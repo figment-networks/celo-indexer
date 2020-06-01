@@ -3,6 +3,7 @@ module github.com/figment-networks/celo-indexer
 go 1.14
 
 require (
+	github.com/figment-networks/indexing-engine v0.1.2
 	github.com/gin-gonic/gin v1.6.3
 	github.com/golang/protobuf v1.4.2
 	google.golang.org/grpc v1.29.1
