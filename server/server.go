@@ -1,13 +1,11 @@
 package server
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"google.golang.org/grpc"
 
-	"github.com/figment-networks/celo-indexer/grpc/validator"
+	"github.com/figment-networks/celo-indexer/client"
 )
 
 func Run() {
@@ -18,19 +16,17 @@ func Run() {
 	router.Run()
 }
 
-const proxyUrl = "localhost:50051"
-
 func GetValidators(ctx *gin.Context) {
-	conn, err := grpc.Dial(proxyUrl, grpc.WithInsecure(), grpc.WithBlock())
+	client, err := client.New("localhost:50051")
 	if err != nil {
-		panic("could not connect to gRPC proxy")
+		panic(err)
 	}
-	defer conn.Close()
+	defer client.Close()
 
-	client := validator.NewValidatorServiceClient(conn)
+	validators, err := client.Validator.GetByHeight(0)
+	if err != nil {
+		panic(err)
+	}
 
-	response, err := client.GetByHeight(context.Background(),
-		&validator.GetByHeightRequest{Height: 0})
-
-	ctx.JSON(http.StatusOK, response)
+	ctx.JSON(http.StatusOK, validators)
 }
