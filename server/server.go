@@ -5,28 +5,20 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/figment-networks/celo-indexer/client"
+	"github.com/figment-networks/celo-indexer/model"
+	"github.com/figment-networks/celo-indexer/store"
 )
 
-func Run() {
+func Run(store *store.Store) {
 	router := gin.Default()
 
-	router.GET("/validators", GetValidators)
+	router.GET("/validators", func(ctx *gin.Context) {
+		var validators []model.Validator
+
+		store.Db.Find(&validators)
+
+		ctx.JSON(http.StatusOK, validators)
+	})
 
 	router.Run()
-}
-
-func GetValidators(ctx *gin.Context) {
-	client, err := client.New("localhost:50051")
-	if err != nil {
-		panic(err)
-	}
-	defer client.Close()
-
-	validators, err := client.Validator.GetByHeight(0)
-	if err != nil {
-		panic(err)
-	}
-
-	ctx.JSON(http.StatusOK, validators)
 }
