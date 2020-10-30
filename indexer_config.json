@@ -1,0 +1,66 @@
+{
+    "versions": [
+        {
+            "id": 1,
+            "targets": [1,2,3,4,5,5],
+            "parallel": false
+        }
+    ],
+    "shared_tasks": [
+      "HeightMetaRetriever",
+      "MainSyncer",
+      "SyncerPersistor"
+    ],
+    "available_targets": [
+      {
+        "id": 1,
+        "name": "index_block_sequences",
+        "desc": "Creates and persists block sequences",
+        "tasks": [
+          "BlockFetcher",
+          "BlockSeqCreator",
+          "BlockSeqPersistor"
+        ]
+      },
+      {
+        "id": 2,
+        "name": "index_validator_group_sequences",
+        "desc": "Creates and persists validator group sequences",
+        "tasks": [
+          "ValidatorGroupsFetcher",
+          "ValidatorGroupSeqCreator",
+          "ValidatorGroupSeqPersistor"
+        ]
+      },
+      {
+        "id": 3,
+        "name": "index_validator_sequences",
+        "desc": "Creates and persists validator sequences",
+        "tasks": [
+          "ValidatorsFetcher",
+          "ValidatorSeqCreator",
+          "ValidatorSeqPersistor"
+        ]
+      },
+      {
+        "id": 4,
+        "name": "index_validator_group_aggregates",
+        "desc": "Creates and persists validator aggregates",
+        "tasks": [
+          "ValidatorGroupsFetcher",
+          "ValidatorGroupAggCreator",
+          "ValidatorGroupAggPersistor"
+        ]
+      },
+      {
+        "id": 5,
+        "name": "index_validator_aggregates",
+        "desc": "Creates and persists validator aggregates",
+        "tasks": [
+          "ValidatorsFetcher",
+          "ValidatorAggCreator",
+          "ValidatorAggPersistor"
+        ]
+      }
+    ]
+  }

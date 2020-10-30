@@ -1,24 +1,51 @@
 package server
 
 import (
-	"net/http"
-
+	"github.com/figment-networks/celo-indexer/config"
+	"github.com/figment-networks/celo-indexer/metric"
+	"github.com/figment-networks/celo-indexer/usecase"
+	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/gin-gonic/gin"
-
-	"github.com/figment-networks/celo-indexer/model"
-	"github.com/figment-networks/celo-indexer/store"
 )
 
-func Run(store *store.Store) {
-	router := gin.Default()
+// Server handles HTTP requests
+type Server struct {
+	cfg      *config.Config
+	handlers *usecase.HttpHandlers
 
-	router.GET("/validators", func(ctx *gin.Context) {
-		var validators []model.Validator
-
-		store.Db.Find(&validators)
-
-		ctx.JSON(http.StatusOK, validators)
-	})
-
-	router.Run()
+	engine *gin.Engine
 }
+
+// New returns a new server instance
+func New(cfg *config.Config, handlers *usecase.HttpHandlers) *Server {
+	app := &Server{
+		cfg:      cfg,
+		engine:   gin.Default(),
+		handlers: handlers,
+	}
+	return app.init()
+}
+
+// Start starts the server
+func (s *Server) Start(listenAdd string) error {
+	logger.Info("starting server...", logger.Field("app", "server"))
+
+	go s.startMetricsServer()
+
+	return s.engine.Run(listenAdd)
+}
+
+// init initializes the server
+func (s *Server) init() *Server {
+	logger.Info("initializing server...", logger.Field("app", "server"))
+
+	s.setupMiddleware()
+	s.setupRoutes()
+
+	return s
+}
+
+func (s *Server) startMetricsServer() error {
+	return metric.NewServerMetric().StartServer(s.cfg.ServerMetricAddr, s.cfg.MetricServerUrl)
+}
+

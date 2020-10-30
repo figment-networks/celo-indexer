@@ -1,0 +1,76 @@
+version: "3.7"
+
+networks:
+  internal:
+    name: internal
+    driver: bridge
+
+volumes:
+  database:
+
+services:
+  database:
+    image: postgres:10.14
+    networks: 
+      - internal
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: celo
+      POSTGRES_PASSWORD: celo
+      POSTGRES_DB: celo
+    volumes:
+      - database:/var/lib/postgresql/data/
+  
+  server:
+    build: .
+    command: -cmd=server
+    networks:
+      - internal
+    ports:
+      - "8081:8081"
+    environment:
+      NODE_URL: localhost:50051
+      DATABASE_DSN: postgres://celo:celo@database/celo?sslmode=disable
+    depends_on:
+      - database
+  
+  worker:
+    build: .
+    command: -cmd=worker
+    networks:    
+      - internal
+    environment:
+      NODE_URL: localhost:50051
+      DATABASE_DSN: postgres://celo:celo@database/celo?sslmode=disable
+    depends_on:
+      - database
+
+  migrate:
+    build: .
+    command: -cmd=migrate
+    networks:
+      - internal
+    environment:
+      NODE_URL: localhost:50051
+      DATABASE_DSN: postgres://celo:celo@database/celo?sslmode=disable
+    depends_on:
+      - database
+
+  migrate-cmd:
+    image: migrate/migrate
+    volumes:
+      - ./migrations:/migrations
+    command: version
+    networks:
+      - internal
+    entrypoint:
+      - migrate
+      - -path
+      - /migrations/
+      - -database
+      - postgres://celo:celo@database:5432/celo?sslmode=disable
+    environment:
+      DATABASE_DSN: postgres://celo:celo@database/celo?sslmode=disable
+    depends_on:
+      - database

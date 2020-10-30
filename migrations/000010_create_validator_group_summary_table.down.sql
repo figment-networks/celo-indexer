@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS validator_group_summary;

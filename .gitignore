@@ -1,0 +1,7 @@
+.DS_Store
+celo-indexer
+tmp/*
+*.log
+.env*
+Procfile
+config.json
