@@ -4,7 +4,7 @@ import "fmt"
 
 const (
 	AppName    = "celo-indexer"
-	AppVersion = "0.0.1"
+	AppVersion = "0.0.2"
 	GitCommit  = "-"
 	GoVersion  = "1.14"
 )
