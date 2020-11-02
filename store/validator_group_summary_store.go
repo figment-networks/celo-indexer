@@ -57,18 +57,18 @@ func (s *ValidatorGroupSummaryStore) FindActivityPeriods(interval types.SummaryI
 type ValidatorGroupSummaryRow struct {
 	TimeBucket         string         `json:"time_bucket"`
 	TimeInterval       string         `json:"time_interval"`
-	CommissionAvg      types.Quantity `json:"commission_avg"`
-	CommissionMin      types.Quantity `json:"commission_min"`
-	CommissionMax      types.Quantity `json:"commission_max"`
-	ActiveVotesAvg     types.Quantity `json:"active_votes_avg"`
-	ActiveVotesMin     types.Quantity `json:"active_votes_min"`
-	ActiveVotesMax     types.Quantity `json:"active_votes_max"`
-	ActiveVoteUnitsAvg types.Quantity `json:"active_vote_units_avg"`
-	ActiveVoteUnitsMin types.Quantity `json:"active_vote_units_min"`
-	ActiveVoteUnitsMax types.Quantity `json:"active_vote_units_max"`
-	PendingVotesAvg    types.Quantity `json:"pending_votes_avg"`
-	PendingVotesMin    types.Quantity `json:"pending_votes_min"`
-	PendingVotesMax    types.Quantity `json:"pending_votes_max"`
+	CommissionAvg      string `json:"commission_avg"`
+	CommissionMin      string `json:"commission_min"`
+	CommissionMax      string `json:"commission_max"`
+	ActiveVotesAvg     string `json:"active_votes_avg"`
+	ActiveVotesMin     string `json:"active_votes_min"`
+	ActiveVotesMax     string `json:"active_votes_max"`
+	ActiveVoteUnitsAvg string `json:"active_vote_units_avg"`
+	ActiveVoteUnitsMin string `json:"active_vote_units_min"`
+	ActiveVoteUnitsMax string `json:"active_vote_units_max"`
+	PendingVotesAvg    string `json:"pending_votes_avg"`
+	PendingVotesMin    string `json:"pending_votes_min"`
+	PendingVotesMax    string `json:"pending_votes_max"`
 }
 
 // FindSummary gets summary for validator group summary

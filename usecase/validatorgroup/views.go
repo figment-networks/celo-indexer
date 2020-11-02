@@ -2,7 +2,6 @@ package validatorgroup
 
 import (
 	"github.com/figment-networks/celo-indexer/model"
-	"github.com/figment-networks/celo-indexer/types"
 )
 
 type AggDetailsView struct {
@@ -11,29 +10,33 @@ type AggDetailsView struct {
 
 	Address string `json:"address"`
 
-	LastSequences []model.ValidatorGroupSeq `json:"last_sequences"`
+	LastSequences []SeqListItem `json:"last_sequences"`
 }
 
 func ToAggDetailsView(m *model.ValidatorGroupAgg, validatorSequences []model.ValidatorGroupSeq) *AggDetailsView {
-	return &AggDetailsView{
+	view := &AggDetailsView{
 		Model:     m.Model,
 		Aggregate: m.Aggregate,
 
 		Address: m.Address,
-
-		LastSequences: validatorSequences,
 	}
+
+	sequenceListView := ToSeqListView(validatorSequences)
+
+	view.LastSequences = sequenceListView.Items
+
+	return view
 }
 
 type SeqListItem struct {
 	*model.Sequence
 
-	Address         string         `json:"address"`
-	Commission      types.Quantity `json:"commission"`
-	ActiveVotes     types.Quantity `json:"active_votes"`
-	ActiveVoteUnits types.Quantity `json:"active_vote_units"`
-	PendingVotes    types.Quantity `json:"pending_votes"`
-	MembersCount    int            `json:"members_count"`
+	Address         string `json:"address"`
+	Commission      string `json:"commission"`
+	ActiveVotes     string `json:"active_votes"`
+	ActiveVoteUnits string `json:"active_vote_units"`
+	PendingVotes    string `json:"pending_votes"`
+	MembersCount    int    `json:"members_count"`
 }
 
 type SeqListView struct {
@@ -47,10 +50,10 @@ func ToSeqListView(validatorSeqs []model.ValidatorGroupSeq) SeqListView {
 			Sequence: m.Sequence,
 
 			Address:         m.Address,
-			Commission:      m.Commission,
-			ActiveVotes:     m.ActiveVotes,
-			ActiveVoteUnits: m.ActiveVoteUnits,
-			PendingVotes:    m.PendingVotes,
+			Commission:      m.Commission.String(),
+			ActiveVotes:     m.ActiveVotes.String(),
+			ActiveVoteUnits: m.ActiveVoteUnits.String(),
+			PendingVotes:    m.PendingVotes.String(),
 			MembersCount:    m.MembersCount,
 		}
 
