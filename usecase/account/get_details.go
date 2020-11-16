@@ -60,5 +60,10 @@ func (uc *getDetailsUseCase) Execute(ctx context.Context, address string, limit 
 		return nil, err
 	}
 
-	return ToDetailsView(address, lastHeightAccountInfo, internalTransfersSent, validatorGroupVoteCastReceived, validatorGroupVoteCastSent, goldLocked, goldUnlocked, goldWithdrawn, accountSlashed)
+	validatorPaymentDistributed, err := uc.db.AccountActivitySeq.FindLastByAddressAndKind(address, figmentclient.OperationTypeValidatorEpochPaymentDistributed, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	return ToDetailsView(address, lastHeightAccountInfo, internalTransfersSent, validatorGroupVoteCastReceived, validatorGroupVoteCastSent, goldLocked, goldUnlocked, goldWithdrawn, accountSlashed, validatorPaymentDistributed)
 }

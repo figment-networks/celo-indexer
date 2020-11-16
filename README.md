@@ -57,6 +57,7 @@ Celo Indexer is responsible for fetching and indexing Celo data.
 | GET    | `/validator_groups`                        | get list of validator groups                                      | height (optional) - height [Default: 0 = last]                                                                                                        |
 | GET    | `/validator_group/:address`          | get validator group by address                                    | address (required) - validator's address    sequences_limit (required) - number of last sequences to include    eras_limit (required) - number of last eras to include                                                                                                      |
 | GET    | `/validator_groups_summary`                | validator group summary                                           | interval (required) - time interval [hourly or daily] period (required) - summary period [ie. 24 hours]  address (optional) - validator's address |
+| GET    | `/system_events/:address`            | system events for given actor                               | `address (required)` - address of account `after (optional)` - return events after with height greater than provided height  `kind (optional)` - system event kind |
 
 ### Running app
 

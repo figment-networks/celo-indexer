@@ -9,6 +9,7 @@ import (
 	"github.com/figment-networks/celo-indexer/usecase/block"
 	"github.com/figment-networks/celo-indexer/usecase/chain"
 	"github.com/figment-networks/celo-indexer/usecase/health"
+	"github.com/figment-networks/celo-indexer/usecase/systemevent"
 	"github.com/figment-networks/celo-indexer/usecase/transaction"
 	"github.com/figment-networks/celo-indexer/usecase/validator"
 	"github.com/figment-networks/celo-indexer/usecase/validatorgroup"
@@ -31,6 +32,7 @@ func NewHttpHandlers(cfg *config.Config, db *store.Store, c figmentclient.Client
 		GetValidatorGroupsByHeight: validatorgroup.NewGetByHeightHttpHandler(cfg, db, c),
 		GetValidatorGroupByAddress: validatorgroup.NewGetByAddressHttpHandler(db, c),
 		GetValidatorGroupSummary:   validatorgroup.NewGetSummaryHttpHandler(db, c),
+		GetSystemEventsForAddress:  systemevent.NewGetForAddressHttpHandler(db, c),
 	}
 }
 
@@ -50,4 +52,5 @@ type HttpHandlers struct {
 	GetValidatorGroupsByHeight types.HttpHandler
 	GetValidatorGroupByAddress types.HttpHandler
 	GetValidatorGroupSummary   types.HttpHandler
+	GetSystemEventsForAddress  types.HttpHandler
 }

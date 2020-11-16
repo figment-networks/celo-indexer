@@ -36,9 +36,10 @@ type DetailsView struct {
 	GoldUnlocked                   []model.AccountActivitySeq `json:"gold_unlocked"`
 	GoldWithdrawn                  []model.AccountActivitySeq `json:"gold_withdrawn"`
 	AccountSlashed                 []model.AccountActivitySeq `json:"account_slashed"`
+	RewardReceived                 []model.AccountActivitySeq `json:"reward_received"`
 }
 
-func ToDetailsView(address string, rawAccountInfo *figmentclient.AccountInfo, internalTransfersSent, validatorGroupVoteCastReceived, validatorGroupVoteCastSent, goldLocked, goldUnlocked, goldWithdrawn, accountSlashed []model.AccountActivitySeq) (*DetailsView, error) {
+func ToDetailsView(address string, rawAccountInfo *figmentclient.AccountInfo, internalTransfersSent, validatorGroupVoteCastReceived, validatorGroupVoteCastSent, goldLocked, goldUnlocked, goldWithdrawn, accountSlashed, rewardReceived []model.AccountActivitySeq) (*DetailsView, error) {
 	view := &DetailsView{
 		Address:         address,
 		IdentityDetails: ToIdentityDetails(rawAccountInfo),
@@ -46,12 +47,13 @@ func ToDetailsView(address string, rawAccountInfo *figmentclient.AccountInfo, in
 	}
 
 	view.InternalTransfersSent = internalTransfersSent
-	view.InternalTransfersSent = validatorGroupVoteCastReceived
-	view.InternalTransfersSent = validatorGroupVoteCastSent
-	view.InternalTransfersSent = goldLocked
-	view.InternalTransfersSent = goldUnlocked
-	view.InternalTransfersSent = goldWithdrawn
-	view.InternalTransfersSent = accountSlashed
+	view.ValidatorGroupVoteCastReceived = validatorGroupVoteCastReceived
+	view.ValidatorGroupVoteCastSent = validatorGroupVoteCastSent
+	view.GoldLocked = goldLocked
+	view.GoldUnlocked = goldUnlocked
+	view.GoldWithdrawn = goldWithdrawn
+	view.AccountSlashed = accountSlashed
+	view.RewardReceived = rewardReceived
 
 	return view, nil
 }
