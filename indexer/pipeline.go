@@ -20,6 +20,8 @@ const (
 )
 
 var (
+	StageAnalyzer pipeline.StageName = "stage_analyzer"
+
 	ErrIsPristine          = errors.New("cannot run because database is empty")
 	ErrIndexCannotBeRun    = errors.New("cannot run index process")
 	ErrBackfillCannotBeRun = errors.New("cannot run backfill process")
@@ -51,7 +53,9 @@ func NewPipeline(cfg *config.Config, db *store.Store, client figmentclient.Clien
 		pipeline.NewStageWithTasks(pipeline.StageFetcher,
 			pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, maxRetries),
-			pipeline.RetryingTask(NewValidatorGroupFetcherTask(client), isTransient, maxRetries)),
+			pipeline.RetryingTask(NewValidatorGroupFetcherTask(client), isTransient, maxRetries),
+			pipeline.RetryingTask(NewTransactionFetcherTask(client), isTransient, maxRetries),
+		),
 	)
 
 	// Syncer stage
@@ -66,6 +70,8 @@ func NewPipeline(cfg *config.Config, db *store.Store, client figmentclient.Clien
 			pipeline.RetryingTask(NewBlockSeqCreatorTask(db), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorSeqCreatorTask(cfg, db), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorGroupSeqCreatorTask(cfg, db), isTransient, maxRetries),
+			pipeline.RetryingTask(NewAccountActivitySeqCreatorTask(cfg, db), isTransient, maxRetries),
+			pipeline.RetryingTask(NewSystemEventPersistorTask(db), isTransient, maxRetries),
 		),
 	)
 
@@ -78,6 +84,14 @@ func NewPipeline(cfg *config.Config, db *store.Store, client figmentclient.Clien
 		),
 	)
 
+	// Set analyzer stage
+	p.AddStage(
+		pipeline.NewStageWithTasks(
+			StageAnalyzer,
+			pipeline.RetryingTask(NewSystemEventCreatorTask(cfg, db), isTransient, maxRetries),
+		),
+	)
+
 	// Set persistor stage
 	p.AddStage(
 		pipeline.NewAsyncStageWithTasks(
@@ -86,6 +100,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client figmentclient.Clien
 			pipeline.RetryingTask(NewBlockSeqPersistorTask(db), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorSeqPersistorTask(db), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorGroupSeqPersistorTask(db), isTransient, maxRetries),
+			pipeline.RetryingTask(NewAccountActivitySeqPersistorTask(db), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorAggPersistorTask(db), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorGroupAggPersistorTask(db), isTransient, maxRetries),
 		),

@@ -27,12 +27,15 @@ type Client interface {
 	base.Client
 
 	GetChainStatus(context.Context) (*ChainStatus, error)
+	GetChainParams(context.Context) (*ChainParams, error)
 	GetMetaByHeight(context.Context, int64) (*HeightMeta, error)
 	GetBlockByHeight(context.Context, int64) (*Block, error)
 	GetTransactionsByHeight(context.Context, int64) ([]*Transaction, error)
 	GetValidatorGroupsByHeight(context.Context, int64) ([]*ValidatorGroup, error)
 	GetValidatorsByHeight(context.Context, int64) ([]*Validator, error)
-	GetAccountDetailsByAddressAndHeight(context.Context, string, int64) (*AccountDetails, error)
+	GetAccountByAddressAndHeight(context.Context, string, int64) (*AccountInfo, error)
+	GetIdentityByHeight(context.Context, string, int64) (*Identity, error)
+	//GetEpochPaymentsByHeight(context.Context, int64) (*EpochPayment, error)
 }
 
 type client struct {
@@ -83,6 +86,31 @@ func (l *client) GetChainStatus(ctx context.Context) (*ChainStatus, error) {
 	}
 
 	return chain, nil
+}
+
+func (l *client) GetChainParams(ctx context.Context) (*ChainParams, error) {
+	l.contractsRegistry.setupContractsForHeight(ctx, nil)
+
+	chainId, err := l.cc.Net.ChainId(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	chainParams := &ChainParams{
+		ChainId: chainId.Uint64(),
+	}
+
+	if l.contractsRegistry.electionContract != nil {
+		opts := &bind.CallOpts{Context: ctx}
+		epochSize, err := l.contractsRegistry.electionContract.GetEpochSize(opts)
+		if err != nil {
+			return nil, err
+		}
+		e := epochSize.Int64()
+		chainParams.EpochSize = &e
+	}
+
+	return chainParams, nil
 }
 
 func (l *client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, error) {
@@ -206,6 +234,9 @@ func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Trans
 		operations = append(operations, l.parseFromInternalTransfers(internalTransfers)...)
 
 		transaction := &Transaction{
+			Hash:       tx.Hash().String(),
+			To:         tx.To().String(),
+			Size:       tx.Size().String(),
 			Nonce:      tx.Nonce(),
 			GasPrice:   tx.GasPrice(),
 			Gas:        tx.Gas(),
@@ -241,7 +272,7 @@ func (l *client) parseFromInternalTransfers(internalTransfers []debug.Transfer) 
 		}
 
 		operations = append(operations, &Operation{
-			Name:    "internalTransfer",
+			Name:    OperationTypeInternalTransfer,
 			Details: transfer,
 		})
 	}
@@ -439,6 +470,32 @@ func (l *client) parseFromLogs(logs []*celoTypes.Log) ([]*Operation, error) {
 				Name:    eventName,
 				Details: eventRaw,
 			})
+		} else if eventLog.Address == l.contractsRegistry.addresses[registry.GoldTokenContractID] {
+			eventName, eventRaw, ok, err := l.contractsRegistry.goldTokenContract.TryParseLog(*eventLog)
+			if err != nil {
+				return nil, fmt.Errorf("can't parse GoldToken event: %w", err)
+			}
+			if !ok {
+				continue
+			}
+
+			operations = append(operations, &Operation{
+				Name:    eventName,
+				Details: eventRaw,
+			})
+		} else if eventLog.Address == l.contractsRegistry.addresses[registry.ValidatorsContractID] {
+			eventName, eventRaw, ok, err := l.contractsRegistry.validatorsContract.TryParseLog(*eventLog)
+			if err != nil {
+				return nil, fmt.Errorf("can't parse Validators event: %w", err)
+			}
+			if !ok {
+				continue
+			}
+
+			operations = append(operations, &Operation{
+				Name:    eventName,
+				Details: eventRaw,
+			})
 		}
 
 	}
@@ -483,9 +540,16 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 				return nil, err
 			}
 
+			identity, err := l.getIdentity(ctx, rawValidatorGroup.String())
+			if err != nil {
+				return nil, err
+			}
+
 			validatorGroup := &ValidatorGroup{
 				Index:               uint64(i),
 				Address:             rawValidatorGroup.String(),
+				Name:                identity.Name,
+				MetadataUrl:         identity.MetadataUrl,
 				Commission:          commission,
 				NextCommission:      nextCommission,
 				NextCommissionBlock: nextCommissionBlock.Int64(),
@@ -536,8 +600,15 @@ func (l *client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validat
 			return nil, err
 		}
 
+		identity, err := l.getIdentity(ctx, rawValidator.String())
+		if err != nil {
+			return nil, err
+		}
+
 		validator := &Validator{
 			Address:        rawValidator.String(),
+			Name:           identity.Name,
+			MetadataUrl:    identity.MetadataUrl,
 			BlsPublicKey:   validatorDetails.BlsPublicKey,
 			EcdsaPublicKey: validatorDetails.EcdsaPublicKey,
 			Signer:         validatorDetails.Signer.String(),
@@ -593,19 +664,26 @@ func (l *client) getValidationMap(ctx context.Context, height *big.Int) (map[str
 	return validationMap, nil
 }
 
-func (l *client) GetAccountDetailsByAddressAndHeight(ctx context.Context, rawAddress string, h int64) (*AccountDetails, error) {
+func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress string, h int64) (*AccountInfo, error) {
 	height := big.NewInt(h)
+
 	l.contractsRegistry.setupContractsForHeight(ctx, height)
 
 	address := common.HexToAddress(rawAddress)
 
-	accountDetails := &AccountDetails{}
+	accountInfo := &AccountInfo{}
 
 	goldAmount, err := l.cc.Eth.BalanceAt(ctx, address, height)
 	if err != nil {
 		return nil, err
 	}
-	accountDetails.GoldBalance = goldAmount
+	accountInfo.GoldBalance = goldAmount
+
+	identity, err := l.getIdentity(ctx, rawAddress)
+	if err != nil {
+		return nil, err
+	}
+	accountInfo.Identity = identity
 
 	if l.contractsRegistry.lockedGoldContract != nil {
 		opts := &bind.CallOpts{Context: ctx}
@@ -613,14 +691,14 @@ func (l *client) GetAccountDetailsByAddressAndHeight(ctx context.Context, rawAdd
 		if err != nil {
 			return nil, err
 		}
-		accountDetails.TotalLockedGold = totalLockedGold
+		accountInfo.TotalLockedGold = totalLockedGold
 
 		opts = &bind.CallOpts{Context: ctx}
 		totalNonvotingLockedGold, err := l.contractsRegistry.lockedGoldContract.GetAccountNonvotingLockedGold(opts, address)
 		if err != nil {
 			return nil, err
 		}
-		accountDetails.TotalNonvotingLockedGold = totalNonvotingLockedGold
+		accountInfo.TotalNonvotingLockedGold = totalNonvotingLockedGold
 	}
 
 	if l.contractsRegistry.stableTokenContract != nil {
@@ -629,8 +707,70 @@ func (l *client) GetAccountDetailsByAddressAndHeight(ctx context.Context, rawAdd
 		if err != nil {
 			return nil, err
 		}
-		accountDetails.StableTokenBalance = stableTokenBalance
+		accountInfo.StableTokenBalance = stableTokenBalance
 	}
 
-	return accountDetails, nil
+	return accountInfo, nil
 }
+
+func (l *client) GetIdentityByHeight(ctx context.Context, rawAddress string, h int64) (*Identity, error) {
+	height := big.NewInt(h)
+	l.contractsRegistry.setupContractsForHeight(ctx, height)
+
+	return l.getIdentity(ctx, rawAddress)
+}
+
+func (l *client) getIdentity(ctx context.Context, rawAddress string) (*Identity, error) {
+	address := common.HexToAddress(rawAddress)
+
+	identity := &Identity{}
+	if l.contractsRegistry.accountsContract != nil {
+		opts := &bind.CallOpts{Context: ctx}
+		name, err := l.contractsRegistry.accountsContract.GetName(opts, address)
+		if err != nil {
+			return nil, err
+		}
+		identity.Name = name
+
+		metadataUrl, err := l.contractsRegistry.accountsContract.GetMetadataURL(opts, address)
+		if err != nil {
+			return nil, err
+		}
+		identity.MetadataUrl = metadataUrl
+
+	}
+
+	return identity, nil
+}
+
+//func (l *client) GetEpochPaymentsByHeight(ctx context.Context, h int64) (*EpochPayment, error) {
+//	height := uint64(h)
+//	l.contractsRegistry.setupContractsForHeight(ctx, height)
+//
+//	var epochPayments = []*EpochPayment
+//	if l.contractsRegistry.validatorsContract != nil {
+//		iter, err := token.FilterTransfer(, []common.Address{common.ZeroAddress}, nil)
+//		if err != nil {
+//			return err
+//		}
+//		opts := &bind.FilterOpts{
+//			Start:   height,
+//			End:     &height,
+//			Context: ctx,
+//		}
+//		name, err := l.contractsRegistry.validatorsContract.FilterValidatorEpochPaymentDistributed(opts, nil, nil)
+//		if err != nil {
+//			return nil, err
+//		}
+//		identity.Name = name
+//
+//		metadataUrl, err := l.contractsRegistry.accountsContract.GetMetadataURL(opts, address)
+//		if err != nil {
+//			return nil, err
+//		}
+//		identity.MetadataUrl = metadataUrl
+//
+//	}
+//
+//	return identity, nil
+//}

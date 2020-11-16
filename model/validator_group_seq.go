@@ -10,6 +10,8 @@ type ValidatorGroupSeq struct {
 	*Sequence
 
 	Address         string         `json:"address"`
+	Name            string         `json:"name"`
+	MetadataUrl     string         `json:"metadata_url"`
 	Commission      types.Quantity `json:"commission"`
 	ActiveVotes     types.Quantity `json:"active_votes"`
 	ActiveVoteUnits types.Quantity `json:"active_vote_units"`
@@ -31,6 +33,8 @@ func (s *ValidatorGroupSeq) Equal(m ValidatorGroupSeq) bool {
 }
 
 func (b *ValidatorGroupSeq) Update(m ValidatorGroupSeq) {
+	b.Name = m.Name
+	b.MetadataUrl = m.MetadataUrl
 	b.Commission = m.Commission
 	b.ActiveVotes = m.ActiveVotes
 	b.ActiveVotes = m.ActiveVotes

@@ -23,6 +23,7 @@ func NewHttpHandlers(cfg *config.Config, db *store.Store, c figmentclient.Client
 		GetBlockSummary:            block.NewGetBlockSummaryHttpHandler(db, c),
 		GetTransactionsByHeight:    transaction.NewGetByHeightHttpHandler(db, c),
 		GetAccountByHeight:         account.NewGetByHeightHttpHandler(db, c),
+		GetAccountDetails:          account.NewGetDetailsHttpHandler(db, c),
 		GetValidatorsByHeight:      validator.NewGetByHeightHttpHandler(cfg, db, c),
 		GetValidatorByAddress:      validator.NewGetByAddressHttpHandler(db, c),
 		GetValidatorSummary:        validator.NewGetSummaryHttpHandler(db, c),
@@ -41,6 +42,7 @@ type HttpHandlers struct {
 	GetBlockByHeight           types.HttpHandler
 	GetTransactionsByHeight    types.HttpHandler
 	GetAccountByHeight         types.HttpHandler
+	GetAccountDetails          types.HttpHandler
 	GetValidatorsByHeight      types.HttpHandler
 	GetValidatorByAddress      types.HttpHandler
 	GetValidatorSummary        types.HttpHandler

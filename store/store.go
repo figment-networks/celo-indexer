@@ -25,9 +25,10 @@ func New(connStr string) (*Store, error) {
 		Syncables: NewSyncablesStore(conn),
 		Reports:   NewReportsStore(conn),
 
-		BlockSeq:          NewBlockSeqStore(conn),
-		ValidatorSeq:      NewValidatorSeqStore(conn),
-		ValidatorGroupSeq: NewValidatorGroupSeqStore(conn),
+		BlockSeq:           NewBlockSeqStore(conn),
+		ValidatorSeq:       NewValidatorSeqStore(conn),
+		ValidatorGroupSeq:  NewValidatorGroupSeqStore(conn),
+		AccountActivitySeq: NewAccountActivitySeqStore(conn),
 
 		ValidatorAgg:      NewValidatorAggStore(conn),
 		ValidatorGroupAgg: NewValidatorGroupAggStore(conn),
@@ -35,6 +36,8 @@ func New(connStr string) (*Store, error) {
 		BlockSummary:          NewBlockSummaryStore(conn),
 		ValidatorSummary:      NewValidatorSummaryStore(conn),
 		ValidatorGroupSummary: NewValidatorGroupSummaryStore(conn),
+
+		SystemEvents: NewSystemEventsStore(conn),
 	}, nil
 }
 
@@ -46,9 +49,10 @@ type Store struct {
 	Syncables *SyncablesStore
 	Reports   *ReportsStore
 
-	BlockSeq          *BlockSeqStore
-	ValidatorSeq      *ValidatorSeqStore
-	ValidatorGroupSeq *ValidatorGroupSeqStore
+	BlockSeq           *BlockSeqStore
+	ValidatorSeq       *ValidatorSeqStore
+	ValidatorGroupSeq  *ValidatorGroupSeqStore
+	AccountActivitySeq *AccountActivitySeqStore
 
 	ValidatorAgg      *ValidatorAggStore
 	ValidatorGroupAgg *ValidatorGroupAggStore
@@ -56,6 +60,8 @@ type Store struct {
 	BlockSummary          *BlockSummaryStore
 	ValidatorSummary      *ValidatorSummaryStore
 	ValidatorGroupSummary *ValidatorGroupSummaryStore
+
+	SystemEvents *SystemEventsStore
 }
 
 // Test checks the connection status

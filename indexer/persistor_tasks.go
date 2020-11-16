@@ -6,17 +6,20 @@ import (
 	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/utils/logger"
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"time"
 )
 
 const (
-	SyncerPersistorTaskName            = "SyncerPersistor"
-	BlockSeqPersistorTaskName          = "BlockSeqPersistor"
-	ValidatorSeqPersistorTaskName      = "ValidatorSeqPersistor"
-	ValidatorGroupSeqPersistorTaskName = "ValidatorGroupSeqPersistor"
-	ValidatorAggPersistorTaskName      = "ValidatorAggPersistor"
-	ValidatorGroupAggPersistorTaskName = "ValidatorGroupAggPersistor"
+	SyncerPersistorTaskName             = "SyncerPersistor"
+	BlockSeqPersistorTaskName           = "BlockSeqPersistor"
+	ValidatorSeqPersistorTaskName       = "ValidatorSeqPersistor"
+	ValidatorGroupSeqPersistorTaskName  = "ValidatorGroupSeqPersistor"
+	AccountActivitySeqPersistorTaskName = "AccountActivitySeqPersistor"
+	ValidatorAggPersistorTaskName       = "ValidatorAggPersistor"
+	ValidatorGroupAggPersistorTaskName  = "ValidatorGroupAggPersistor"
+	TaskNameSystemEventPersistor        = "SystemEventPersistor"
 )
 
 // NewSyncerPersistorTask is responsible for storing syncable to persistence layer
@@ -114,6 +117,43 @@ func (t *validatorSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 	return nil
 }
 
+// NewAccountActivitySeqPersistorTask is responsible for storing validator info to persistence layer
+func NewAccountActivitySeqPersistorTask(db *store.Store) pipeline.Task {
+	return &accountActivitySeqPersistorTask{
+		db: db,
+	}
+}
+
+type accountActivitySeqPersistorTask struct {
+	db *store.Store
+}
+
+func (t *accountActivitySeqPersistorTask) GetName() string {
+	return AccountActivitySeqPersistorTaskName
+}
+
+func (t *accountActivitySeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+
+	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
+
+	// Delete current account activities first
+	_, err := t.db.AccountActivitySeq.DeleteForHeight(payload.CurrentHeight)
+	if err != nil {
+		return err
+	}
+
+	for _, sequence := range payload.AccountActivitySequences {
+		if err := t.db.AccountActivitySeq.Create(&sequence); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // NewValidatorGroupSeqPersistorTask is responsible for storing validator era info to persistence layer
 func NewValidatorGroupSeqPersistorTask(db *store.Store) pipeline.Task {
 	return &validatorEraSeqPersistorTask{
@@ -151,6 +191,7 @@ func (t *validatorEraSeqPersistorTask) Run(ctx context.Context, p pipeline.Paylo
 	return nil
 }
 
+// NewValidatorAggPersistorTask store validator aggregate to persistence layer
 func NewValidatorAggPersistorTask(db *store.Store) pipeline.Task {
 	return &validatorAggPersistorTask{
 		db: db,
@@ -187,6 +228,7 @@ func (t *validatorAggPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 	return nil
 }
 
+// NewValidatorGroupAggPersistorTask store validator group aggregate to persistence layer
 func NewValidatorGroupAggPersistorTask(db *store.Store) pipeline.Task {
 	return &validatorGroupAggPersistorTask{
 		db: db,
@@ -216,6 +258,39 @@ func (t *validatorGroupAggPersistorTask) Run(ctx context.Context, p pipeline.Pay
 
 	for _, aggregate := range payload.UpdatedValidatorGroupAggregates {
 		if err := t.db.ValidatorGroupAgg.Save(&aggregate); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func NewSystemEventPersistorTask(db *store.Store) pipeline.Task {
+	return &systemEventPersistorTask{
+		db:             db,
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameSystemEventPersistor),
+	}
+}
+
+type systemEventPersistorTask struct {
+	db             *store.Store
+	metricObserver metrics.Observer
+}
+
+func (t *systemEventPersistorTask) GetName() string {
+	return TaskNameSystemEventPersistor
+}
+
+func (t *systemEventPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
+
+	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
+
+	for _, systemEvent := range payload.SystemEvents {
+		if err := t.db.SystemEvents.CreateOrUpdate(systemEvent); err != nil {
 			return err
 		}
 	}

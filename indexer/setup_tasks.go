@@ -36,6 +36,7 @@ type HeightMeta struct {
 	Height      int64
 	Time        *types.Time
 	Epoch       *int64
+	EpochSize   *int64
 	LastInEpoch *bool
 }
 
@@ -50,6 +51,11 @@ func (t *heightMetaRetrieverTask) Run(ctx context.Context, p pipeline.Payload) e
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSetup, t.GetName(), payload.CurrentHeight))
+
+	chainParams, err := t.client.GetChainParams(ctx)
+	if err != nil {
+		return err
+	}
 
 	chainStatus, err := t.client.GetChainStatus(ctx)
 	if err != nil {
@@ -66,6 +72,7 @@ func (t *heightMetaRetrieverTask) Run(ctx context.Context, p pipeline.Payload) e
 		Height:      meta.Height,
 		Time:        types.NewTimeFromSeconds(meta.Time),
 		Epoch:       meta.Epoch,
+		EpochSize:   chainParams.EpochSize,
 		LastInEpoch: meta.LastInEpoch,
 	}
 	return nil

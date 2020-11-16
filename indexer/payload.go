@@ -31,6 +31,7 @@ type payload struct {
 	RawBlock           *figmentclient.Block
 	RawValidators      []*figmentclient.Validator
 	RawValidatorGroups []*figmentclient.ValidatorGroup
+	RawTransactions    []*figmentclient.Transaction
 
 	// Syncer stage
 	Syncable *model.Syncable
@@ -50,6 +51,11 @@ type payload struct {
 	UpdatedValidatorSequences      []model.ValidatorSeq
 	NewValidatorGroupSequences     []model.ValidatorGroupSeq
 	UpdatedValidatorGroupSequences []model.ValidatorGroupSeq
+
+	AccountActivitySequences []model.AccountActivitySeq
+
+	// Analyzer
+	SystemEvents []*model.SystemEvent
 }
 
 func (p *payload) MarkAsProcessed() {}

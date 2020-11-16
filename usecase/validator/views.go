@@ -21,6 +21,8 @@ type AggDetailsView struct {
 
 	Address                 string  `json:"address"`
 	RecentAsValidatorHeight int64   `json:"recent_as_validator_height"`
+	RecentName              string  `json:"recent_name"`
+	RecentMetadataUrl       string  `json:"recent_metadata_url"`
 	Uptime                  float64 `json:"uptime"`
 
 	LastSequences []model.ValidatorSeq `json:"last_sequences"`
@@ -33,6 +35,8 @@ func ToAggDetailsView(m *model.ValidatorAgg, validatorSequences []model.Validato
 
 		Address:                 m.Address,
 		RecentAsValidatorHeight: m.RecentAsValidatorHeight,
+		RecentName:              m.RecentName,
+		RecentMetadataUrl:       m.RecentMetadataUrl,
 		Uptime:                  float64(m.AccumulatedUptime) / float64(m.AccumulatedUptimeCount),
 
 		LastSequences: validatorSequences,
@@ -43,6 +47,8 @@ type SeqListItem struct {
 	*model.Sequence
 
 	Address     string         `json:"address"`
+	Name        string         `json:"name"`
+	MetadataUrl string         `json:"metadata_url"`
 	Signed      *bool          `json:"signed"`
 	Score       types.Quantity `json:"score"`
 	Affiliation string         `json:"affiliation"`
@@ -59,6 +65,8 @@ func ToSeqListView(validatorSeqs []model.ValidatorSeq) SeqListView {
 			Sequence: m.Sequence,
 
 			Address:     m.Address,
+			Name:        m.Name,
+			MetadataUrl: m.MetadataUrl,
 			Signed:      m.Signed,
 			Score:       m.Score,
 			Affiliation: m.Affiliation,

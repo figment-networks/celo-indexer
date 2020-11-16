@@ -57,3 +57,13 @@ func (b *Quantity) Scan(value interface{}) error {
 	}
 	return nil
 }
+
+// Add adds n to q, returning an error if n < 0 or n == nil.
+func (b *Quantity) Add(o Quantity) error {
+	if !o.Valid() {
+		return fmt.Errorf("could not multiply %v: invalid quantity", o)
+	}
+
+	b.Int.Add(&b.Int, &o.Int)
+	return nil
+}

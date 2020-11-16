@@ -14,6 +14,7 @@ const (
 	TaskNameBlockFetcher           = "BlockFetcher"
 	TaskNameValidatorsFetcher      = "ValidatorsFetcher"
 	TaskNameValidatorGroupsFetcher = "ValidatorGroupsFetcher"
+	TaskNameTransactionsFetcher    = "TransactionsFetcher"
 )
 
 func NewBlockFetcherTask(client figmentclient.Client) pipeline.Task {
@@ -127,5 +128,43 @@ func (t *ValidatorGroupsFetcherTask) Run(ctx context.Context, p pipeline.Payload
 	)
 
 	payload.RawValidatorGroups = validators
+	return nil
+}
+
+func NewTransactionFetcherTask(client figmentclient.Client) pipeline.Task {
+	return &TransactionsFetcherTask{
+		client:         client,
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameTransactionsFetcher),
+	}
+}
+
+type TransactionsFetcherTask struct {
+	client         figmentclient.Client
+	metricObserver metrics.Observer
+}
+
+func (t *TransactionsFetcherTask) GetName() string {
+	return TaskNameTransactionsFetcher
+}
+
+func (t *TransactionsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
+
+	payload := p.(*payload)
+	transactions, err := t.client.GetTransactionsByHeight(ctx, payload.CurrentHeight)
+	if err != nil {
+		return err
+	}
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
+	logger.DebugJSON(transactions,
+		logger.Field("process", "pipeline"),
+		logger.Field("stage", "fetcher"),
+		logger.Field("request", "transactions"),
+		logger.Field("height", payload.CurrentHeight),
+	)
+
+	payload.RawTransactions = transactions
 	return nil
 }

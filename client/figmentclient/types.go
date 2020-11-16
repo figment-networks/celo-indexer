@@ -5,10 +5,33 @@ import (
 	"math/big"
 )
 
+const (
+	OperationTypeInternalTransfer                 = "InternalTransfer"
+	OperationTypeValidatorGroupVoteCast           = "ValidatorGroupVoteCast"
+	OperationTypeValidatorGroupVoteActivated      = "ValidatorGroupVoteActivated"
+	OperationTypeValidatorGroupPendingVoteRevoked = "ValidatorGroupPendingVoteRevoked"
+	OperationTypeValidatorGroupActiveVoteRevoked  = "ValidatorGroupActiveVoteRevoked"
+	OperationTypeAccountCreated                   = "AccountCreated"
+	OperationTypeAccountSlashed                   = "AccountSlashed"
+	OperationTypeVoteSignerAuthorized             = "VoteSignerAuthorized"
+	OperationTypeValidatorSignerAuthorized        = "ValidatorSignerAuthorized"
+	OperationTypeAttestationSignerAuthorized      = "AttestationSignerAuthorized"
+	OperationTypeGoldLocked                       = "GoldLocked"
+	OperationTypeGoldRelocked                     = "GoldRelocked"
+	OperationTypeGoldUnlocked                     = "GoldUnlocked"
+	OperationTypeGoldWithdrawn                    = "GoldWithdrawn"
+	OperationTypeValidatorEpochPaymentDistributed = "ValidatorEpochPaymentDistributed"
+)
+
 type ChainStatus struct {
 	ChainId         uint64 `json:"chain_id"`
 	LastBlockHeight int64  `json:"last_block_height"`
 	LastBlockHash   string `json:"last_block_hash"`
+}
+
+type ChainParams struct {
+	ChainId   uint64 `json:"chain_id"`
+	EpochSize *int64  `json:"epoch_size"`
 }
 
 type HeightMeta struct {
@@ -51,6 +74,9 @@ type IstanbulAggregatedSeal struct {
 }
 
 type Transaction struct {
+	Hash                string   `json:"hash"`
+	To                  string   `json:"to"`
+	Size                string   `json:"size"`
 	Nonce               uint64   `json:"nonce"`
 	GasPrice            *big.Int `json:"gas_price"`
 	Gas                 uint64   `json:"gas"`
@@ -81,6 +107,8 @@ type Transfer struct {
 type ValidatorGroup struct {
 	Index               uint64   `json:"index"`
 	Address             string   `json:"address"`
+	Name                string   `json:"name"`
+	MetadataUrl         string   `json:"metadata_url"`
 	Commission          *big.Int `json:"commission"`
 	NextCommission      *big.Int `json:"next_commission"`
 	NextCommissionBlock int64    `json:"next_commission_block"`
@@ -94,6 +122,8 @@ type ValidatorGroup struct {
 
 type Validator struct {
 	Address        string   `json:"address"`
+	Name           string   `json:"name"`
+	MetadataUrl    string   `json:"metadata_url"`
 	BlsPublicKey   []byte   `json:"bls_public_key"`
 	EcdsaPublicKey []byte   `json:"ecdsa_public_key"`
 	Signer         string   `json:"signer"`
@@ -102,10 +132,16 @@ type Validator struct {
 	Signed         *bool    `json:"signed"`
 }
 
-type AccountDetails struct {
+type AccountInfo struct {
 	GoldBalance *big.Int `json:"gold_balance"`
 
+	*Identity
 	TotalLockedGold          *big.Int `json:"total_locked_gold"`
 	TotalNonvotingLockedGold *big.Int `json:"total_nonvoting_locked_gold"`
 	StableTokenBalance       *big.Int `json:"stable_token_balance"`
+}
+
+type Identity struct {
+	Name        string `json:"name"`
+	MetadataUrl string `json:"metadata_url"`
 }

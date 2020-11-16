@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS validator_aggregates
     recent_at                  TIMESTAMP WITH TIME ZONE NOT NULL,
 
     address                    TEXT                     NOT NULL,
+    recent_name                TEXT,
+    recent_metadata_url        TEXT,
     recent_as_validator_height DECIMAL(65, 0),
     accumulated_uptime         BIGINT,
     accumulated_uptime_count   BIGINT,

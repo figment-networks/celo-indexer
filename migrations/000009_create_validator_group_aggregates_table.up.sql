@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS validator_group_aggregates
     recent_at                  TIMESTAMP WITH TIME ZONE NOT NULL,
 
     address                    TEXT                     NOT NULL,
+    recent_name                TEXT,
+    recent_metadata_url        TEXT,
 
     PRIMARY KEY (id)
 );

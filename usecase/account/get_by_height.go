@@ -36,10 +36,15 @@ func (uc *getByHeightUseCase) Execute(ctx context.Context, address string, heigh
 		return nil, errors.New("height is not indexed yet")
 	}
 
-	accountDetails, err := uc.client.GetAccountDetailsByAddressAndHeight(ctx, address, *height)
+	accountInfo, err := uc.client.GetAccountByAddressAndHeight(ctx, address, *height)
 	if err != nil {
 		return nil, err
 	}
 
-	return ToHeightDetailsView(accountDetails), nil
+	accountActivitySeqs, err := uc.db.AccountActivitySeq.FindByHeightAndAddress(*height, address)
+	if err != nil {
+		return nil, err
+	}
+
+	return ToHeightDetailsView(accountInfo, accountActivitySeqs), nil
 }

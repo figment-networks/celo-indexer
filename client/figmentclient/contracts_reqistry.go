@@ -28,14 +28,15 @@ type contractsRegistry struct {
 
 	addresses map[registry.ContractID]common.Address
 
-	reserveContract     *contracts.Reserve
-	stableTokenContract *contracts.StableToken
-	validatorsContract  *contracts.Validators
-	lockedGoldContract  *contracts.LockedGold
-	electionContract    *contracts.Election
-	accountsContract    *contracts.Accounts
-	goldTokenContract   *contracts.GoldToken
-	chainParamsContract *contracts.BlockchainParameters
+	reserveContract      *contracts.Reserve
+	stableTokenContract  *contracts.StableToken
+	validatorsContract   *contracts.Validators
+	lockedGoldContract   *contracts.LockedGold
+	electionContract     *contracts.Election
+	accountsContract     *contracts.Accounts
+	goldTokenContract    *contracts.GoldToken
+	chainParamsContract  *contracts.BlockchainParameters
+	epochRewardsContract *contracts.EpochRewards
 }
 
 func (l *contractsRegistry) setupContractsForHeight(ctx context.Context, height *big.Int) {
@@ -46,6 +47,7 @@ func (l *contractsRegistry) setupContractsForHeight(ctx context.Context, height 
 	l.setupElectionContractForHeight(ctx, height)
 	l.setupAccountsContractForHeight(ctx, height)
 	l.setupGoldTokenContractForHeight(ctx, height)
+	l.setupEpochRewardsContractForHeight(ctx, height)
 }
 
 func (l *contractsRegistry) setupReserveContractForHeight(ctx context.Context, height *big.Int) error {
@@ -164,6 +166,21 @@ func (l *contractsRegistry) setupChainParamsContractForHeight(ctx context.Contex
 	}
 	l.addresses[registry.BlockchainParametersContractID] = address
 	l.chainParamsContract = contract
+
+	return nil
+}
+
+func (l *contractsRegistry) setupEpochRewardsContractForHeight(ctx context.Context, height *big.Int) error {
+	address, err := l.reg.GetAddressFor(ctx, height, registry.EpochRewardsContractID)
+	if err != nil {
+		return err
+	}
+	contract, err := contracts.NewEpochRewards(address, l.cc.Eth)
+	if err != nil {
+		return err
+	}
+	l.addresses[registry.BlockchainParametersContractID] = address
+	l.epochRewardsContract = contract
 
 	return nil
 }
