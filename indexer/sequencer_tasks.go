@@ -144,7 +144,7 @@ func (t *validatorGroupSeqCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
-	mappedValidatorGroupSeqs, err := ToValidatorGroupSequence(payload.Syncable, payload.RawValidatorGroups)
+	mappedValidatorGroupSeqs, err := ToValidatorGroupSequence(payload.Syncable, payload.RawValidatorGroups, payload.RawValidators)
 	if err != nil {
 		return err
 	}

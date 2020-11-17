@@ -75,7 +75,9 @@ func ToValidatorSequence(syncable *model.Syncable, rawValidators []*figmentclien
 	return validators, nil
 }
 
-func ToValidatorGroupSequence(syncable *model.Syncable, rawValidatorGroups []*figmentclient.ValidatorGroup) ([]model.ValidatorGroupSeq, error) {
+func ToValidatorGroupSequence(syncable *model.Syncable, rawValidatorGroups []*figmentclient.ValidatorGroup, rawValidators []*figmentclient.Validator) ([]model.ValidatorGroupSeq, error) {
+	membersAvgSignedMap := getMembersAvgSignedMap(rawValidators)
+
 	var validators []model.ValidatorGroupSeq
 	for _, rawValidatorGroup := range rawValidatorGroups {
 		e := model.ValidatorGroupSeq{
@@ -94,6 +96,11 @@ func ToValidatorGroupSequence(syncable *model.Syncable, rawValidatorGroups []*fi
 			MembersCount:    len(rawValidatorGroup.Members),
 		}
 
+		found, ok := membersAvgSignedMap[rawValidatorGroup.Address]
+		if ok {
+			e.MembersAvgSigned = float64(found.count) / float64(found.total)
+		}
+
 		if !e.Valid() {
 			return nil, ErrValidatorGroupSequenceNotValid
 		}
@@ -101,6 +108,30 @@ func ToValidatorGroupSequence(syncable *model.Syncable, rawValidatorGroups []*fi
 		validators = append(validators, e)
 	}
 	return validators, nil
+}
+
+type membersAvgSigned struct {
+	total int64
+	count int64
+}
+
+func getMembersAvgSignedMap(rawValidators []*figmentclient.Validator) map[string]membersAvgSigned {
+	membersAvgSignedMap := make(map[string]membersAvgSigned)
+	for _, rawValidator := range rawValidators {
+		foundInfo, ok := membersAvgSignedMap[rawValidator.Affiliation]
+		if ok {
+			if rawValidator.Signed != nil && *rawValidator.Signed {
+				foundInfo.total += 1
+			}
+			foundInfo.count += 1
+		} else {
+			membersAvgSignedMap[rawValidator.Affiliation] = membersAvgSigned{
+				total: 1,
+				count: 1,
+			}
+		}
+	}
+	return membersAvgSignedMap
 }
 
 func ToAccountActivitySequence(syncable *model.Syncable, rawTransactions []*figmentclient.Transaction) ([]model.AccountActivitySeq, error) {
