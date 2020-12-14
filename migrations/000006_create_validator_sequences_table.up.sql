@@ -1,14 +1,16 @@
 CREATE TABLE IF NOT EXISTS validator_sequences
 (
-    id          BIGSERIAL                NOT NULL,
+    id           BIGSERIAL                NOT NULL,
 
-    height      DECIMAL(65, 0)           NOT NULL,
-    time        TIMESTAMP WITH TIME ZONE NOT NULL,
+    height       DECIMAL(65, 0)           NOT NULL,
+    time         TIMESTAMP WITH TIME ZONE NOT NULL,
 
-    address     TEXT                     NOT NULL,
-    affiliation TEXT                     NOT NULL,
-    signed      BOOLEAN,
-    score       DECIMAL(65, 0)           NOT NULL,
+    address      TEXT                     NOT NULL,
+    name         TEXT,
+    metadata_url TEXT,
+    affiliation  TEXT                     NOT NULL,
+    signed       BOOLEAN,
+    score        DECIMAL(65, 0)           NOT NULL,
 
     PRIMARY KEY (id)
 );

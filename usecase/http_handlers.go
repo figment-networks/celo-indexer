@@ -9,6 +9,7 @@ import (
 	"github.com/figment-networks/celo-indexer/usecase/block"
 	"github.com/figment-networks/celo-indexer/usecase/chain"
 	"github.com/figment-networks/celo-indexer/usecase/health"
+	"github.com/figment-networks/celo-indexer/usecase/systemevent"
 	"github.com/figment-networks/celo-indexer/usecase/transaction"
 	"github.com/figment-networks/celo-indexer/usecase/validator"
 	"github.com/figment-networks/celo-indexer/usecase/validatorgroup"
@@ -23,6 +24,7 @@ func NewHttpHandlers(cfg *config.Config, db *store.Store, c figmentclient.Client
 		GetBlockSummary:            block.NewGetBlockSummaryHttpHandler(db, c),
 		GetTransactionsByHeight:    transaction.NewGetByHeightHttpHandler(db, c),
 		GetAccountByHeight:         account.NewGetByHeightHttpHandler(db, c),
+		GetAccountDetails:          account.NewGetDetailsHttpHandler(db, c),
 		GetValidatorsByHeight:      validator.NewGetByHeightHttpHandler(cfg, db, c),
 		GetValidatorByAddress:      validator.NewGetByAddressHttpHandler(db, c),
 		GetValidatorSummary:        validator.NewGetSummaryHttpHandler(db, c),
@@ -30,6 +32,7 @@ func NewHttpHandlers(cfg *config.Config, db *store.Store, c figmentclient.Client
 		GetValidatorGroupsByHeight: validatorgroup.NewGetByHeightHttpHandler(cfg, db, c),
 		GetValidatorGroupByAddress: validatorgroup.NewGetByAddressHttpHandler(db, c),
 		GetValidatorGroupSummary:   validatorgroup.NewGetSummaryHttpHandler(db, c),
+		GetSystemEventsForAddress:  systemevent.NewGetForAddressHttpHandler(db, c),
 	}
 }
 
@@ -41,6 +44,7 @@ type HttpHandlers struct {
 	GetBlockByHeight           types.HttpHandler
 	GetTransactionsByHeight    types.HttpHandler
 	GetAccountByHeight         types.HttpHandler
+	GetAccountDetails          types.HttpHandler
 	GetValidatorsByHeight      types.HttpHandler
 	GetValidatorByAddress      types.HttpHandler
 	GetValidatorSummary        types.HttpHandler
@@ -48,4 +52,5 @@ type HttpHandlers struct {
 	GetValidatorGroupsByHeight types.HttpHandler
 	GetValidatorGroupByAddress types.HttpHandler
 	GetValidatorGroupSummary   types.HttpHandler
+	GetSystemEventsForAddress  types.HttpHandler
 }

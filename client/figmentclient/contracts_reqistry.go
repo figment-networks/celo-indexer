@@ -2,6 +2,7 @@ package figmentclient
 
 import (
 	"context"
+	"errors"
 	kliento "github.com/celo-org/kliento/client"
 	"github.com/celo-org/kliento/contracts"
 	"github.com/celo-org/kliento/registry"
@@ -9,7 +10,11 @@ import (
 	"math/big"
 )
 
-func NewContractsRegistry(cc *kliento.CeloClient) (*contractsRegistry, error) {
+var (
+	ErrContractNotDeployed = errors.New("contract not deployed")
+)
+
+func NewContractsRegistry(cc *kliento.CeloClient, height *big.Int) (*contractsRegistry, error) {
 	reg, err := registry.New(cc)
 	if err != nil {
 		return nil, err
@@ -18,40 +23,108 @@ func NewContractsRegistry(cc *kliento.CeloClient) (*contractsRegistry, error) {
 	return &contractsRegistry{
 		cc:        cc,
 		reg:       reg,
+		height:    height,
+
 		addresses: map[registry.ContractID]common.Address{},
 	}, nil
 }
 
 type contractsRegistry struct {
-	cc  *kliento.CeloClient
-	reg registry.Registry
+	cc     *kliento.CeloClient
+	reg    registry.Registry
+	height *big.Int
 
 	addresses map[registry.ContractID]common.Address
 
-	reserveContract     *contracts.Reserve
-	stableTokenContract *contracts.StableToken
-	validatorsContract  *contracts.Validators
-	lockedGoldContract  *contracts.LockedGold
-	electionContract    *contracts.Election
-	accountsContract    *contracts.Accounts
-	goldTokenContract   *contracts.GoldToken
-	chainParamsContract *contracts.BlockchainParameters
+	reserveContract      *contracts.Reserve
+	stableTokenContract  *contracts.StableToken
+	validatorsContract   *contracts.Validators
+	lockedGoldContract   *contracts.LockedGold
+	electionContract     *contracts.Election
+	accountsContract     *contracts.Accounts
+	goldTokenContract    *contracts.GoldToken
+	chainParamsContract  *contracts.BlockchainParameters
+	epochRewardsContract *contracts.EpochRewards
 }
 
-func (l *contractsRegistry) setupContractsForHeight(ctx context.Context, height *big.Int) {
-	l.setupReserveContractForHeight(ctx, height)
-	l.setupStableTokenContractForHeight(ctx, height)
-	l.setupValidatorsContractForHeight(ctx, height)
-	l.setupLockedGoldContractForHeight(ctx, height)
-	l.setupElectionContractForHeight(ctx, height)
-	l.setupAccountsContractForHeight(ctx, height)
-	l.setupGoldTokenContractForHeight(ctx, height)
+func contractIncluded(contracts []registry.ContractID, contractID registry.ContractID) bool {
+	for _, id := range contracts {
+		if id == contractID {
+			return true
+		}
+	}
+	return false
 }
 
-func (l *contractsRegistry) setupReserveContractForHeight(ctx context.Context, height *big.Int) error {
-	address, err := l.reg.GetAddressFor(ctx, height, registry.ReserveContractID)
-	if err != nil {
+func (l *contractsRegistry) setupContracts(ctx context.Context, contracts ...registry.ContractID) error {
+	if len(contracts) == 0 || contractIncluded(contracts, registry.ReserveContractID) {
+		err := l.setupReserveContract(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	if len(contracts) == 0 || contractIncluded(contracts, registry.StableTokenContractID) {
+		err := l.setupStableTokenContract(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	if len(contracts) == 0 || contractIncluded(contracts, registry.ValidatorsContractID) {
+		err := l.setupValidatorsContract(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	if len(contracts) == 0 || contractIncluded(contracts, registry.LockedGoldContractID) {
+		err := l.setupLockedGoldContract(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	if len(contracts) == 0 || contractIncluded(contracts, registry.ElectionContractID) {
+		err := l.setupElectionContract(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	if len(contracts) == 0 || contractIncluded(contracts, registry.AccountsContractID) {
+		err := l.setupAccountsContract(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	if len(contracts) == 0 || contractIncluded(contracts, registry.GoldTokenContractID) {
+		err := l.setupGoldTokenContract(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	if len(contracts) == 0 || contractIncluded(contracts, registry.EpochRewardsContractID) {
+		err := l.setupEpochRewardsContract(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func checkErr(err error) error {
+	if err == kliento.ErrContractNotDeployed {
+		return ErrContractNotDeployed
+	} else {
 		return err
+	}
+}
+
+func (l *contractsRegistry) contractDeployed(contractId registry.ContractID) bool {
+	_, ok := l.addresses[contractId]
+	return ok
+}
+
+func (l *contractsRegistry) setupReserveContract(ctx context.Context) error {
+	address, err := l.reg.GetAddressFor(ctx, l.height, registry.ReserveContractID)
+	if err != nil {
+		return checkErr(err)
 	}
 	contract, err := contracts.NewReserve(address, l.cc.Eth)
 	if err != nil {
@@ -63,10 +136,10 @@ func (l *contractsRegistry) setupReserveContractForHeight(ctx context.Context, h
 	return nil
 }
 
-func (l *contractsRegistry) setupStableTokenContractForHeight(ctx context.Context, height *big.Int) error {
-	address, err := l.reg.GetAddressFor(ctx, height, registry.StableTokenContractID)
+func (l *contractsRegistry) setupStableTokenContract(ctx context.Context) error {
+	address, err := l.reg.GetAddressFor(ctx, l.height, registry.StableTokenContractID)
 	if err != nil {
-		return err
+		return checkErr(err)
 	}
 	contract, err := contracts.NewStableToken(address, l.cc.Eth)
 	if err != nil {
@@ -78,10 +151,10 @@ func (l *contractsRegistry) setupStableTokenContractForHeight(ctx context.Contex
 	return nil
 }
 
-func (l *contractsRegistry) setupValidatorsContractForHeight(ctx context.Context, height *big.Int) error {
-	address, err := l.reg.GetAddressFor(ctx, height, registry.ValidatorsContractID)
+func (l *contractsRegistry) setupValidatorsContract(ctx context.Context) error {
+	address, err := l.reg.GetAddressFor(ctx, l.height, registry.ValidatorsContractID)
 	if err != nil {
-		return err
+		return checkErr(err)
 	}
 	contract, err := contracts.NewValidators(address, l.cc.Eth)
 	if err != nil {
@@ -93,10 +166,10 @@ func (l *contractsRegistry) setupValidatorsContractForHeight(ctx context.Context
 	return nil
 }
 
-func (l *contractsRegistry) setupLockedGoldContractForHeight(ctx context.Context, height *big.Int) error {
-	address, err := l.reg.GetAddressFor(ctx, height, registry.LockedGoldContractID)
+func (l *contractsRegistry) setupLockedGoldContract(ctx context.Context) error {
+	address, err := l.reg.GetAddressFor(ctx, l.height, registry.LockedGoldContractID)
 	if err != nil {
-		return err
+		return checkErr(err)
 	}
 	contract, err := contracts.NewLockedGold(address, l.cc.Eth)
 	if err != nil {
@@ -108,10 +181,10 @@ func (l *contractsRegistry) setupLockedGoldContractForHeight(ctx context.Context
 	return nil
 }
 
-func (l *contractsRegistry) setupElectionContractForHeight(ctx context.Context, height *big.Int) error {
-	address, err := l.reg.GetAddressFor(ctx, height, registry.ElectionContractID)
+func (l *contractsRegistry) setupElectionContract(ctx context.Context) error {
+	address, err := l.reg.GetAddressFor(ctx, l.height, registry.ElectionContractID)
 	if err != nil {
-		return err
+		return checkErr(err)
 	}
 	contract, err := contracts.NewElection(address, l.cc.Eth)
 	if err != nil {
@@ -123,10 +196,10 @@ func (l *contractsRegistry) setupElectionContractForHeight(ctx context.Context, 
 	return nil
 }
 
-func (l *contractsRegistry) setupAccountsContractForHeight(ctx context.Context, height *big.Int) error {
-	address, err := l.reg.GetAddressFor(ctx, height, registry.AccountsContractID)
+func (l *contractsRegistry) setupAccountsContract(ctx context.Context) error {
+	address, err := l.reg.GetAddressFor(ctx, l.height, registry.AccountsContractID)
 	if err != nil {
-		return err
+		return checkErr(err)
 	}
 	contract, err := contracts.NewAccounts(address, l.cc.Eth)
 	if err != nil {
@@ -138,10 +211,10 @@ func (l *contractsRegistry) setupAccountsContractForHeight(ctx context.Context, 
 	return nil
 }
 
-func (l *contractsRegistry) setupGoldTokenContractForHeight(ctx context.Context, height *big.Int) error {
-	address, err := l.reg.GetAddressFor(ctx, height, registry.GoldTokenContractID)
+func (l *contractsRegistry) setupGoldTokenContract(ctx context.Context) error {
+	address, err := l.reg.GetAddressFor(ctx, l.height, registry.GoldTokenContractID)
 	if err != nil {
-		return err
+		return checkErr(err)
 	}
 	contract, err := contracts.NewGoldToken(address, l.cc.Eth)
 	if err != nil {
@@ -153,10 +226,10 @@ func (l *contractsRegistry) setupGoldTokenContractForHeight(ctx context.Context,
 	return nil
 }
 
-func (l *contractsRegistry) setupChainParamsContractForHeight(ctx context.Context, height *big.Int) error {
-	address, err := l.reg.GetAddressFor(ctx, height, registry.BlockchainParametersContractID)
+func (l *contractsRegistry) setupChainParamsContract(ctx context.Context) error {
+	address, err := l.reg.GetAddressFor(ctx, l.height, registry.BlockchainParametersContractID)
 	if err != nil {
-		return err
+		return checkErr(err)
 	}
 	contract, err := contracts.NewBlockchainParameters(address, l.cc.Eth)
 	if err != nil {
@@ -164,6 +237,21 @@ func (l *contractsRegistry) setupChainParamsContractForHeight(ctx context.Contex
 	}
 	l.addresses[registry.BlockchainParametersContractID] = address
 	l.chainParamsContract = contract
+
+	return nil
+}
+
+func (l *contractsRegistry) setupEpochRewardsContract(ctx context.Context) error {
+	address, err := l.reg.GetAddressFor(ctx, l.height, registry.EpochRewardsContractID)
+	if err != nil {
+		return checkErr(err)
+	}
+	contract, err := contracts.NewEpochRewards(address, l.cc.Eth)
+	if err != nil {
+		return err
+	}
+	l.addresses[registry.BlockchainParametersContractID] = address
+	l.epochRewardsContract = contract
 
 	return nil
 }

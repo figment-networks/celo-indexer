@@ -62,6 +62,8 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					},
 
 					Address:                 rawValidator.Address,
+					RecentName:              rawValidator.Name,
+					RecentMetadataUrl:       rawValidator.MetadataUrl,
 					RecentAsValidatorHeight: payload.Syncable.Height,
 				}
 
@@ -101,6 +103,14 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 				validator.AccumulatedUptimeCount = existing.AccumulatedUptimeCount + 1
 			}
 
+			if rawValidator.Name != "" {
+				validator.RecentName = rawValidator.Name
+			}
+
+			if rawValidator.MetadataUrl != "" {
+				validator.RecentMetadataUrl = rawValidator.MetadataUrl
+			}
+
 			existing.Update(validator)
 
 			updatedValidatorAggs = append(updatedValidatorAggs, *existing)
@@ -111,7 +121,6 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 
 	return nil
 }
-
 
 func NewValidatorGroupAggCreatorTask(db *store.Store) *validatorGroupAggCreatorTask {
 	return &validatorGroupAggCreatorTask{
@@ -138,13 +147,13 @@ func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 
 	var newValidatorGroupAggs []model.ValidatorGroupAgg
 	var updatedValidatorGroupAggs []model.ValidatorGroupAgg
-	for _, rawValidator := range rawValidatorGroups {
-		existing, err := t.db.ValidatorGroupAgg.FindByAddress(rawValidator.Address)
+	for _, rawGroup := range rawValidatorGroups {
+		existing, err := t.db.ValidatorGroupAgg.FindByAddress(rawGroup.Address)
 		if err != nil {
 			if err == store.ErrNotFound {
 				// Create new
 
-				validator := model.ValidatorGroupAgg{
+				group := model.ValidatorGroupAgg{
 					Aggregate: &model.Aggregate{
 						StartedAtHeight: payload.Syncable.Height,
 						StartedAt:       *payload.Syncable.Time,
@@ -152,23 +161,33 @@ func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 						RecentAt:        *payload.Syncable.Time,
 					},
 
-					Address:                 rawValidator.Address,
+					Address:           rawGroup.Address,
+					RecentName:        rawGroup.Name,
+					RecentMetadataUrl: rawGroup.MetadataUrl,
 				}
 
-				newValidatorGroupAggs = append(newValidatorGroupAggs, validator)
+				newValidatorGroupAggs = append(newValidatorGroupAggs, group)
 			} else {
 				return err
 			}
 		} else {
 			// Update
-			validator := &model.ValidatorGroupAgg{
+			group := &model.ValidatorGroupAgg{
 				Aggregate: &model.Aggregate{
 					RecentAtHeight: payload.Syncable.Height,
 					RecentAt:       *payload.Syncable.Time,
 				},
 			}
 
-			existing.Update(validator)
+			if rawGroup.Name != "" {
+				group.RecentName = rawGroup.Name
+			}
+
+			if rawGroup.MetadataUrl != "" {
+				group.RecentMetadataUrl = rawGroup.MetadataUrl
+			}
+
+			existing.Update(group)
 
 			updatedValidatorGroupAggs = append(updatedValidatorGroupAggs, *existing)
 		}

@@ -27,17 +27,19 @@ type Client interface {
 	base.Client
 
 	GetChainStatus(context.Context) (*ChainStatus, error)
+	GetChainParams(context.Context) (*ChainParams, error)
 	GetMetaByHeight(context.Context, int64) (*HeightMeta, error)
 	GetBlockByHeight(context.Context, int64) (*Block, error)
 	GetTransactionsByHeight(context.Context, int64) ([]*Transaction, error)
 	GetValidatorGroupsByHeight(context.Context, int64) ([]*ValidatorGroup, error)
 	GetValidatorsByHeight(context.Context, int64) ([]*Validator, error)
-	GetAccountDetailsByAddressAndHeight(context.Context, string, int64) (*AccountDetails, error)
+	GetAccountByAddressAndHeight(context.Context, string, int64) (*AccountInfo, error)
+	GetIdentityByHeight(context.Context, string, int64) (*Identity, error)
+	//GetEpochPaymentsByHeight(context.Context, int64) (*EpochPayment, error)
 }
 
 type client struct {
-	cc                *kliento.CeloClient
-	contractsRegistry *contractsRegistry
+	cc *kliento.CeloClient
 }
 
 func New(url string) (*client, error) {
@@ -46,14 +48,8 @@ func New(url string) (*client, error) {
 		return nil, err
 	}
 
-	contractsRegistry, err := NewContractsRegistry(cc)
-	if err != nil {
-		return nil, err
-	}
-
 	return &client{
-		cc:                cc,
-		contractsRegistry: contractsRegistry,
+		cc: cc,
 	}, nil
 }
 
@@ -85,9 +81,36 @@ func (l *client) GetChainStatus(ctx context.Context) (*ChainStatus, error) {
 	return chain, nil
 }
 
+func (l *client) GetChainParams(ctx context.Context) (*ChainParams, error) {
+	chainParams := &ChainParams{}
+
+	chainId, err := l.cc.Net.ChainId(ctx)
+	if err != nil {
+		return nil, err
+	}
+	chainParams.ChainId = chainId.Uint64()
+
+	cr, err := NewContractsRegistry(l.cc, nil)
+	if err != nil {
+		return nil, err
+	}
+	setupErr := cr.setupContracts(ctx, registry.ElectionContractID)
+
+	if cr.contractDeployed(registry.ElectionContractID) {
+		opts := &bind.CallOpts{Context: ctx}
+		epochSize, err := cr.electionContract.GetEpochSize(opts)
+		if err != nil {
+			return nil, err
+		}
+		e := epochSize.Int64()
+		chainParams.EpochSize = &e
+	}
+
+	return chainParams, setupErr
+}
+
 func (l *client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, error) {
 	height := big.NewInt(h)
-	l.contractsRegistry.setupContractsForHeight(ctx, height)
 
 	heightMeta := &HeightMeta{
 		Height: h,
@@ -99,9 +122,15 @@ func (l *client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, err
 	}
 	heightMeta.Time = rawBlock.Time()
 
-	if l.contractsRegistry.validatorsContract != nil {
+	cr, err := NewContractsRegistry(l.cc, height)
+	if err != nil {
+		return nil, err
+	}
+	setupErr := cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID)
+
+	if cr.contractDeployed(registry.ValidatorsContractID) {
 		opts := &bind.CallOpts{Context: ctx}
-		epoch, err := l.contractsRegistry.validatorsContract.GetEpochNumberOfBlock(opts, height)
+		epoch, err := cr.validatorsContract.GetEpochNumberOfBlock(opts, height)
 		if err != nil {
 			return nil, err
 		}
@@ -109,9 +138,9 @@ func (l *client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, err
 		heightMeta.Epoch = &e
 	}
 
-	if l.contractsRegistry.electionContract != nil {
+	if cr.contractDeployed(registry.ElectionContractID) {
 		opts := &bind.CallOpts{Context: ctx}
-		epochSize, err := l.contractsRegistry.electionContract.GetEpochSize(opts)
+		epochSize, err := cr.electionContract.GetEpochSize(opts)
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +148,7 @@ func (l *client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, err
 		heightMeta.LastInEpoch = &isLastInEpoch
 	}
 
-	return heightMeta, nil
+	return heightMeta, setupErr
 }
 
 func (l *client) GetBlockByHeight(ctx context.Context, h int64) (*Block, error) {
@@ -177,6 +206,13 @@ func (l *client) GetBlockByHeight(ctx context.Context, h int64) (*Block, error) 
 
 func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Transaction, error) {
 	height := big.NewInt(h)
+
+	cr, err := NewContractsRegistry(l.cc, height)
+	if err != nil {
+		return nil, err
+	}
+	setupErr := cr.setupContracts(ctx)
+
 	block, err := l.cc.Eth.BlockByNumber(ctx, height)
 	if err != nil {
 		return nil, err
@@ -193,10 +229,7 @@ func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Trans
 			return nil, err
 		}
 
-		operations, err := l.parseFromLogs(receipt.Logs)
-		if err != nil {
-			return nil, err
-		}
+		var operations []*Operation
 
 		// Internal transfers
 		internalTransfers, err := l.cc.Debug.TransactionTransfers(ctx, txHash)
@@ -205,7 +238,17 @@ func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Trans
 		}
 		operations = append(operations, l.parseFromInternalTransfers(internalTransfers)...)
 
+		// Operations from logs
+		operationsFromLogs, err := l.parseFromLogs(cr, receipt.Logs)
+		if err != nil {
+			return nil, err
+		}
+		operations = append(operations, operationsFromLogs...)
+
 		transaction := &Transaction{
+			Hash:       tx.Hash().String(),
+			To:         tx.To().String(),
+			Size:       tx.Size().String(),
 			Nonce:      tx.Nonce(),
 			GasPrice:   tx.GasPrice(),
 			Gas:        tx.Gas(),
@@ -225,7 +268,7 @@ func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Trans
 		transactions = append(transactions, transaction)
 	}
 
-	return transactions, nil
+	return transactions, setupErr
 }
 
 func (l *client) parseFromInternalTransfers(internalTransfers []debug.Transfer) []*Operation {
@@ -241,18 +284,18 @@ func (l *client) parseFromInternalTransfers(internalTransfers []debug.Transfer) 
 		}
 
 		operations = append(operations, &Operation{
-			Name:    "internalTransfer",
+			Name:    OperationTypeInternalTransfer,
 			Details: transfer,
 		})
 	}
 	return operations
 }
 
-func (l *client) parseFromLogs(logs []*celoTypes.Log) ([]*Operation, error) {
+func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]*Operation, error) {
 	var operations []*Operation
 	for _, eventLog := range logs {
-		if eventLog.Address == l.contractsRegistry.addresses[registry.ElectionContractID] {
-			eventName, eventRaw, ok, err := l.contractsRegistry.electionContract.TryParseLog(*eventLog)
+		if eventLog.Address == cr.addresses[registry.ElectionContractID] && cr.contractDeployed(registry.ElectionContractID) {
+			eventName, eventRaw, ok, err := cr.electionContract.TryParseLog(*eventLog)
 			if err != nil {
 				return nil, fmt.Errorf("can't parse Election event: %w", err)
 			}
@@ -314,8 +357,8 @@ func (l *client) parseFromLogs(logs []*celoTypes.Log) ([]*Operation, error) {
 			//	operations = append(operations, op)
 			//}
 
-		} else if eventLog.Address == l.contractsRegistry.addresses[registry.AccountsContractID] {
-			eventName, eventRaw, ok, err := l.contractsRegistry.accountsContract.TryParseLog(*eventLog)
+		} else if eventLog.Address == cr.addresses[registry.AccountsContractID] && cr.contractDeployed(registry.AccountsContractID) {
+			eventName, eventRaw, ok, err := cr.accountsContract.TryParseLog(*eventLog)
 			if err != nil {
 				return nil, fmt.Errorf("can't parse Accounts event: %w", err)
 			}
@@ -366,8 +409,8 @@ func (l *client) parseFromLogs(logs []*celoTypes.Log) ([]*Operation, error) {
 			//	operations = append(operations, op)
 			//}
 
-		} else if eventLog.Address == l.contractsRegistry.addresses[registry.LockedGoldContractID] {
-			eventName, eventRaw, ok, err := l.contractsRegistry.lockedGoldContract.TryParseLog(*eventLog)
+		} else if eventLog.Address == cr.addresses[registry.LockedGoldContractID] && cr.contractDeployed(registry.LockedGoldContractID) {
+			eventName, eventRaw, ok, err := cr.lockedGoldContract.TryParseLog(*eventLog)
 			if err != nil {
 				return nil, fmt.Errorf("can't parse LockedGold event: %w", err)
 			}
@@ -426,10 +469,36 @@ func (l *client) parseFromLogs(logs []*celoTypes.Log) ([]*Operation, error) {
 			//	operations = append(operations, *NewSlash(event.Slashed, event.Reporter, governanceAddr, lockedGoldAddr, event.Penalty, event.Reward, tobinTax))
 			//
 			//}
-		} else if eventLog.Address == l.contractsRegistry.addresses[registry.StableTokenContractID] {
-			eventName, eventRaw, ok, err := l.contractsRegistry.stableTokenContract.TryParseLog(*eventLog)
+		} else if eventLog.Address == cr.addresses[registry.StableTokenContractID] && cr.contractDeployed(registry.StableTokenContractID) {
+			eventName, eventRaw, ok, err := cr.stableTokenContract.TryParseLog(*eventLog)
 			if err != nil {
 				return nil, fmt.Errorf("can't parse StableToken event: %w", err)
+			}
+			if !ok {
+				continue
+			}
+
+			operations = append(operations, &Operation{
+				Name:    eventName,
+				Details: eventRaw,
+			})
+		} else if eventLog.Address == cr.addresses[registry.GoldTokenContractID] && cr.contractDeployed(registry.GoldTokenContractID) {
+			eventName, eventRaw, ok, err := cr.goldTokenContract.TryParseLog(*eventLog)
+			if err != nil {
+				return nil, fmt.Errorf("can't parse GoldToken event: %w", err)
+			}
+			if !ok {
+				continue
+			}
+
+			operations = append(operations, &Operation{
+				Name:    eventName,
+				Details: eventRaw,
+			})
+		} else if eventLog.Address == cr.addresses[registry.ValidatorsContractID] && cr.contractDeployed(registry.ValidatorsContractID) {
+			eventName, eventRaw, ok, err := cr.validatorsContract.TryParseLog(*eventLog)
+			if err != nil {
+				return nil, fmt.Errorf("can't parse Validators event: %w", err)
 			}
 			if !ok {
 				continue
@@ -447,38 +516,51 @@ func (l *client) parseFromLogs(logs []*celoTypes.Log) ([]*Operation, error) {
 
 func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*ValidatorGroup, error) {
 	height := big.NewInt(h)
-	l.contractsRegistry.setupContractsForHeight(ctx, height)
+
+	cr, err := NewContractsRegistry(l.cc, height)
+	if err != nil {
+		return nil, err
+	}
+	err = cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID, registry.AccountsContractID)
+	if err != nil {
+		return nil, err
+	}
 
 	var validatorGroups []*ValidatorGroup
 
-	if l.contractsRegistry.validatorsContract != nil {
+	if cr.validatorsContract != nil {
 		opts := &bind.CallOpts{Context: ctx}
-		rawValidatorGroups, err := l.contractsRegistry.validatorsContract.GetRegisteredValidatorGroups(opts)
+		rawValidatorGroups, err := cr.validatorsContract.GetRegisteredValidatorGroups(opts)
 		if err != nil {
 			return nil, err
 		}
 
 		for i, rawValidatorGroup := range rawValidatorGroups {
 			opts = &bind.CallOpts{Context: ctx}
-			members, commission, nextCommission, nextCommissionBlock, _, slashMultiplier, lastSlashed, err := l.contractsRegistry.validatorsContract.GetValidatorGroup(opts, rawValidatorGroup)
+			members, commission, nextCommission, nextCommissionBlock, _, slashMultiplier, lastSlashed, err := cr.validatorsContract.GetValidatorGroup(opts, rawValidatorGroup)
 			if err != nil {
 				return nil, err
 			}
 
 			opts = &bind.CallOpts{Context: ctx}
-			activeVotes, err := l.contractsRegistry.electionContract.GetActiveVotesForGroup(opts, rawValidatorGroup)
+			activeVotes, err := cr.electionContract.GetActiveVotesForGroup(opts, rawValidatorGroup)
 			if err != nil {
 				return nil, err
 			}
 
 			opts = &bind.CallOpts{Context: ctx}
-			activeVoteUnits, err := l.contractsRegistry.electionContract.GetActiveVoteUnitsForGroup(opts, rawValidatorGroup)
+			activeVoteUnits, err := cr.electionContract.GetActiveVoteUnitsForGroup(opts, rawValidatorGroup)
 			if err != nil {
 				return nil, err
 			}
 
 			opts = &bind.CallOpts{Context: ctx}
-			pendingVotes, err := l.contractsRegistry.electionContract.GetPendingVotesForGroup(opts, rawValidatorGroup)
+			pendingVotes, err := cr.electionContract.GetPendingVotesForGroup(opts, rawValidatorGroup)
+			if err != nil {
+				return nil, err
+			}
+
+			identity, err := l.getIdentity(ctx, cr, rawValidatorGroup.String())
 			if err != nil {
 				return nil, err
 			}
@@ -486,6 +568,8 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 			validatorGroup := &ValidatorGroup{
 				Index:               uint64(i),
 				Address:             rawValidatorGroup.String(),
+				Name:                identity.Name,
+				MetadataUrl:         identity.MetadataUrl,
 				Commission:          commission,
 				NextCommission:      nextCommission,
 				NextCommissionBlock: nextCommissionBlock.Int64(),
@@ -510,34 +594,49 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 
 func (l *client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validator, error) {
 	height := big.NewInt(h)
-	l.contractsRegistry.setupContractsForHeight(ctx, height)
 
-	var validators []*Validator
-
-	if l.contractsRegistry.validatorsContract == nil {
-		return validators, nil
+	cr, err := NewContractsRegistry(l.cc, height)
+	if err != nil {
+		return nil, err
 	}
-
-	opts := &bind.CallOpts{Context: ctx}
-	rawValidators, err := l.contractsRegistry.validatorsContract.GetRegisteredValidators(opts)
+	err = cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID, registry.AccountsContractID)
 	if err != nil {
 		return nil, err
 	}
 
-	validationMap, err := l.getValidationMap(ctx, height)
+	var validators []*Validator
+
+	if cr.validatorsContract == nil {
+		return validators, nil
+	}
+
+	opts := &bind.CallOpts{Context: ctx}
+	rawValidators, err := cr.validatorsContract.GetRegisteredValidators(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	validationMap, err := l.getValidationMap(ctx, cr, height)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, rawValidator := range rawValidators {
 		opts := &bind.CallOpts{Context: ctx}
-		validatorDetails, err := l.contractsRegistry.validatorsContract.GetValidator(opts, rawValidator)
+		validatorDetails, err := cr.validatorsContract.GetValidator(opts, rawValidator)
+		if err != nil {
+			return nil, err
+		}
+
+		identity, err := l.getIdentity(ctx, cr, rawValidator.String())
 		if err != nil {
 			return nil, err
 		}
 
 		validator := &Validator{
 			Address:        rawValidator.String(),
+			Name:           identity.Name,
+			MetadataUrl:    identity.MetadataUrl,
 			BlsPublicKey:   validatorDetails.BlsPublicKey,
 			EcdsaPublicKey: validatorDetails.EcdsaPublicKey,
 			Signer:         validatorDetails.Signer.String(),
@@ -556,12 +655,12 @@ func (l *client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validat
 	return validators, nil
 }
 
-func (l *client) getValidationMap(ctx context.Context, height *big.Int) (map[string]bool, error) {
+func (l *client) getValidationMap(ctx context.Context, cr *contractsRegistry, height *big.Int) (map[string]bool, error) {
 	validationMap := map[string]bool{}
 
-	if l.contractsRegistry.electionContract != nil {
+	if cr.electionContract != nil {
 		opts := &bind.CallOpts{Context: ctx}
-		currentValidatorSigners, err := l.contractsRegistry.electionContract.GetCurrentValidatorSigners(opts)
+		currentValidatorSigners, err := cr.electionContract.GetCurrentValidatorSigners(opts)
 		if err != nil {
 			return nil, err
 		}
@@ -593,44 +692,127 @@ func (l *client) getValidationMap(ctx context.Context, height *big.Int) (map[str
 	return validationMap, nil
 }
 
-func (l *client) GetAccountDetailsByAddressAndHeight(ctx context.Context, rawAddress string, h int64) (*AccountDetails, error) {
+func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress string, h int64) (*AccountInfo, error) {
 	height := big.NewInt(h)
-	l.contractsRegistry.setupContractsForHeight(ctx, height)
+
+	cr, err := NewContractsRegistry(l.cc, height)
+	if err != nil {
+		return nil, err
+	}
+	setupErr := cr.setupContracts(ctx, registry.AccountsContractID, registry.LockedGoldContractID, registry.StableTokenContractID)
 
 	address := common.HexToAddress(rawAddress)
 
-	accountDetails := &AccountDetails{}
+	accountInfo := &AccountInfo{}
 
 	goldAmount, err := l.cc.Eth.BalanceAt(ctx, address, height)
 	if err != nil {
 		return nil, err
 	}
-	accountDetails.GoldBalance = goldAmount
+	accountInfo.GoldBalance = goldAmount
 
-	if l.contractsRegistry.lockedGoldContract != nil {
-		opts := &bind.CallOpts{Context: ctx}
-		totalLockedGold, err := l.contractsRegistry.lockedGoldContract.GetAccountTotalLockedGold(opts, address)
+	if cr.contractDeployed(registry.AccountsContractID) {
+		identity, err := l.getIdentity(ctx, cr, rawAddress)
 		if err != nil {
 			return nil, err
 		}
-		accountDetails.TotalLockedGold = totalLockedGold
+		accountInfo.Identity = identity
+	}
+
+	if cr.contractDeployed(registry.LockedGoldContractID) {
+		opts := &bind.CallOpts{Context: ctx}
+		totalLockedGold, err := cr.lockedGoldContract.GetAccountTotalLockedGold(opts, address)
+		if err != nil {
+			return nil, err
+		}
+		accountInfo.TotalLockedGold = totalLockedGold
 
 		opts = &bind.CallOpts{Context: ctx}
-		totalNonvotingLockedGold, err := l.contractsRegistry.lockedGoldContract.GetAccountNonvotingLockedGold(opts, address)
+		totalNonvotingLockedGold, err := cr.lockedGoldContract.GetAccountNonvotingLockedGold(opts, address)
 		if err != nil {
 			return nil, err
 		}
-		accountDetails.TotalNonvotingLockedGold = totalNonvotingLockedGold
+		accountInfo.TotalNonvotingLockedGold = totalNonvotingLockedGold
 	}
 
-	if l.contractsRegistry.stableTokenContract != nil {
+	if cr.contractDeployed(registry.StableTokenContractID) {
 		opts := &bind.CallOpts{Context: ctx}
-		stableTokenBalance, err := l.contractsRegistry.stableTokenContract.BalanceOf(opts, address)
+		stableTokenBalance, err := cr.stableTokenContract.BalanceOf(opts, address)
 		if err != nil {
 			return nil, err
 		}
-		accountDetails.StableTokenBalance = stableTokenBalance
+		accountInfo.StableTokenBalance = stableTokenBalance
 	}
 
-	return accountDetails, nil
+	return accountInfo, setupErr
 }
+
+func (l *client) GetIdentityByHeight(ctx context.Context, rawAddress string, h int64) (*Identity, error) {
+	height := big.NewInt(h)
+
+	cr, err := NewContractsRegistry(l.cc, height)
+	if err != nil {
+		return nil, err
+	}
+	err = cr.setupContracts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return l.getIdentity(ctx, cr, rawAddress)
+}
+
+func (l *client) getIdentity(ctx context.Context, cr *contractsRegistry, rawAddress string) (*Identity, error) {
+	address := common.HexToAddress(rawAddress)
+
+	identity := &Identity{}
+	if cr.accountsContract != nil {
+		opts := &bind.CallOpts{Context: ctx}
+		name, err := cr.accountsContract.GetName(opts, address)
+		if err != nil {
+			return nil, err
+		}
+		identity.Name = name
+
+		metadataUrl, err := cr.accountsContract.GetMetadataURL(opts, address)
+		if err != nil {
+			return nil, err
+		}
+		identity.MetadataUrl = metadataUrl
+
+	}
+
+	return identity, nil
+}
+
+//func (l *client) GetEpochPaymentsByHeight(ctx context.Context, h int64) (*EpochPayment, error) {
+//	height := uint64(h)
+//	cr.setupContractsForHeight(ctx, height)
+//
+//	var epochPayments = []*EpochPayment
+//	if cr.validatorsContract != nil {
+//		iter, err := token.FilterTransfer(, []common.Address{common.ZeroAddress}, nil)
+//		if err != nil {
+//			return err
+//		}
+//		opts := &bind.FilterOpts{
+//			Start:   height,
+//			End:     &height,
+//			Context: ctx,
+//		}
+//		name, err := cr.validatorsContract.FilterValidatorEpochPaymentDistributed(opts, nil, nil)
+//		if err != nil {
+//			return nil, err
+//		}
+//		identity.Name = name
+//
+//		metadataUrl, err := cr.accountsContract.GetMetadataURL(opts, address)
+//		if err != nil {
+//			return nil, err
+//		}
+//		identity.MetadataUrl = metadataUrl
+//
+//	}
+//
+//	return identity, nil
+//}

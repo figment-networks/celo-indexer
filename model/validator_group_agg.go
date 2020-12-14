@@ -4,7 +4,9 @@ type ValidatorGroupAgg struct {
 	*Model
 	*Aggregate
 
-	Address string `json:"address"`
+	Address           string `json:"address"`
+	RecentName        string `json:"recent_name"`
+	RecentMetadataUrl string `json:"recent_metadata_url"`
 }
 
 func (ValidatorGroupAgg) TableName() string {
@@ -23,4 +25,6 @@ func (s *ValidatorGroupAgg) Equal(m ValidatorGroupAgg) bool {
 func (s *ValidatorGroupAgg) Update(u *ValidatorGroupAgg) {
 	s.Aggregate.RecentAtHeight = u.Aggregate.RecentAtHeight
 	s.Aggregate.RecentAt = u.Aggregate.RecentAt
+	s.RecentName = u.RecentName
+	s.RecentMetadataUrl = u.RecentMetadataUrl
 }

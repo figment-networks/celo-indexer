@@ -8,6 +8,7 @@ func (s *Server) setupRoutes() {
 	s.engine.GET("/block_times/:limit", s.handlers.GetBlockTimes.Handle)
 	s.engine.GET("/blocks_summary", s.handlers.GetBlockSummary.Handle)
 	s.engine.GET("/transactions", s.handlers.GetTransactionsByHeight.Handle)
+	s.engine.GET("/account_details/:address", s.handlers.GetAccountDetails.Handle)
 	s.engine.GET("/account/:address", s.handlers.GetAccountByHeight.Handle)
 	s.engine.GET("/validator/:address", s.handlers.GetValidatorByAddress.Handle)
 	s.engine.GET("/validators/for_min_height/:height", s.handlers.GetValidatorsForMinHeight.Handle)
@@ -16,4 +17,5 @@ func (s *Server) setupRoutes() {
 	s.engine.GET("/validator_group/:address", s.handlers.GetValidatorGroupByAddress.Handle)
 	s.engine.GET("/validator_groups", s.handlers.GetValidatorGroupsByHeight.Handle)
 	s.engine.GET("/validator_groups_summary", s.handlers.GetValidatorGroupSummary.Handle)
+	s.engine.GET("/system_events/:address", s.handlers.GetSystemEventsForAddress.Handle)
 }

@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	BlockSeqCreatorTaskName          = "BlockSeqCreator"
-	ValidatorSeqCreatorTaskName      = "ValidatorSeqCreator"
-	ValidatorGroupSeqCreatorTaskName = "ValidatorGroupSeqCreator"
+	BlockSeqCreatorTaskName           = "BlockSeqCreator"
+	ValidatorSeqCreatorTaskName       = "ValidatorSeqCreator"
+	ValidatorGroupSeqCreatorTaskName  = "ValidatorGroupSeqCreator"
+	AccountActivitySeqCreatorTaskName = "AccountActivitySeqCreator"
 )
 
 var (
@@ -143,7 +144,7 @@ func (t *validatorGroupSeqCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
-	mappedValidatorGroupSeqs, err := ToValidatorGroupSequence(payload.Syncable, payload.RawValidatorGroups)
+	mappedValidatorGroupSeqs, err := ToValidatorGroupSequence(payload.Syncable, payload.RawValidatorGroups, payload.RawValidators)
 	if err != nil {
 		return err
 	}
@@ -167,6 +168,40 @@ func (t *validatorGroupSeqCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 
 	payload.NewValidatorGroupSequences = newValidatorGroupSeqs
 	payload.UpdatedValidatorGroupSequences = updatedValidatorGroupSeqs
+
+	return nil
+}
+
+// NewAccountActivitySeqCreatorTask creates account activity sequences
+func NewAccountActivitySeqCreatorTask(cfg *config.Config, db *store.Store) *accountActivitySeqCreatorTask {
+	return &accountActivitySeqCreatorTask{
+		cfg: cfg,
+		db:  db,
+	}
+}
+
+type accountActivitySeqCreatorTask struct {
+	cfg *config.Config
+	db  *store.Store
+}
+
+func (t *accountActivitySeqCreatorTask) GetName() string {
+	return AccountActivitySeqCreatorTaskName
+}
+
+func (t *accountActivitySeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+
+	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
+
+	mappedAccountActivitySeqs, err := ToAccountActivitySequence(payload.Syncable, payload.RawTransactions)
+	if err != nil {
+		return err
+	}
+
+	payload.AccountActivitySequences = mappedAccountActivitySeqs
 
 	return nil
 }

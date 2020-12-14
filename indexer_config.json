@@ -2,7 +2,7 @@
     "versions": [
         {
             "id": 1,
-            "targets": [1,2,3,4,5,5],
+            "targets": [1,2,3,4,5,5,6,7],
             "parallel": false
         }
     ],
@@ -60,6 +60,27 @@
           "ValidatorsFetcher",
           "ValidatorAggCreator",
           "ValidatorAggPersistor"
+        ]
+      },
+      {
+        "id": 6,
+        "name": "index_account_activity_sequences",
+        "desc": "Creates and persists account activity sequences",
+        "tasks": [
+          "TransactionsFetcher",
+          "AccountActivitySeqCreator",
+          "AccountActivitySeqPersistor"
+        ]
+      },
+      {
+        "id": 7,
+        "name": "index_system_events",
+        "desc": "Creates and persists system events",
+        "tasks": [
+          "TransactionsFetcher",
+          "AccountActivitySeqCreator",
+          "SystemEventCreator",
+          "SystemEventPersistor"
         ]
       }
     ]

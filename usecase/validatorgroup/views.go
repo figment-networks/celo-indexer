@@ -8,7 +8,9 @@ type AggDetailsView struct {
 	*model.Model
 	*model.Aggregate
 
-	Address string `json:"address"`
+	Address           string `json:"address"`
+	RecentName        string `json:"recent_name"`
+	RecentMetadataUrl string `json:"recent_metadata_url"`
 
 	LastSequences []SeqListItem `json:"last_sequences"`
 }
@@ -18,7 +20,9 @@ func ToAggDetailsView(m *model.ValidatorGroupAgg, validatorSequences []model.Val
 		Model:     m.Model,
 		Aggregate: m.Aggregate,
 
-		Address: m.Address,
+		Address:           m.Address,
+		RecentName:        m.RecentName,
+		RecentMetadataUrl: m.RecentMetadataUrl,
 	}
 
 	sequenceListView := ToSeqListView(validatorSequences)
@@ -31,12 +35,15 @@ func ToAggDetailsView(m *model.ValidatorGroupAgg, validatorSequences []model.Val
 type SeqListItem struct {
 	*model.Sequence
 
-	Address         string `json:"address"`
-	Commission      string `json:"commission"`
-	ActiveVotes     string `json:"active_votes"`
-	ActiveVoteUnits string `json:"active_vote_units"`
-	PendingVotes    string `json:"pending_votes"`
-	MembersCount    int    `json:"members_count"`
+	Address          string  `json:"address"`
+	Name             string  `json:"name"`
+	MetadataUrl      string  `json:"metadata_url"`
+	Commission       string  `json:"commission"`
+	ActiveVotes      string  `json:"active_votes"`
+	ActiveVoteUnits  string  `json:"active_vote_units"`
+	PendingVotes     string  `json:"pending_votes"`
+	MembersCount     int     `json:"members_count"`
+	MembersAvgUptime float64 `json:"members_avg_uptime"`
 }
 
 type SeqListView struct {
@@ -49,12 +56,15 @@ func ToSeqListView(validatorSeqs []model.ValidatorGroupSeq) SeqListView {
 		item := SeqListItem{
 			Sequence: m.Sequence,
 
-			Address:         m.Address,
-			Commission:      m.Commission.String(),
-			ActiveVotes:     m.ActiveVotes.String(),
-			ActiveVoteUnits: m.ActiveVoteUnits.String(),
-			PendingVotes:    m.PendingVotes.String(),
-			MembersCount:    m.MembersCount,
+			Address:          m.Address,
+			Name:             m.Name,
+			MetadataUrl:      m.MetadataUrl,
+			Commission:       m.Commission.String(),
+			ActiveVotes:      m.ActiveVotes.String(),
+			ActiveVoteUnits:  m.ActiveVoteUnits.String(),
+			PendingVotes:     m.PendingVotes.String(),
+			MembersCount:     m.MembersCount,
+			MembersAvgUptime: m.MembersAvgSigned,
 		}
 
 		items = append(items, item)

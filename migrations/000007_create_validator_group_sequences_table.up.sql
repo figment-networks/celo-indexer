@@ -1,16 +1,19 @@
 CREATE TABLE IF NOT EXISTS validator_group_sequences
 (
-    id                BIGSERIAL                NOT NULL,
+    id                 BIGSERIAL                NOT NULL,
 
-    height            DECIMAL(65, 0)           NOT NULL,
-    time              TIMESTAMP WITH TIME ZONE NOT NULL,
+    height             DECIMAL(65, 0)           NOT NULL,
+    time               TIMESTAMP WITH TIME ZONE NOT NULL,
 
-    address           TEXT                     NOT NULL,
-    commission        DECIMAL(65, 0)           NOT NULL,
-    active_votes      DECIMAL(65, 0)           NOT NULL,
-    active_vote_units DECIMAL(65, 0)           NOT NULL,
-    pending_votes     DECIMAL(65, 0)           NOT NULL,
-    members_count     INT                      NOT NULL,
+    address            TEXT                     NOT NULL,
+    name               TEXT,
+    metadata_url       TEXT,
+    commission         DECIMAL(65, 0)           NOT NULL,
+    active_votes       DECIMAL(65, 0)           NOT NULL,
+    active_vote_units  DECIMAL(65, 0)           NOT NULL,
+    pending_votes      DECIMAL(65, 0)           NOT NULL,
+    members_count      INT                      NOT NULL,
+    members_avg_signed DECIMAL                  NOT NULL,
 
     PRIMARY KEY (id)
 );
