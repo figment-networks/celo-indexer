@@ -31,6 +31,7 @@ type ChainStatus struct {
 
 type ChainParams struct {
 	ChainId   uint64 `json:"chain_id"`
+
 	EpochSize *int64  `json:"epoch_size"`
 }
 

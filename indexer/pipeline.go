@@ -50,7 +50,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client figmentclient.Clien
 
 	// Fetcher stage
 	p.AddStage(
-		pipeline.NewStageWithTasks(pipeline.StageFetcher,
+		pipeline.NewAsyncStageWithTasks(pipeline.StageFetcher,
 			pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorGroupFetcherTask(client), isTransient, maxRetries),

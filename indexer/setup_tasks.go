@@ -52,28 +52,40 @@ func (t *heightMetaRetrieverTask) Run(ctx context.Context, p pipeline.Payload) e
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSetup, t.GetName(), payload.CurrentHeight))
 
+	heightMeta := HeightMeta{}
+
 	chainParams, err := t.client.GetChainParams(ctx)
 	if err != nil {
-		return err
+		if err == figmentclient.ErrContractNotDeployed {
+			logger.Info("GetChainParams returned partial data")
+		} else {
+			return err
+		}
+	} else {
+		// Contract dependent data
+		heightMeta.EpochSize = chainParams.EpochSize
 	}
 
-	chainStatus, err := t.client.GetChainStatus(ctx)
-	if err != nil {
-		return err
-	}
+	// Get chainParams partial data
+	heightMeta.ChainId = chainParams.ChainId
 
 	meta, err := t.client.GetMetaByHeight(ctx, payload.CurrentHeight)
 	if err != nil {
-		return err
+		if err == figmentclient.ErrContractNotDeployed {
+			logger.Info("GetMetaByHeight returned partial data")
+		} else {
+			return err
+		}
+	} else {
+		// Contract dependent data
+		heightMeta.Epoch = meta.Epoch
+		heightMeta.LastInEpoch = meta.LastInEpoch
 	}
 
-	payload.HeightMeta = HeightMeta{
-		ChainId:     chainStatus.ChainId,
-		Height:      meta.Height,
-		Time:        types.NewTimeFromSeconds(meta.Time),
-		Epoch:       meta.Epoch,
-		EpochSize:   chainParams.EpochSize,
-		LastInEpoch: meta.LastInEpoch,
-	}
+	// Get meta partial data
+	heightMeta.Height = meta.Height
+	heightMeta.Time = types.NewTimeFromSeconds(meta.Time)
+
+	payload.HeightMeta = heightMeta
 	return nil
 }

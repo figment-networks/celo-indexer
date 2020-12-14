@@ -38,12 +38,18 @@ func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
-	block, err := t.client.GetBlockByHeight(ctx, payload.CurrentHeight)
-	if err != nil {
-		return err
-	}
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
+
+	block, err := t.client.GetBlockByHeight(ctx, payload.CurrentHeight)
+	if err != nil {
+		if err == figmentclient.ErrContractNotDeployed {
+			logger.Info(err.Error())
+		} else {
+			return err
+		}
+	}
+
 	logger.DebugJSON(block,
 		logger.Field("process", "pipeline"),
 		logger.Field("stage", "fetcher"),
@@ -76,12 +82,18 @@ func (t *ValidatorsFetcherTask) Run(ctx context.Context, p pipeline.Payload) err
 	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
-	validators, err := t.client.GetValidatorsByHeight(ctx, payload.CurrentHeight)
-	if err != nil {
-		return err
-	}
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
+
+	validators, err := t.client.GetValidatorsByHeight(ctx, payload.CurrentHeight)
+	if err != nil {
+		if err == figmentclient.ErrContractNotDeployed {
+			logger.Info(err.Error())
+		} else {
+			return err
+		}
+	}
+
 	logger.DebugJSON(validators,
 		logger.Field("process", "pipeline"),
 		logger.Field("stage", "fetcher"),
@@ -114,12 +126,18 @@ func (t *ValidatorGroupsFetcherTask) Run(ctx context.Context, p pipeline.Payload
 	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
-	validators, err := t.client.GetValidatorGroupsByHeight(ctx, payload.CurrentHeight)
-	if err != nil {
-		return err
-	}
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
+
+	validators, err := t.client.GetValidatorGroupsByHeight(ctx, payload.CurrentHeight)
+	if err != nil {
+		if err == figmentclient.ErrContractNotDeployed {
+			logger.Info(err.Error())
+		} else {
+			return err
+		}
+	}
+
 	logger.DebugJSON(validators,
 		logger.Field("process", "pipeline"),
 		logger.Field("stage", "fetcher"),
@@ -152,12 +170,18 @@ func (t *TransactionsFetcherTask) Run(ctx context.Context, p pipeline.Payload) e
 	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
-	transactions, err := t.client.GetTransactionsByHeight(ctx, payload.CurrentHeight)
-	if err != nil {
-		return err
-	}
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
+
+	transactions, err := t.client.GetTransactionsByHeight(ctx, payload.CurrentHeight)
+	if err != nil {
+		if err == figmentclient.ErrContractNotDeployed {
+			logger.Info(err.Error())
+		} else {
+			return err
+		}
+	}
+
 	logger.DebugJSON(transactions,
 		logger.Field("process", "pipeline"),
 		logger.Field("stage", "fetcher"),
