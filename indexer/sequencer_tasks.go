@@ -13,16 +13,19 @@ import (
 )
 
 const (
-	BlockSeqCreatorTaskName           = "BlockSeqCreator"
-	ValidatorSeqCreatorTaskName       = "ValidatorSeqCreator"
-	ValidatorGroupSeqCreatorTaskName  = "ValidatorGroupSeqCreator"
-	AccountActivitySeqCreatorTaskName = "AccountActivitySeqCreator"
+	BlockSeqCreatorTaskName              = "BlockSeqCreator"
+	ValidatorSeqCreatorTaskName          = "ValidatorSeqCreator"
+	ValidatorGroupSeqCreatorTaskName     = "ValidatorGroupSeqCreator"
+	AccountActivitySeqCreatorTaskName    = "AccountActivitySeqCreator"
+	GovernanceActivitySeqCreatorTaskName = "GovernanceActivitySeqCreator"
 )
 
 var (
 	_ pipeline.Task = (*blockSeqCreatorTask)(nil)
 	_ pipeline.Task = (*validatorSeqCreatorTask)(nil)
 	_ pipeline.Task = (*validatorGroupSeqCreatorTask)(nil)
+	_ pipeline.Task = (*accountActivitySeqCreatorTask)(nil)
+	_ pipeline.Task = (*governanceActivitySeqCreatorTask)(nil)
 )
 
 // NewBlockSeqCreatorTask creates block sequences
@@ -202,6 +205,40 @@ func (t *accountActivitySeqCreatorTask) Run(ctx context.Context, p pipeline.Payl
 	}
 
 	payload.AccountActivitySequences = mappedAccountActivitySeqs
+
+	return nil
+}
+
+// NewGovernanceActivitySeqCreatorTask creates account activity sequences
+func NewGovernanceActivitySeqCreatorTask(cfg *config.Config, db *store.Store) *governanceActivitySeqCreatorTask {
+	return &governanceActivitySeqCreatorTask{
+		cfg: cfg,
+		db:  db,
+	}
+}
+
+type governanceActivitySeqCreatorTask struct {
+	cfg *config.Config
+	db  *store.Store
+}
+
+func (t *governanceActivitySeqCreatorTask) GetName() string {
+	return GovernanceActivitySeqCreatorTaskName
+}
+
+func (t *governanceActivitySeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+
+	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
+
+	mappedGovernanceActivitySeqs, err := ToGovernanceActivitySequence(payload.Syncable, payload.ParsedGovernanceLogs)
+	if err != nil {
+		return err
+	}
+
+	payload.GovernanceActivitySequences = mappedGovernanceActivitySeqs
 
 	return nil
 }

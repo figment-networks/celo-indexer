@@ -12,7 +12,7 @@ const (
 )
 
 type Report struct {
-	*Model
+	*ModelWithTimestamps
 
 	Kind         ReportKind
 	IndexVersion int64
@@ -50,8 +50,8 @@ func (r *Report) Valid() bool {
 }
 
 func (r *Report) Equal(m Report) bool {
-	return m.Model != nil &&
-		r.Model.ID == m.Model.ID
+	return m.ModelWithTimestamps != nil &&
+		r.ModelWithTimestamps.ID == m.ModelWithTimestamps.ID
 }
 
 func (r *Report) Complete(successCount int64, errorCount int64, err error) {

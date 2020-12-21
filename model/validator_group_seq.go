@@ -16,6 +16,7 @@ type ValidatorGroupSeq struct {
 	ActiveVotes      types.Quantity `json:"active_votes"`
 	ActiveVoteUnits  types.Quantity `json:"active_vote_units"`
 	PendingVotes     types.Quantity `json:"pending_votes"`
+	VotingCap     types.Quantity `json:"voting_cap"`
 	MembersCount     int            `json:"members_count"`
 	MembersAvgSigned float64        `json:"members_avg_signed"`
 }

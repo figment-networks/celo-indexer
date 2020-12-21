@@ -23,13 +23,14 @@ var (
 // Config holds the configuration data
 type Config struct {
 	AppEnv                       string `json:"app_env" envconfig:"APP_ENV" default:"development"`
-	NodeUrl                     string `json:"node_url" envconfig:"NODE_URL"`
+	NodeUrl                      string `json:"node_url" envconfig:"NODE_URL"`
 	ServerAddr                   string `json:"server_addr" envconfig:"SERVER_ADDR" default:"0.0.0.0"`
 	ServerPort                   int64  `json:"server_port" envconfig:"SERVER_PORT" default:"8081"`
 	FirstBlockHeight             int64  `json:"first_block_height" envconfig:"FIRST_BLOCK_HEIGHT" default:"1"`
 	IndexWorkerInterval          string `json:"index_worker_interval" envconfig:"INDEX_WORKER_INTERVAL" default:"@every 15m"`
 	SummarizeWorkerInterval      string `json:"summarize_worker_interval" envconfig:"SUMMARIZE_WORKER_INTERVAL" default:"@every 20m"`
 	PurgeWorkerInterval          string `json:"purge_worker_interval" envconfig:"PURGE_WORKER_INTERVAL" default:"@every 1h"`
+	UpdateProposalsInterval      string `json:"update_proposals_interval" envconfig:"UPDATE_PROPOSALS_INTERVAL" default:"@every 20s"`
 	DefaultBatchSize             int64  `json:"default_batch_size" envconfig:"DEFAULT_BATCH_SIZE" default:"0"`
 	DatabaseDSN                  string `json:"database_dsn" envconfig:"DATABASE_DSN"`
 	Debug                        bool   `json:"debug" envconfig:"DEBUG"`
@@ -43,6 +44,7 @@ type Config struct {
 	PurgeSequencesInterval       string `json:"purge_sequences_interval" envconfig:"PURGE_SEQUENCES_INTERVAL" default:"26 hours"`
 	PurgeHourlySummariesInterval string `json:"purge_hourly_summaries_interval" envconfig:"PURGE_HOURLY_SUMMARIES_INTERVAL" default:"26h"`
 	IndexerConfigFile            string `json:"indexer_config_file" envconfig:"INDEXER_CONFIG_FILE" default:"indexer_config.json"`
+	TheCeloBaseUrl               string `json:"the_celo_base_url" envconfig:"THE_CELO_BASE_URL" default:"https://thecelo.com/api/v0.1"`
 }
 
 // Validate returns an error if config is invalid

@@ -20,8 +20,12 @@ func runCmd(cfg *config.Config, flags Flags) error {
 		return err
 	}
 	defer client.Close()
+	theCeloClient, err := initTheCeloClient(cfg)
+	if err != nil {
+		return err
+	}
 
-	cmdHandlers := usecase.NewCmdHandlers(cfg, db, client)
+	cmdHandlers := usecase.NewCmdHandlers(cfg, db, client, theCeloClient)
 
 	logger.Info(fmt.Sprintf("executing cmd %s ...", flags.runCommand), logger.Field("app", "cli"))
 
@@ -37,6 +41,8 @@ func runCmd(cfg *config.Config, flags Flags) error {
 		cmdHandlers.SummarizeIndexer.Handle(ctx)
 	case "indexer_purge":
 		cmdHandlers.PurgeIndexer.Handle(ctx)
+	case "update_proposals":
+		cmdHandlers.UpdateProposals.Handle(ctx)
 	default:
 		return errors.New(fmt.Sprintf("command %s not found", flags.runCommand))
 	}

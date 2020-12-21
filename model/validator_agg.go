@@ -1,7 +1,7 @@
 package model
 
 type ValidatorAgg struct {
-	*Model
+	*ModelWithTimestamps
 	*Aggregate
 
 	Address                 string `json:"address"`

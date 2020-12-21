@@ -17,8 +17,12 @@ func startWorker(cfg *config.Config) error {
 		return err
 	}
 	defer client.Close()
+	theCeloClient, err := initTheCeloClient(cfg)
+	if err != nil {
+		return err
+	}
 
-	workerHandlers := usecase.NewWorkerHandlers(cfg, db, client)
+	workerHandlers := usecase.NewWorkerHandlers(cfg, db, client, theCeloClient)
 
 	w, err := worker.New(cfg, workerHandlers)
 	if err != nil {

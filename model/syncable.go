@@ -13,7 +13,7 @@ const (
 type SyncableStatus int
 
 type Syncable struct {
-	*Model
+	*ModelWithTimestamps
 
 	Height      int64       `json:"height"`
 	Time        *types.Time `json:"time"`

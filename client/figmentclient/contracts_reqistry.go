@@ -21,9 +21,9 @@ func NewContractsRegistry(cc *kliento.CeloClient, height *big.Int) (*contractsRe
 	}
 
 	return &contractsRegistry{
-		cc:        cc,
-		reg:       reg,
-		height:    height,
+		cc:     cc,
+		reg:    reg,
+		height: height,
 
 		addresses: map[registry.ContractID]common.Address{},
 	}, nil
@@ -45,6 +45,7 @@ type contractsRegistry struct {
 	goldTokenContract    *contracts.GoldToken
 	chainParamsContract  *contracts.BlockchainParameters
 	epochRewardsContract *contracts.EpochRewards
+	governanceContract   *contracts.Governance
 }
 
 func contractIncluded(contracts []registry.ContractID, contractID registry.ContractID) bool {
@@ -101,6 +102,12 @@ func (l *contractsRegistry) setupContracts(ctx context.Context, contracts ...reg
 	}
 	if len(contracts) == 0 || contractIncluded(contracts, registry.EpochRewardsContractID) {
 		err := l.setupEpochRewardsContract(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	if len(contracts) == 0 || contractIncluded(contracts, registry.GovernanceContractID) {
+		err := l.setupGovernanceContract(ctx)
 		if err != nil {
 			return err
 		}
@@ -252,6 +259,21 @@ func (l *contractsRegistry) setupEpochRewardsContract(ctx context.Context) error
 	}
 	l.addresses[registry.BlockchainParametersContractID] = address
 	l.epochRewardsContract = contract
+
+	return nil
+}
+
+func (l *contractsRegistry) setupGovernanceContract(ctx context.Context) error {
+	address, err := l.reg.GetAddressFor(ctx, l.height, registry.GovernanceContractID)
+	if err != nil {
+		return checkErr(err)
+	}
+	contract, err := contracts.NewGovernance(address, l.cc.Eth)
+	if err != nil {
+		return err
+	}
+	l.addresses[registry.GovernanceContractID] = address
+	l.governanceContract = contract
 
 	return nil
 }

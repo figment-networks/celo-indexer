@@ -3,7 +3,7 @@ package model
 import "github.com/figment-networks/celo-indexer/types"
 
 type ValidatorGroupSummary struct {
-	*Model
+	*ModelWithTimestamps
 	*Summary
 
 	Address string `json:"address"`

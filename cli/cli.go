@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
+	"github.com/figment-networks/celo-indexer/client/theceloclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/utils/logger"
@@ -135,6 +136,10 @@ func initLogger(cfg *config.Config) error {
 
 func initClient(cfg *config.Config) (figmentclient.Client, error) {
 	return figmentclient.New(cfg.NodeUrl)
+}
+
+func initTheCeloClient(cfg *config.Config) (theceloclient.Client, error) {
+	return theceloclient.New(cfg.TheCeloBaseUrl)
 }
 
 func initStore(cfg *config.Config) (*store.Store, error) {

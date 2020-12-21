@@ -37,12 +37,15 @@ type payload struct {
 	Syncable *model.Syncable
 
 	// Parser stage
+	ParsedGovernanceLogs []*ParsedGovernanceLogs
 
 	// Aggregator stage
 	NewValidatorAggregates          []model.ValidatorAgg
 	UpdatedValidatorAggregates      []model.ValidatorAgg
 	NewValidatorGroupAggregates     []model.ValidatorGroupAgg
 	UpdatedValidatorGroupAggregates []model.ValidatorGroupAgg
+	NewProposalAggregates           []model.ProposalAgg
+	UpdatedProposalAggregates       []model.ProposalAgg
 
 	// Sequencer stage
 	NewBlockSequence               *model.BlockSeq
@@ -51,8 +54,8 @@ type payload struct {
 	UpdatedValidatorSequences      []model.ValidatorSeq
 	NewValidatorGroupSequences     []model.ValidatorGroupSeq
 	UpdatedValidatorGroupSequences []model.ValidatorGroupSeq
-
-	AccountActivitySequences []model.AccountActivitySeq
+	AccountActivitySequences       []model.AccountActivitySeq
+	GovernanceActivitySequences    []model.GovernanceActivitySeq
 
 	// Analyzer
 	SystemEvents []*model.SystemEvent

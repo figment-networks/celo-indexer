@@ -21,6 +21,13 @@ const (
 	OperationTypeGoldUnlocked                     = "GoldUnlocked"
 	OperationTypeGoldWithdrawn                    = "GoldWithdrawn"
 	OperationTypeValidatorEpochPaymentDistributed = "ValidatorEpochPaymentDistributed"
+	OperationTypeProposalVoted                    = "ProposalVoted"
+	OperationTypeProposalUpvoted                  = "ProposalUpvoted"
+	OperationTypeProposalApproved                 = "ProposalApproved"
+	OperationTypeProposalExecuted                 = "ProposalExecuted"
+	OperationTypeProposalDequeued                 = "ProposalDequeued"
+	OperationTypeProposalQueued                   = "ProposalQueued"
+	OperationTypeProposalExpired                  = "ProposalExpired"
 )
 
 type ChainStatus struct {
@@ -30,9 +37,9 @@ type ChainStatus struct {
 }
 
 type ChainParams struct {
-	ChainId   uint64 `json:"chain_id"`
+	ChainId uint64 `json:"chain_id"`
 
-	EpochSize *int64  `json:"epoch_size"`
+	EpochSize *int64 `json:"epoch_size"`
 }
 
 type HeightMeta struct {
@@ -118,6 +125,7 @@ type ValidatorGroup struct {
 	ActiveVotes         *big.Int `json:"active_votes"`
 	ActiveVotesUnits    *big.Int `json:"active_votes_units"`
 	PendingVotes        *big.Int `json:"pending_votes"`
+	VotingCap           *big.Int `json:"voting_cap"`
 	Members             []string `json:"members"`
 }
 

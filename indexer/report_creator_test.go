@@ -172,7 +172,7 @@ func TestReportCreator_complete(t *testing.T) {
 
 func getTestReport(kind model.ReportKind) *model.Report {
 	return &model.Report{
-		Model: &model.Model{
+		ModelWithTimestamps: &model.ModelWithTimestamps{
 			CreatedAt: *types.NewTimeFromTime(time.Now()),
 			UpdatedAt: *types.NewTimeFromTime(time.Now()),
 		},

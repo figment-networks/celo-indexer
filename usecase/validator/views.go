@@ -2,7 +2,6 @@ package validator
 
 import (
 	"github.com/figment-networks/celo-indexer/model"
-	"github.com/figment-networks/celo-indexer/types"
 )
 
 type AggListView struct {
@@ -16,7 +15,7 @@ func ToAggListView(ms []model.ValidatorAgg) *AggListView {
 }
 
 type AggDetailsView struct {
-	*model.Model
+	*model.ModelWithTimestamps
 	*model.Aggregate
 
 	Address                 string  `json:"address"`
@@ -30,8 +29,8 @@ type AggDetailsView struct {
 
 func ToAggDetailsView(m *model.ValidatorAgg, validatorSequences []model.ValidatorSeq) *AggDetailsView {
 	return &AggDetailsView{
-		Model:     m.Model,
-		Aggregate: m.Aggregate,
+		ModelWithTimestamps: m.ModelWithTimestamps,
+		Aggregate:           m.Aggregate,
 
 		Address:                 m.Address,
 		RecentAsValidatorHeight: m.RecentAsValidatorHeight,
@@ -46,12 +45,12 @@ func ToAggDetailsView(m *model.ValidatorAgg, validatorSequences []model.Validato
 type SeqListItem struct {
 	*model.Sequence
 
-	Address     string         `json:"address"`
-	Name        string         `json:"name"`
-	MetadataUrl string         `json:"metadata_url"`
-	Signed      *bool          `json:"signed"`
-	Score       types.Quantity `json:"score"`
-	Affiliation string         `json:"affiliation"`
+	Address     string  `json:"address"`
+	Name        string  `json:"name"`
+	MetadataUrl string  `json:"metadata_url"`
+	Signed      *bool   `json:"signed"`
+	Score       float64 `json:"score"`
+	Affiliation string  `json:"affiliation"`
 }
 
 type SeqListView struct {
@@ -68,7 +67,7 @@ func ToSeqListView(validatorSeqs []model.ValidatorSeq) SeqListView {
 			Name:        m.Name,
 			MetadataUrl: m.MetadataUrl,
 			Signed:      m.Signed,
-			Score:       m.Score,
+			Score:       m.ScoreAsPercentage(),
 			Affiliation: m.Affiliation,
 		}
 

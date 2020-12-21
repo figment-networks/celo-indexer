@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS validator_group_sequences
     active_votes       DECIMAL(65, 0)           NOT NULL,
     active_vote_units  DECIMAL(65, 0)           NOT NULL,
     pending_votes      DECIMAL(65, 0)           NOT NULL,
+    voting_cap         DECIMAL(65, 0)           NOT NULL,
     members_count      INT                      NOT NULL,
     members_avg_signed DECIMAL                  NOT NULL,
 

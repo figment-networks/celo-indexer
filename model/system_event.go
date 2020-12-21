@@ -19,7 +19,7 @@ func (o SystemEventKind) String() string {
 }
 
 type SystemEvent struct {
-	*Model
+	*ModelWithTimestamps
 
 	Height int64           `json:"height"`
 	Time   types.Time      `json:"time"`

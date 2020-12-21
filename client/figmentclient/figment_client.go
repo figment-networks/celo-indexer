@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	CeloClientFigment = "figment"
+	CeloClientFigment = "figment_celo_client"
 )
 
 var (
@@ -35,7 +35,6 @@ type Client interface {
 	GetValidatorsByHeight(context.Context, int64) ([]*Validator, error)
 	GetAccountByAddressAndHeight(context.Context, string, int64) (*AccountInfo, error)
 	GetIdentityByHeight(context.Context, string, int64) (*Identity, error)
-	//GetEpochPaymentsByHeight(context.Context, int64) (*EpochPayment, error)
 }
 
 type client struct {
@@ -247,7 +246,6 @@ func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Trans
 
 		transaction := &Transaction{
 			Hash:       tx.Hash().String(),
-			To:         tx.To().String(),
 			Size:       tx.Size().String(),
 			Nonce:      tx.Nonce(),
 			GasPrice:   tx.GasPrice(),
@@ -259,6 +257,10 @@ func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Trans
 			CumulativeGasUsed: receipt.CumulativeGasUsed,
 			Success:           receipt.Status == celoTypes.ReceiptStatusSuccessful,
 			Operations:        operations,
+		}
+
+		if tx.To() != nil {
+			transaction.To = tx.To().String()
 		}
 
 		if tx.GatewayFeeRecipient() != nil {
@@ -307,55 +309,6 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 				Name:    eventName,
 				Details: eventRaw,
 			})
-			// Election:
-			//switch eventName {
-			//case "ValidatorGroupVoteCast":
-			//	// vote() [ValidatorGroupVoteCast] => lockNonVoting->lockVotingPending
-			//	event := eventRaw.(*contracts.ElectionValidatorGroupVoteCast)
-			//	op := &Operation{
-			//		Details: map[string]interface{}{
-			//			"account": event.Account,
-			//			"group":   event.Group,
-			//			"value":   event.Value,
-			//		},
-			//	}
-			//	operations = append(operations, op)
-			//case "ValidatorGroupVoteActivated":
-			//	// activate() [ValidatorGroupVoteActivated] => lockVotingPending->lockVotingActive
-			//	event := eventRaw.(*contracts.ElectionValidatorGroupVoteActivated)
-			//	op := &Operation{
-			//		Details: map[string]interface{}{
-			//			"account": event.Account,
-			//			"group":   event.Group,
-			//			"value":   event.Value,
-			//			"units":   event.Units,
-			//		},
-			//	}
-			//	operations = append(operations, op)
-			//case "ValidatorGroupPendingVoteRevoked":
-			//	// revokePending() [ValidatorGroupPendingVoteRevoked] => lockVotingPending->lockNonVoting
-			//	event := eventRaw.(*contracts.ElectionValidatorGroupPendingVoteRevoked)
-			//	op := &Operation{
-			//		Details: map[string]interface{}{
-			//			"account": event.Account,
-			//			"group":   event.Group,
-			//			"value":   event.Value,
-			//		},
-			//	}
-			//	operations = append(operations, op)
-			//case "ValidatorGroupActiveVoteRevoked":
-			//	// revokeActive() [ValidatorGroupActiveVoteRevoked] => lockVotingActive->lockNonVoting
-			//	event := eventRaw.(*contracts.ElectionValidatorGroupActiveVoteRevoked)
-			//	op := &Operation{
-			//		Details: map[string]interface{}{
-			//			"account": event.Account,
-			//			"group":   event.Group,
-			//			"value":   event.Value,
-			//			"units":   event.Units,
-			//		},
-			//	}
-			//	operations = append(operations, op)
-			//}
 
 		} else if eventLog.Address == cr.addresses[registry.AccountsContractID] && cr.contractDeployed(registry.AccountsContractID) {
 			eventName, eventRaw, ok, err := cr.accountsContract.TryParseLog(*eventLog)
@@ -370,44 +323,6 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 				Name:    eventName,
 				Details: eventRaw,
 			})
-			// Accounts:
-			//switch eventName {
-			//case "AccountCreated":
-			//	event := eventRaw.(*contracts.AccountsAccountCreated)
-			//	op := &Operation{
-			//		Details: map[string]interface{}{
-			//			"account": event.Account,
-			//		},
-			//	}
-			//	operations = append(operations, op)
-			//case "VoteSignerAuthorized":
-			//	event := eventRaw.(*contracts.AccountsVoteSignerAuthorized)
-			//	op := &Operation{
-			//		Details: map[string]interface{}{
-			//			"account": event.Account,
-			//			"signer":  event.Signer,
-			//		},
-			//	}
-			//	operations = append(operations, op)
-			//case "ValidatorSignerAuthorized":
-			//	event := eventRaw.(*contracts.AccountsValidatorSignerAuthorized)
-			//	op := &Operation{
-			//		Details: map[string]interface{}{
-			//			"account": event.Account,
-			//			"signer":  event.Signer,
-			//		},
-			//	}
-			//	operations = append(operations, op)
-			//case "AttestationSignerAuthorized":
-			//	event := eventRaw.(*contracts.AccountsAttestationSignerAuthorized)
-			//	op := &Operation{
-			//		Details: map[string]interface{}{
-			//			"account": event.Account,
-			//			"signer":  event.Signer,
-			//		},
-			//	}
-			//	operations = append(operations, op)
-			//}
 
 		} else if eventLog.Address == cr.addresses[registry.LockedGoldContractID] && cr.contractDeployed(registry.LockedGoldContractID) {
 			eventName, eventRaw, ok, err := cr.lockedGoldContract.TryParseLog(*eventLog)
@@ -423,52 +338,6 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 				Details: eventRaw,
 			})
 
-			//switch eventName {
-			//case "GoldLocked":
-			//	// lock() [GoldLocked + transfer] => main->lockNonVoting
-			//	event := eventRaw.(*contracts.LockedGoldGoldLocked)
-			//	op := &Operation{
-			//		Details: map[string]interface{}{
-			//			"account": event.Account,
-			//			"value":  event.Value,
-			//		},
-			//	}
-			//	operations = append(operations, op)
-			//
-			//case "GoldRelocked":
-			//	// relock() [GoldRelocked] => lockPending->lockNonVoting
-			//	event := eventRaw.(*contracts.LockedGoldGoldRelocked)
-			//	op := &Operation{
-			//		Details: map[string]interface{}{
-			//			"account": event.Account,
-			//			"value":  event.Value,
-			//		},
-			//	}
-			//	operations = append(operations, op)
-			//
-			//case "GoldUnlocked":
-			//	// unlock() [GoldUnlocked] => lockNonVoting->lockPending
-			//	event := eventRaw.(*contracts.LockedGoldGoldUnlocked)
-			//	op := &Operation{
-			//		Details: map[string]interface{}{
-			//			"account": event.Account,
-			//			"value":  event.Value,
-			//			"available": event.Available,
-			//		},
-			//	}
-			//	operations = append(operations, op)
-			//
-			//case "GoldWithdrawn":
-			//	// withdraw() [GoldWithdrawn + transfer] => lockPending->main
-			//	event := eventRaw.(*contracts.LockedGoldGoldWithdrawn)
-			//	operations = append(operations, *NewWithdrawGold(event.Account, lockedGoldAddr, event.Value, tobinTax))
-			//
-			//case "AccountSlashed":
-			//	// slash() [AccountSlashed + transfer] => account:lockNonVoting -> beneficiary:lockNonVoting + governance:main
-			//	event := eventRaw.(*contracts.LockedGoldAccountSlashed)
-			//	operations = append(operations, *NewSlash(event.Slashed, event.Reporter, governanceAddr, lockedGoldAddr, event.Penalty, event.Reward, tobinTax))
-			//
-			//}
 		} else if eventLog.Address == cr.addresses[registry.StableTokenContractID] && cr.contractDeployed(registry.StableTokenContractID) {
 			eventName, eventRaw, ok, err := cr.stableTokenContract.TryParseLog(*eventLog)
 			if err != nil {
@@ -499,6 +368,19 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 			eventName, eventRaw, ok, err := cr.validatorsContract.TryParseLog(*eventLog)
 			if err != nil {
 				return nil, fmt.Errorf("can't parse Validators event: %w", err)
+			}
+			if !ok {
+				continue
+			}
+
+			operations = append(operations, &Operation{
+				Name:    eventName,
+				Details: eventRaw,
+			})
+		} else if eventLog.Address == cr.addresses[registry.GovernanceContractID] && cr.contractDeployed(registry.GovernanceContractID) {
+			eventName, eventRaw, ok, err := cr.governanceContract.TryParseLog(*eventLog)
+			if err != nil {
+				return nil, fmt.Errorf("can't parse Governance event: %w", err)
 			}
 			if !ok {
 				continue
@@ -560,6 +442,12 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 				return nil, err
 			}
 
+			opts := &bind.CallOpts{Context: ctx}
+			votingCap, err := cr.electionContract.GetNumVotesReceivable(opts, rawValidatorGroup)
+			if err != nil {
+				return nil, err
+			}
+
 			identity, err := l.getIdentity(ctx, cr, rawValidatorGroup.String())
 			if err != nil {
 				return nil, err
@@ -578,6 +466,7 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 				ActiveVotes:         activeVotes,
 				ActiveVotesUnits:    activeVoteUnits,
 				PendingVotes:        pendingVotes,
+				VotingCap:           votingCap,
 			}
 
 			validatorGroup.Members = []string{}
@@ -605,10 +494,6 @@ func (l *client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validat
 	}
 
 	var validators []*Validator
-
-	if cr.validatorsContract == nil {
-		return validators, nil
-	}
 
 	opts := &bind.CallOpts{Context: ctx}
 	rawValidators, err := cr.validatorsContract.GetRegisteredValidators(opts)
@@ -754,7 +639,7 @@ func (l *client) GetIdentityByHeight(ctx context.Context, rawAddress string, h i
 	if err != nil {
 		return nil, err
 	}
-	err = cr.setupContracts(ctx)
+	err = cr.setupContracts(ctx, registry.AccountsContractID)
 	if err != nil {
 		return nil, err
 	}
@@ -784,35 +669,3 @@ func (l *client) getIdentity(ctx context.Context, cr *contractsRegistry, rawAddr
 
 	return identity, nil
 }
-
-//func (l *client) GetEpochPaymentsByHeight(ctx context.Context, h int64) (*EpochPayment, error) {
-//	height := uint64(h)
-//	cr.setupContractsForHeight(ctx, height)
-//
-//	var epochPayments = []*EpochPayment
-//	if cr.validatorsContract != nil {
-//		iter, err := token.FilterTransfer(, []common.Address{common.ZeroAddress}, nil)
-//		if err != nil {
-//			return err
-//		}
-//		opts := &bind.FilterOpts{
-//			Start:   height,
-//			End:     &height,
-//			Context: ctx,
-//		}
-//		name, err := cr.validatorsContract.FilterValidatorEpochPaymentDistributed(opts, nil, nil)
-//		if err != nil {
-//			return nil, err
-//		}
-//		identity.Name = name
-//
-//		metadataUrl, err := cr.accountsContract.GetMetadataURL(opts, address)
-//		if err != nil {
-//			return nil, err
-//		}
-//		identity.MetadataUrl = metadataUrl
-//
-//	}
-//
-//	return identity, nil
-//}

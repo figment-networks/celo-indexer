@@ -5,20 +5,21 @@ import (
 )
 
 type AggDetailsView struct {
-	*model.Model
+	*model.ModelWithTimestamps
 	*model.Aggregate
 
 	Address           string `json:"address"`
 	RecentName        string `json:"recent_name"`
 	RecentMetadataUrl string `json:"recent_metadata_url"`
 
-	LastSequences []SeqListItem `json:"last_sequences"`
+	LastSequences      []SeqListItem              `json:"last_sequences"`
+	DelegationActivity []model.AccountActivitySeq `json:"delegation_activity"`
 }
 
-func ToAggDetailsView(m *model.ValidatorGroupAgg, validatorSequences []model.ValidatorGroupSeq) *AggDetailsView {
+func ToAggDetailsView(m *model.ValidatorGroupAgg, validatorSequences []model.ValidatorGroupSeq, delegations []model.AccountActivitySeq) *AggDetailsView {
 	view := &AggDetailsView{
-		Model:     m.Model,
-		Aggregate: m.Aggregate,
+		ModelWithTimestamps: m.ModelWithTimestamps,
+		Aggregate:           m.Aggregate,
 
 		Address:           m.Address,
 		RecentName:        m.RecentName,
@@ -28,6 +29,7 @@ func ToAggDetailsView(m *model.ValidatorGroupAgg, validatorSequences []model.Val
 	sequenceListView := ToSeqListView(validatorSequences)
 
 	view.LastSequences = sequenceListView.Items
+	view.DelegationActivity = delegations
 
 	return view
 }
@@ -50,9 +52,9 @@ type SeqListView struct {
 	Items []SeqListItem `json:"items"`
 }
 
-func ToSeqListView(validatorSeqs []model.ValidatorGroupSeq) SeqListView {
+func ToSeqListView(validatorGroupSeqs []model.ValidatorGroupSeq) SeqListView {
 	var items []SeqListItem
-	for _, m := range validatorSeqs {
+	for _, m := range validatorGroupSeqs {
 		item := SeqListItem{
 			Sequence: m.Sequence,
 

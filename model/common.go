@@ -4,16 +4,21 @@ import "github.com/figment-networks/celo-indexer/types"
 
 // Model is used for general table
 type Model struct {
+	ID types.ID `json:"id"`
+}
+
+// ModelWithTimestamps is used for general table with timestamps
+type ModelWithTimestamps struct {
 	ID        types.ID   `json:"id"`
 	CreatedAt types.Time `json:"created_at"`
 	UpdatedAt types.Time `json:"updated_at"`
 }
 
-func (e *Model) Valid() bool {
+func (e *ModelWithTimestamps) Valid() bool {
 	return true
 }
 
-func (e *Model) Equal(m Model) bool {
+func (e *ModelWithTimestamps) Equal(m ModelWithTimestamps) bool {
 	return e.ID.Equal(m.ID)
 }
 

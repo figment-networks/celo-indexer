@@ -355,3 +355,26 @@ func operationToAccountActivitySequence(sequence *model.Sequence, rawOperation *
 
 	return accountActivities, nil
 }
+
+func ToGovernanceActivitySequence(syncable *model.Syncable, parsedGovernanceLogs []*ParsedGovernanceLogs) ([]model.GovernanceActivitySeq, error) {
+	var governanceActivities []model.GovernanceActivitySeq
+	for _, log := range parsedGovernanceLogs {
+		marshaledData, err := json.Marshal(log.Details)
+		if err != nil {
+			return nil, err
+		}
+
+		governanceActivities = append(governanceActivities, model.GovernanceActivitySeq{
+			Sequence:        &model.Sequence{
+				Height: syncable.Height,
+				Time:   *syncable.Time,
+			},
+
+			TransactionHash: log.TransactionHash,
+			ProposalId:      log.ProposalId,
+			Kind:            log.Kind,
+			Data:            types.Jsonb{RawMessage: marshaledData},
+		})
+	}
+	return governanceActivities, nil
+}

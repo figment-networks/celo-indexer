@@ -18,4 +18,6 @@ func (s *Server) setupRoutes() {
 	s.engine.GET("/validator_groups", s.handlers.GetValidatorGroupsByHeight.Handle)
 	s.engine.GET("/validator_groups_summary", s.handlers.GetValidatorGroupSummary.Handle)
 	s.engine.GET("/system_events/:address", s.handlers.GetSystemEventsForAddress.Handle)
+	s.engine.GET("/proposals", s.handlers.GetProposals.Handle)
+	s.engine.GET("/proposals/:proposal_id/activity", s.handlers.GetProposalActivity.Handle)
 }

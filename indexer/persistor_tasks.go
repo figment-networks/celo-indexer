@@ -12,14 +12,16 @@ import (
 )
 
 const (
-	SyncerPersistorTaskName             = "SyncerPersistor"
-	BlockSeqPersistorTaskName           = "BlockSeqPersistor"
-	ValidatorSeqPersistorTaskName       = "ValidatorSeqPersistor"
-	ValidatorGroupSeqPersistorTaskName  = "ValidatorGroupSeqPersistor"
-	AccountActivitySeqPersistorTaskName = "AccountActivitySeqPersistor"
-	ValidatorAggPersistorTaskName       = "ValidatorAggPersistor"
-	ValidatorGroupAggPersistorTaskName  = "ValidatorGroupAggPersistor"
-	TaskNameSystemEventPersistor        = "SystemEventPersistor"
+	SyncerPersistorTaskName                = "SyncerPersistor"
+	BlockSeqPersistorTaskName              = "BlockSeqPersistor"
+	ValidatorSeqPersistorTaskName          = "ValidatorSeqPersistor"
+	ValidatorGroupSeqPersistorTaskName     = "ValidatorGroupSeqPersistor"
+	AccountActivitySeqPersistorTaskName    = "AccountActivitySeqPersistor"
+	ValidatorAggPersistorTaskName          = "ValidatorAggPersistor"
+	ValidatorGroupAggPersistorTaskName     = "ValidatorGroupAggPersistor"
+	ProposalAggPersistorTaskName           = "ProposalAggPersistor"
+	TaskNameSystemEventPersistor           = "SystemEventPersistor"
+	GovernanceActivitySeqPersistorTaskName = "GovernanceActivitySeqPersistor"
 )
 
 // NewSyncerPersistorTask is responsible for storing syncable to persistence layer
@@ -265,6 +267,44 @@ func (t *validatorGroupAggPersistorTask) Run(ctx context.Context, p pipeline.Pay
 	return nil
 }
 
+// NewProposalAggPersistorTask store validator aggregate to persistence layer
+func NewProposalAggPersistorTask(db *store.Store) pipeline.Task {
+	return &proposalAggPersistorTask{
+		db: db,
+	}
+}
+
+type proposalAggPersistorTask struct {
+	db *store.Store
+}
+
+func (t *proposalAggPersistorTask) GetName() string {
+	return ProposalAggPersistorTaskName
+}
+
+func (t *proposalAggPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+
+	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
+
+	for _, aggregate := range payload.NewProposalAggregates {
+		if err := t.db.ProposalAgg.Create(&aggregate); err != nil {
+			return err
+		}
+	}
+
+	for _, aggregate := range payload.UpdatedProposalAggregates {
+		if err := t.db.ProposalAgg.Save(&aggregate); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+//NewSystemEventPersistorTask store system events to persistance layer
 func NewSystemEventPersistorTask(db *store.Store) pipeline.Task {
 	return &systemEventPersistorTask{
 		db:             db,
@@ -291,6 +331,43 @@ func (t *systemEventPersistorTask) Run(ctx context.Context, p pipeline.Payload) 
 
 	for _, systemEvent := range payload.SystemEvents {
 		if err := t.db.SystemEvents.CreateOrUpdate(systemEvent); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// NewGovernanceActivitySeqPersistorTask is responsible for storing validator info to persistence layer
+func NewGovernanceActivitySeqPersistorTask(db *store.Store) pipeline.Task {
+	return &governanceActivitySeqPersistorTask{
+		db: db,
+	}
+}
+
+type governanceActivitySeqPersistorTask struct {
+	db *store.Store
+}
+
+func (t *governanceActivitySeqPersistorTask) GetName() string {
+	return GovernanceActivitySeqPersistorTaskName
+}
+
+func (t *governanceActivitySeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+
+	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
+
+	// Delete current governance activities first
+	_, err := t.db.GovernanceActivitySeq.DeleteForHeight(payload.CurrentHeight)
+	if err != nil {
+		return err
+	}
+
+	for _, sequence := range payload.GovernanceActivitySequences {
+		if err := t.db.GovernanceActivitySeq.Create(&sequence); err != nil {
 			return err
 		}
 	}

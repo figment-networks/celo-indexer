@@ -6,7 +6,7 @@ import (
 )
 
 type ListItem struct {
-	*model.Model
+	*model.ModelWithTimestamps
 
 	Height int64       `json:"height"`
 	Time   types.Time  `json:"time"`

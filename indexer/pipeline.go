@@ -58,6 +58,12 @@ func NewPipeline(cfg *config.Config, db *store.Store, client figmentclient.Clien
 		),
 	)
 
+	p.AddStage(
+		pipeline.NewAsyncStageWithTasks(pipeline.StageParser,
+			pipeline.RetryingTask(NewGovernanceLogsParserTask(), isTransient, maxRetries),
+		),
+	)
+
 	// Syncer stage
 	p.AddStage(
 		pipeline.NewStageWithTasks(pipeline.StageSyncer, pipeline.RetryingTask(NewMainSyncerTask(db), isTransient, maxRetries)),
@@ -72,6 +78,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client figmentclient.Clien
 			pipeline.RetryingTask(NewValidatorGroupSeqCreatorTask(cfg, db), isTransient, maxRetries),
 			pipeline.RetryingTask(NewAccountActivitySeqCreatorTask(cfg, db), isTransient, maxRetries),
 			pipeline.RetryingTask(NewSystemEventPersistorTask(db), isTransient, maxRetries),
+			pipeline.RetryingTask(NewGovernanceActivitySeqCreatorTask(cfg, db), isTransient, maxRetries),
 		),
 	)
 
@@ -81,6 +88,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client figmentclient.Clien
 			pipeline.StageAggregator,
 			pipeline.RetryingTask(NewValidatorAggCreatorTask(db), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorGroupAggCreatorTask(db), isTransient, maxRetries),
+			pipeline.RetryingTask(NewProposalAggCreatorTask(db), isTransient, maxRetries),
 		),
 	)
 
@@ -101,8 +109,10 @@ func NewPipeline(cfg *config.Config, db *store.Store, client figmentclient.Clien
 			pipeline.RetryingTask(NewValidatorSeqPersistorTask(db), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorGroupSeqPersistorTask(db), isTransient, maxRetries),
 			pipeline.RetryingTask(NewAccountActivitySeqPersistorTask(db), isTransient, maxRetries),
+			pipeline.RetryingTask(NewGovernanceActivitySeqPersistorTask(db), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorAggPersistorTask(db), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorGroupAggPersistorTask(db), isTransient, maxRetries),
+			pipeline.RetryingTask(NewProposalAggPersistorTask(db), isTransient, maxRetries),
 		),
 	)
 

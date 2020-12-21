@@ -25,13 +25,15 @@ func New(connStr string) (*Store, error) {
 		Syncables: NewSyncablesStore(conn),
 		Reports:   NewReportsStore(conn),
 
-		BlockSeq:           NewBlockSeqStore(conn),
-		ValidatorSeq:       NewValidatorSeqStore(conn),
-		ValidatorGroupSeq:  NewValidatorGroupSeqStore(conn),
-		AccountActivitySeq: NewAccountActivitySeqStore(conn),
+		BlockSeq:              NewBlockSeqStore(conn),
+		ValidatorSeq:          NewValidatorSeqStore(conn),
+		ValidatorGroupSeq:     NewValidatorGroupSeqStore(conn),
+		AccountActivitySeq:    NewAccountActivitySeqStore(conn),
+		GovernanceActivitySeq: NewGovernanceActivitySeqStore(conn),
 
 		ValidatorAgg:      NewValidatorAggStore(conn),
 		ValidatorGroupAgg: NewValidatorGroupAggStore(conn),
+		ProposalAgg:       NewProposalAggStore(conn),
 
 		BlockSummary:          NewBlockSummaryStore(conn),
 		ValidatorSummary:      NewValidatorSummaryStore(conn),
@@ -49,13 +51,15 @@ type Store struct {
 	Syncables *SyncablesStore
 	Reports   *ReportsStore
 
-	BlockSeq           *BlockSeqStore
-	ValidatorSeq       *ValidatorSeqStore
-	ValidatorGroupSeq  *ValidatorGroupSeqStore
-	AccountActivitySeq *AccountActivitySeqStore
+	BlockSeq              *BlockSeqStore
+	ValidatorSeq          *ValidatorSeqStore
+	ValidatorGroupSeq     *ValidatorGroupSeqStore
+	AccountActivitySeq    *AccountActivitySeqStore
+	GovernanceActivitySeq *GovernanceActivitySeqStore
 
 	ValidatorAgg      *ValidatorAggStore
 	ValidatorGroupAgg *ValidatorGroupAggStore
+	ProposalAgg       *ProposalAggStore
 
 	BlockSummary          *BlockSummaryStore
 	ValidatorSummary      *ValidatorSummaryStore

@@ -2,19 +2,22 @@ package usecase
 
 import (
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
+	"github.com/figment-networks/celo-indexer/client/theceloclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/usecase/chain"
+	"github.com/figment-networks/celo-indexer/usecase/governance"
 	"github.com/figment-networks/celo-indexer/usecase/indexing"
 )
 
-func NewCmdHandlers(cfg *config.Config, db *store.Store, c figmentclient.Client) *CmdHandlers {
+func NewCmdHandlers(cfg *config.Config, db *store.Store, nodeClient figmentclient.Client, theCeloClient theceloclient.Client) *CmdHandlers {
 	return &CmdHandlers{
-		GetStatus:        chain.NewGetStatusCmdHandler(db, c),
-		StartIndexer:     indexing.NewStartCmdHandler(cfg, db, c),
-		BackfillIndexer:  indexing.NewBackfillCmdHandler(cfg, db, c),
-		PurgeIndexer:     indexing.NewPurgeCmdHandler(cfg, db, c),
-		SummarizeIndexer: indexing.NewSummarizeCmdHandler(cfg, db, c),
+		GetStatus:        chain.NewGetStatusCmdHandler(db, nodeClient),
+		StartIndexer:     indexing.NewStartCmdHandler(cfg, db, nodeClient),
+		BackfillIndexer:  indexing.NewBackfillCmdHandler(cfg, db, nodeClient),
+		PurgeIndexer:     indexing.NewPurgeCmdHandler(cfg, db, nodeClient),
+		SummarizeIndexer: indexing.NewSummarizeCmdHandler(cfg, db, nodeClient),
+		UpdateProposals: governance.NewUpdateProposalsCmdHandler(db, theCeloClient),
 	}
 }
 
@@ -24,4 +27,5 @@ type CmdHandlers struct {
 	BackfillIndexer  *indexing.BackfillCmdHandler
 	PurgeIndexer     *indexing.PurgeCmdHandler
 	SummarizeIndexer *indexing.SummarizeCmdHandler
+	UpdateProposals  *governance.UpdateProposalsCmdHandler
 }
