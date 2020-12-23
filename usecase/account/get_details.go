@@ -21,7 +21,7 @@ func NewGetDetailsUseCase(c figmentclient.Client, db *store.Store) *getDetailsUs
 
 func (uc *getDetailsUseCase) Execute(ctx context.Context, address string, limit int64) (*DetailsView, error) {
 	lastHeightAccountInfo, err := uc.client.GetAccountByAddressAndHeight(ctx, address, 0)
-	if err != nil {
+	if lastHeightAccountInfo == nil && err != nil {
 		return nil, err
 	}
 

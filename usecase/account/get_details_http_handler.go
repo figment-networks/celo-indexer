@@ -31,14 +31,20 @@ func NewGetDetailsHttpHandler(db *store.Store, c figmentclient.Client) *getDetai
 
 type GetDetailsRequest struct {
 	Address string `uri:"address" binding:"required"`
-	Limit   int64  `form:"limit" binding:"required"`
+	Limit   int64  `form:"limit" binding:"-"`
 }
 
 func (h *getDetailsHttpHandler) Handle(c *gin.Context) {
 	var req GetDetailsRequest
 	if err := c.ShouldBindUri(&req); err != nil {
 		logger.Error(err)
-		http.BadRequest(c, errors.New("invalid address or limit"))
+		http.BadRequest(c, errors.New("invalid address"))
+		return
+	}
+
+	if err := c.ShouldBind(&req); err != nil {
+		logger.Error(err)
+		http.BadRequest(c, errors.New("invalid limit parameter"))
 		return
 	}
 
