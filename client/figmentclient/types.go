@@ -84,6 +84,9 @@ type IstanbulAggregatedSeal struct {
 type Transaction struct {
 	Hash                string   `json:"hash"`
 	To                  string   `json:"to"`
+	Height              int64    `json:"height"`
+	Time                uint64   `json:"time"`
+	Address             string   `json:"address"`
 	Size                string   `json:"size"`
 	Nonce               uint64   `json:"nonce"`
 	GasPrice            *big.Int `json:"gas_price"`
