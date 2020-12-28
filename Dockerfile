@@ -12,7 +12,7 @@ RUN go mod download
 
 COPY . .
 
-ENV CGO_ENABLED=0
+ENV CGO_ENABLED=1
 ENV GOARCH=amd64
 ENV GOOS=linux
 
