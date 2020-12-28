@@ -248,7 +248,6 @@ func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Trans
 			Hash:       tx.Hash().String(),
 			Time:       block.Time(),
 			Height:     block.Number().Int64(),
-			Address:    tx.To().String(),
 			Size:       tx.Size().String(),
 			Nonce:      tx.Nonce(),
 			GasPrice:   tx.GasPrice(),
