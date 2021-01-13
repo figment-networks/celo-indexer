@@ -4,15 +4,15 @@ import (
 	"context"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/indexer"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 )
 
 type getDetailsUseCase struct {
-	db *store.Store
+	db *psql.Store
 	client figmentclient.Client
 }
 
-func NewGetDetailsUseCase(c figmentclient.Client, db *store.Store) *getDetailsUseCase {
+func NewGetDetailsUseCase(c figmentclient.Client, db *psql.Store) *getDetailsUseCase {
 	return &getDetailsUseCase{
 		client: c,
 		db: db,
@@ -25,42 +25,42 @@ func (uc *getDetailsUseCase) Execute(ctx context.Context, address string, limit 
 		return nil, err
 	}
 
-	internalTransfersSent, err := uc.db.AccountActivitySeq.FindLastByAddressAndKind(address, indexer.OperationTypeInternalTransferSent, limit)
+	internalTransfersSent, err := uc.db.GetAccounts().AccountActivitySeq.FindLastByAddressAndKind(address, indexer.OperationTypeInternalTransferSent, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	validatorGroupVoteCastReceived, err := uc.db.AccountActivitySeq.FindLastByAddressAndKind(address, indexer.OperationTypeValidatorGroupVoteCastReceived, limit)
+	validatorGroupVoteCastReceived, err := uc.db.GetAccounts().AccountActivitySeq.FindLastByAddressAndKind(address, indexer.OperationTypeValidatorGroupVoteCastReceived, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	validatorGroupVoteCastSent, err := uc.db.AccountActivitySeq.FindLastByAddressAndKind(address, indexer.OperationTypeValidatorGroupVoteCastSent, limit)
+	validatorGroupVoteCastSent, err := uc.db.GetAccounts().AccountActivitySeq.FindLastByAddressAndKind(address, indexer.OperationTypeValidatorGroupVoteCastSent, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	goldLocked, err := uc.db.AccountActivitySeq.FindLastByAddressAndKind(address, figmentclient.OperationTypeGoldLocked, limit)
+	goldLocked, err := uc.db.GetAccounts().AccountActivitySeq.FindLastByAddressAndKind(address, figmentclient.OperationTypeGoldLocked, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	goldUnlocked, err := uc.db.AccountActivitySeq.FindLastByAddressAndKind(address, figmentclient.OperationTypeGoldUnlocked, limit)
+	goldUnlocked, err := uc.db.GetAccounts().AccountActivitySeq.FindLastByAddressAndKind(address, figmentclient.OperationTypeGoldUnlocked, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	goldWithdrawn, err := uc.db.AccountActivitySeq.FindLastByAddressAndKind(address, figmentclient.OperationTypeGoldWithdrawn, limit)
+	goldWithdrawn, err := uc.db.GetAccounts().AccountActivitySeq.FindLastByAddressAndKind(address, figmentclient.OperationTypeGoldWithdrawn, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	accountSlashed, err := uc.db.AccountActivitySeq.FindLastByAddressAndKind(address, figmentclient.OperationTypeAccountSlashed, limit)
+	accountSlashed, err := uc.db.GetAccounts().AccountActivitySeq.FindLastByAddressAndKind(address, figmentclient.OperationTypeAccountSlashed, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	validatorPaymentDistributed, err := uc.db.AccountActivitySeq.FindLastByAddressAndKind(address, figmentclient.OperationTypeValidatorEpochPaymentDistributed, limit)
+	validatorPaymentDistributed, err := uc.db.GetAccounts().AccountActivitySeq.FindLastByAddressAndKind(address, figmentclient.OperationTypeValidatorEpochPaymentDistributed, limit)
 	if err != nil {
 		return nil, err
 	}

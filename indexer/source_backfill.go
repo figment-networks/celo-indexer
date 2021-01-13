@@ -3,11 +3,12 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 
-	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/celo-indexer/client"
 	"github.com/figment-networks/celo-indexer/config"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/pkg/errors"
 )
 
@@ -15,11 +16,12 @@ var (
 	_ pipeline.Source = (*backfillSource)(nil)
 )
 
-func NewBackfillSource(cfg *config.Config, db *store.Store, client client.Client, indexVersion int64) (*backfillSource, error) {
+func NewBackfillSource(cfg *config.Config, client client.Client, syncableDb store.Syncables, indexVersion int64) (*backfillSource, error) {
 	src := &backfillSource{
 		cfg:    cfg,
-		db:     db,
 		client: client,
+
+		syncableDb: syncableDb,
 
 		currentIndexVersion: indexVersion,
 	}
@@ -33,8 +35,9 @@ func NewBackfillSource(cfg *config.Config, db *store.Store, client client.Client
 
 type backfillSource struct {
 	cfg    *config.Config
-	db     *store.Store
 	client client.Client
+
+	syncableDb store.Syncables
 
 	currentIndexVersion int64
 
@@ -42,6 +45,10 @@ type backfillSource struct {
 	startHeight   int64
 	endHeight     int64
 	err           error
+}
+
+func (s *backfillSource) Skip(pipeline.StageName) bool {
+	return false
 }
 
 func (s *backfillSource) Next(context.Context, pipeline.Payload) bool {
@@ -75,9 +82,9 @@ func (s *backfillSource) init() error {
 }
 
 func (s *backfillSource) setStartHeight() error {
-	syncable, err := s.db.Syncables.FindFirstByDifferentIndexVersion(s.currentIndexVersion)
+	syncable, err := s.syncableDb.FindFirstByDifferentIndexVersion(s.currentIndexVersion)
 	if err != nil {
-		if err == store.ErrNotFound {
+		if err == psql.ErrNotFound {
 			return errors.New(fmt.Sprintf("nothing to backfill [currentIndexVersion=%d]", s.currentIndexVersion))
 		}
 		return err
@@ -89,9 +96,9 @@ func (s *backfillSource) setStartHeight() error {
 }
 
 func (s *backfillSource) setEndHeight() error {
-	syncable, err := s.db.Syncables.FindMostRecentByDifferentIndexVersion(s.currentIndexVersion)
+	syncable, err := s.syncableDb.FindMostRecentByDifferentIndexVersion(s.currentIndexVersion)
 	if err != nil {
-		if err == store.ErrNotFound {
+		if err == psql.ErrNotFound {
 			return errors.New(fmt.Sprintf("nothing to backfill [currentIndexVersion=%d]", s.currentIndexVersion))
 		}
 		return err

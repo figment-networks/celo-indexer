@@ -3,16 +3,16 @@ package block
 import (
 	"context"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/pkg/errors"
 )
 
 type getByHeightUseCase struct {
-	db     *store.Store
+	db     *psql.Store
 	client figmentclient.Client
 }
 
-func NewGetByHeightUseCase(db *store.Store, c figmentclient.Client) *getByHeightUseCase {
+func NewGetByHeightUseCase(db *psql.Store, c figmentclient.Client) *getByHeightUseCase {
 	return &getByHeightUseCase{
 		db:     db,
 		client: c,
@@ -21,7 +21,7 @@ func NewGetByHeightUseCase(db *store.Store, c figmentclient.Client) *getByHeight
 
 func (uc *getByHeightUseCase) Execute(ctx context.Context, height *int64) (*DetailsView, error) {
 	// Get last indexed height
-	mostRecentSynced, err := uc.db.Syncables.FindMostRecent()
+	mostRecentSynced, err := uc.db.GetCore().Syncables.FindMostRecent()
 	if err != nil {
 		return nil, err
 	}

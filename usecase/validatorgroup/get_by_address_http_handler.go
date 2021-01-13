@@ -2,7 +2,7 @@ package validatorgroup
 
 import (
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/usecase/http"
 	"github.com/figment-networks/celo-indexer/utils/logger"
@@ -15,13 +15,13 @@ var (
 )
 
 type getByAddressHttpHandler struct {
-	db     *store.Store
+	db     *psql.Store
 	client figmentclient.Client
 
 	useCase *getByAddressUseCase
 }
 
-func NewGetByAddressHttpHandler(db *store.Store, c figmentclient.Client) *getByAddressHttpHandler {
+func NewGetByAddressHttpHandler(db *psql.Store, c figmentclient.Client) *getByAddressHttpHandler {
 	return &getByAddressHttpHandler{
 		db:     db,
 		client: c,

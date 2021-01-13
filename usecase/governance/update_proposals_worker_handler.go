@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/figment-networks/celo-indexer/client/theceloclient"
 	"github.com/figment-networks/celo-indexer/config"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 )
@@ -15,13 +15,13 @@ var (
 
 type updateProposalsWorkerHandler struct {
 	cfg    *config.Config
-	db     *store.Store
+	db     *psql.Store
 	client theceloclient.Client
 
 	useCase *updateProposalsUseCase
 }
 
-func NewUpdateProposalsWorkerHandler(cfg *config.Config, db *store.Store, c theceloclient.Client) *updateProposalsWorkerHandler {
+func NewUpdateProposalsWorkerHandler(cfg *config.Config, db *psql.Store, c theceloclient.Client) *updateProposalsWorkerHandler {
 	return &updateProposalsWorkerHandler{
 		cfg:    cfg,
 		db:     db,
@@ -43,7 +43,7 @@ func (h *updateProposalsWorkerHandler) Handle() {
 
 func (h *updateProposalsWorkerHandler) getUseCase() *updateProposalsUseCase {
 	if h.useCase == nil {
-		return NewUpdateProposalsUseCase(h.client, h.db)
+		return NewUpdateProposalsUseCase(h.client, h.db.GetGovernance().ProposalAgg)
 	}
 	return h.useCase
 }

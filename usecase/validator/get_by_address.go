@@ -2,21 +2,21 @@ package validator
 
 import (
 	"github.com/figment-networks/celo-indexer/model"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 )
 
 type getByAddressUseCase struct {
-	db *store.Store
+	db *psql.Store
 }
 
-func NewGetByAddressUseCase(db *store.Store) *getByAddressUseCase {
+func NewGetByAddressUseCase(db *psql.Store) *getByAddressUseCase {
 	return &getByAddressUseCase{
 		db: db,
 	}
 }
 
 func (uc *getByAddressUseCase) Execute(address string, sequencesLimit int64) (*AggDetailsView, error) {
-	validatorAggs, err := uc.db.ValidatorAgg.FindByAddress(address)
+	validatorAggs, err := uc.db.GetValidators().ValidatorAgg.FindByAddress(address)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (uc *getByAddressUseCase) getSessionSequences(address string, sequencesLimi
 	var sequences []model.ValidatorSeq
 	var err error
 	if sequencesLimit > 0 {
-		sequences, err = uc.db.ValidatorSeq.FindLastByAddress(address, sequencesLimit)
+		sequences, err = uc.db.GetValidators().ValidatorSeq.FindLastByAddress(address, sequencesLimit)
 		if err != nil {
 			return nil, err
 		}

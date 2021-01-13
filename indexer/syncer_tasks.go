@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/figment-networks/celo-indexer/metric"
+	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"time"
 
 	"github.com/figment-networks/celo-indexer/model"
-	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/indexing-engine/pipeline"
 )
@@ -17,14 +18,14 @@ const (
 	MainSyncerTaskName = "MainSyncer"
 )
 
-func NewMainSyncerTask(db *store.Store) pipeline.Task {
+func NewMainSyncerTask(syncableDb store.Syncables) pipeline.Task {
 	return &mainSyncerTask{
-		db: db,
+		syncableDb: syncableDb,
 	}
 }
 
 type mainSyncerTask struct {
-	db *store.Store
+	syncableDb store.Syncables
 }
 
 func (t *mainSyncerTask) GetName() string {
@@ -38,9 +39,9 @@ func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSyncer, t.GetName(), payload.CurrentHeight))
 
-	syncable, err := t.db.Syncables.FindByHeight(payload.CurrentHeight)
+	syncable, err := t.syncableDb.FindByHeight(payload.CurrentHeight)
 	if err != nil {
-		if err == store.ErrNotFound {
+		if err == psql.ErrNotFound {
 			syncable = &model.Syncable{
 				Height: payload.CurrentHeight,
 				Time:   payload.HeightMeta.Time,

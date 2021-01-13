@@ -21,12 +21,13 @@ type Syncable struct {
 	Epoch       *int64      `json:"epoch"`
 	LastInEpoch *bool       `json:"last_in_epoch"`
 
-	IndexVersion int64          `json:"index_version"`
-	Status       SyncableStatus `json:"status"`
-	ReportID     types.ID       `json:"report_id"`
-	StartedAt    types.Time     `json:"started_at"`
-	ProcessedAt  *types.Time    `json:"processed_at"`
-	Duration     time.Duration  `json:"duration"`
+	IndexVersion  int64          `json:"index_version"`
+	Status        SyncableStatus `json:"status"`
+	ReportID      types.ID       `json:"report_id"`
+	StartedAt     types.Time     `json:"started_at"`
+	ProcessedAt   *types.Time    `json:"processed_at"`
+	Duration      time.Duration  `json:"duration"`
+	RequestsCount uint64         `json:"requests_count"`
 }
 
 // - Methods
@@ -46,7 +47,7 @@ func (s *Syncable) SetStatus(newStatus SyncableStatus) {
 	s.Status = newStatus
 }
 
-func (s *Syncable) MarkProcessed(indexVersion int64) {
+func (s *Syncable) MarkProcessed(indexVersion int64, requestsCount uint64) {
 	t := types.NewTimeFromTime(time.Now())
 	duration := time.Since(s.StartedAt.Time)
 
@@ -54,4 +55,5 @@ func (s *Syncable) MarkProcessed(indexVersion int64) {
 	s.Duration = duration
 	s.ProcessedAt = t
 	s.IndexVersion = indexVersion
+	s.RequestsCount = requestsCount
 }

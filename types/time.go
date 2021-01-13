@@ -26,7 +26,7 @@ func NewTimeFromTimestamp(timestamp timestamp.Timestamp) *Time {
 
 func NewTimeFromSeconds(seconds uint64) *Time {
 	return &Time{
-		Time: time.Unix(int64(seconds), 0),
+		Time: time.Unix(int64(seconds), 0).UTC(),
 	}
 }
 

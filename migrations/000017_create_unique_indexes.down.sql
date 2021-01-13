@@ -1,0 +1,3 @@
+DROP index IF EXISTS idx_validator_sequences_height_address;
+
+DROP index IF EXISTS idx_validator_group_sequences_height_address;

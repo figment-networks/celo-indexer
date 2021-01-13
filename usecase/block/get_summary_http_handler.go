@@ -2,7 +2,7 @@ package block
 
 import (
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/usecase/http"
 	"github.com/figment-networks/celo-indexer/utils/logger"
@@ -17,13 +17,13 @@ var (
 )
 
 type getBlockSummaryHttpHandler struct {
-	db     *store.Store
+	db     *psql.Store
 	client figmentclient.Client
 
 	useCase *getBlockSummaryUseCase
 }
 
-func NewGetBlockSummaryHttpHandler(db *store.Store, client figmentclient.Client) *getBlockSummaryHttpHandler {
+func NewGetBlockSummaryHttpHandler(db *psql.Store, client figmentclient.Client) *getBlockSummaryHttpHandler {
 	return &getBlockSummaryHttpHandler{
 		db:     db,
 		client: client,

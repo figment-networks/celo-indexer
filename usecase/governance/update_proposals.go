@@ -15,21 +15,21 @@ var (
 )
 
 type updateProposalsUseCase struct {
-	db *store.Store
-	client theceloclient.Client
+	proposalAggDb store.ProposalAgg
+	client        theceloclient.Client
 }
 
-func NewUpdateProposalsUseCase(c theceloclient.Client, db *store.Store) *updateProposalsUseCase {
+func NewUpdateProposalsUseCase(c theceloclient.Client, proposalAggDb store.ProposalAgg) *updateProposalsUseCase {
 	return &updateProposalsUseCase{
-		client: c,
-		db: db,
+		client:        c,
+		proposalAggDb: proposalAggDb,
 	}
 }
 
 func (uc *updateProposalsUseCase) Execute(ctx context.Context) error {
 	logger.Info(fmt.Sprintf("running update proposals use case [handler=cmd]"))
 
-	persistedProposals, _, err := uc.db.ProposalAgg.All(0, nil)
+	persistedProposals, _, err := uc.proposalAggDb.All(0, nil)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (uc *updateProposalsUseCase) Execute(ctx context.Context) error {
 		if ok && persistedProposal.DescriptionUrl == "" {
 			persistedProposal.DescriptionUrl = sourceProposal.DescriptionUrl
 
-			if err = uc.db.ProposalAgg.Save(persistedProposal); err != nil {
+			if err = uc.proposalAggDb.Save(&persistedProposal); err != nil {
 				errorsCount++
 			}
 		}
@@ -58,4 +58,3 @@ func (uc *updateProposalsUseCase) Execute(ctx context.Context) error {
 
 	return nil
 }
-

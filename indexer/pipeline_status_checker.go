@@ -2,8 +2,8 @@ package indexer
 
 import (
 	"fmt"
+	"github.com/figment-networks/celo-indexer/store/psql"
 
-	"github.com/figment-networks/celo-indexer/store"
 	"github.com/pkg/errors"
 )
 
@@ -32,7 +32,7 @@ func (o *pipelineStatusChecker) getStatus() (*pipelineStatus, error) {
 
 	smallestIndexVersion, err := o.store.FindSmallestIndexVersion()
 	if err != nil {
-		if err == store.ErrNotFound {
+		if err == psql.ErrNotFound {
 			// When syncables not found in databases, set start version to first
 			startIndexVersion = 1
 			isUpToDate = false

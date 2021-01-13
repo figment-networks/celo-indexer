@@ -8,7 +8,10 @@ DOCKER_TAG   ?= latest
 # Generate mocks
 mockgen:
 	@echo "[mockgen] generating mocks"
-	@mockgen -destination mock/indexer/mocks.go github.com/figment-networks/celo-indexer/indexer ConfigParser,ReportStore
+	@mockgen -destination mock/baseclient/mocks.go github.com/figment-networks/celo-indexer/client Client,RequestCounter
+	@mockgen -destination mock/client/mocks.go github.com/figment-networks/celo-indexer/client/figmentclient Client
+	@mockgen -destination mock/indexer/mocks.go github.com/figment-networks/celo-indexer/indexer ConfigParser
+	@mockgen -destination mock/store/mocks.go github.com/figment-networks/celo-indexer/store AccountActivitySeq,BlockSeq,BlockSummary,Database,Reports,Syncables,SystemEvents,ValidatorAgg,ValidatorSeq,ValidatorSummary,ValidatorGroupAgg,ValidatorGroupSeq,ValidatorGroupSummary
 
 # Build the binary
 build:

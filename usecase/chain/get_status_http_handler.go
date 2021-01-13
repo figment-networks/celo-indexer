@@ -2,8 +2,8 @@ package chain
 
 import (
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
+	"github.com/figment-networks/celo-indexer/store/psql"
 
-	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/usecase/http"
 	"github.com/figment-networks/celo-indexer/utils/logger"
@@ -15,13 +15,13 @@ var (
 )
 
 type getStatusHttpHandler struct {
-	db     *store.Store
+	db     *psql.Store
 	client figmentclient.Client
 
 	useCase *getStatusUseCase
 }
 
-func NewGetStatusHttpHandler(db *store.Store, client figmentclient.Client) *getStatusHttpHandler {
+func NewGetStatusHttpHandler(db *psql.Store, client figmentclient.Client) *getStatusHttpHandler {
 	return &getStatusHttpHandler{
 		db:     db,
 		client: client,

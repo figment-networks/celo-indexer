@@ -3,15 +3,15 @@ package chain
 import (
 	"context"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 )
 
 type getStatusUseCase struct {
-	db     *store.Store
+	db     *psql.Store
 	client figmentclient.Client
 }
 
-func NewGetStatusUseCase(db *store.Store, c figmentclient.Client) *getStatusUseCase {
+func NewGetStatusUseCase(db *psql.Store, c figmentclient.Client) *getStatusUseCase {
 	return &getStatusUseCase{
 		db:     db,
 		client: c,
@@ -19,8 +19,8 @@ func NewGetStatusUseCase(db *store.Store, c figmentclient.Client) *getStatusUseC
 }
 
 func (uc *getStatusUseCase) Execute(ctx context.Context) (*DetailsView, error) {
-	mostRecentSyncable, err := uc.db.Syncables.FindMostRecent()
-	if err != nil && err != store.ErrNotFound {
+	mostRecentSyncable, err := uc.db.GetCore().Syncables.FindMostRecent()
+	if err != nil && err != psql.ErrNotFound {
 		return nil, err
 	}
 

@@ -52,6 +52,10 @@ func (t *heightMetaRetrieverTask) Run(ctx context.Context, p pipeline.Payload) e
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSetup, t.GetName(), payload.CurrentHeight))
 
+	logger.Info(fmt.Sprintf("initializing requests counter [stage=%s] [task=%s] [height=%d]", pipeline.StageSetup, t.GetName(), payload.CurrentHeight))
+
+	t.client.GetRequestCounter().InitCounter()
+
 	heightMeta := HeightMeta{}
 
 	chainParams, err := t.client.GetChainParams(ctx)

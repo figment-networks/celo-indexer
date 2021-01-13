@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"math"
 
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/model"
-	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/indexing-engine/metrics"
@@ -29,16 +30,19 @@ var (
 )
 
 // NewSystemEventCreatorTask creates system events
-func NewSystemEventCreatorTask(cfg *config.Config, db *store.Store) *systemEventCreatorTask {
+func NewSystemEventCreatorTask(cfg *config.Config, validatorSeqDb store.ValidatorSeq, accountActivitySeqDb store.AccountActivitySeq) *systemEventCreatorTask {
 	return &systemEventCreatorTask{
-		db:             db,
-		cfg:            cfg,
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameSystemEventCreator),
+		validatorSeqDb:       validatorSeqDb,
+		accountActivitySeqDb: accountActivitySeqDb,
+		cfg:                  cfg,
+		metricObserver:       indexerTaskDuration.WithLabels(TaskNameSystemEventCreator),
 	}
 }
 
 type systemEventCreatorTask struct {
-	db  *store.Store
+	validatorSeqDb       store.ValidatorSeq
+	accountActivitySeqDb store.AccountActivitySeq
+
 	cfg *config.Config
 
 	metricObserver metrics.Observer
@@ -64,7 +68,7 @@ func (t *systemEventCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 		return err
 	}
 
-	currHeightValidatorSequences := append(payload.NewValidatorSequences, payload.UpdatedValidatorSequences...)
+	currHeightValidatorSequences := payload.ValidatorSequences
 	prevHeightValidatorSequences, err := t.getPrevHeightValidatorSequences(payload)
 	if err != nil {
 		return err
@@ -98,9 +102,9 @@ func (t *systemEventCreatorTask) getPrevEpochAccountActivitySequences(payload *p
 	var prevEpochAccountActivitySequences []model.AccountActivitySeq
 	if payload.CurrentHeight > t.cfg.FirstBlockHeight {
 		var err error
-		prevEpochAccountActivitySequences, err = t.db.AccountActivitySeq.FindByHeight(prevEpochHeight)
+		prevEpochAccountActivitySequences, err = t.accountActivitySeqDb.FindByHeight(prevEpochHeight)
 		if err != nil {
-			if err != store.ErrNotFound {
+			if err != psql.ErrNotFound {
 				return nil, err
 			}
 		}
@@ -112,9 +116,9 @@ func (t *systemEventCreatorTask) getPrevHeightValidatorSequences(payload *payloa
 	var prevHeightValidatorSequences []model.ValidatorSeq
 	if payload.CurrentHeight > t.cfg.FirstBlockHeight {
 		var err error
-		prevHeightValidatorSequences, err = t.db.ValidatorSeq.FindByHeight(payload.CurrentHeight - 1)
+		prevHeightValidatorSequences, err = t.validatorSeqDb.FindByHeight(payload.CurrentHeight - 1)
 		if err != nil {
-			if err != store.ErrNotFound {
+			if err != psql.ErrNotFound {
 				return nil, err
 			}
 		}
@@ -122,17 +126,17 @@ func (t *systemEventCreatorTask) getPrevHeightValidatorSequences(payload *payloa
 	return prevHeightValidatorSequences, nil
 }
 
-func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidatorSequences []model.ValidatorSeq) ([]*model.SystemEvent, error) {
-	var systemEvents []*model.SystemEvent
+func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidatorSequences []model.ValidatorSeq) ([]model.SystemEvent, error) {
+	var systemEvents []model.SystemEvent
 	for _, validatorSequence := range currHeightValidatorSequences {
 		// When current height validator has validated the block no need to check last records
 		if t.isValidated(validatorSequence) {
 			return systemEvents, nil
 		}
 
-		lastValidatorSequencesForAddress, err := t.db.ValidatorSeq.FindLastByAddress(validatorSequence.Address, MaxValidatorSequences)
+		lastValidatorSequencesForAddress, err := t.validatorSeqDb.FindLastByAddress(validatorSequence.Address, MaxValidatorSequences)
 		if err != nil {
-			if err == store.ErrNotFound {
+			if err == psql.ErrNotFound {
 				return systemEvents, nil
 			} else {
 				return nil, err
@@ -153,7 +157,7 @@ func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidator
 					return nil, err
 				}
 
-				systemEvents = append(systemEvents, newSystemEvent)
+				systemEvents = append(systemEvents, *newSystemEvent)
 			}
 
 			missedInRowCount := t.getMissedInRow(validatorSequencesToCheck, MissedInRowThreshold)
@@ -168,7 +172,7 @@ func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidator
 					return nil, err
 				}
 
-				systemEvents = append(systemEvents, newSystemEvent)
+				systemEvents = append(systemEvents, *newSystemEvent)
 			}
 		}
 	}
@@ -218,8 +222,8 @@ func (t systemEventCreatorTask) isValidated(validatorSequence model.ValidatorSeq
 	return !t.isNotValidated(validatorSequence)
 }
 
-func (t *systemEventCreatorTask) getActiveSetPresenceChangeSystemEvents(currHeightValidatorSequences []model.ValidatorSeq, prevHeightValidatorSequences []model.ValidatorSeq) ([]*model.SystemEvent, error) {
-	var systemEvents []*model.SystemEvent
+func (t *systemEventCreatorTask) getActiveSetPresenceChangeSystemEvents(currHeightValidatorSequences []model.ValidatorSeq, prevHeightValidatorSequences []model.ValidatorSeq) ([]model.SystemEvent, error) {
+	var systemEvents []model.SystemEvent
 
 	for _, currentValidatorSequence := range currHeightValidatorSequences {
 		joined := true
@@ -238,7 +242,7 @@ func (t *systemEventCreatorTask) getActiveSetPresenceChangeSystemEvents(currHeig
 				return nil, err
 			}
 
-			systemEvents = append(systemEvents, newSystemEvent)
+			systemEvents = append(systemEvents, *newSystemEvent)
 		}
 	}
 
@@ -259,18 +263,18 @@ func (t *systemEventCreatorTask) getActiveSetPresenceChangeSystemEvents(currHeig
 				return nil, err
 			}
 
-			systemEvents = append(systemEvents, newSystemEvent)
+			systemEvents = append(systemEvents, *newSystemEvent)
 		}
 	}
 
 	return systemEvents, nil
 }
 
-func (t *systemEventCreatorTask) getValueChangeForAccountActivity(heightMeta HeightMeta, currHeightItems []model.AccountActivitySeq, prevHeightItems []model.AccountActivitySeq) ([]*model.SystemEvent, error) {
+func (t *systemEventCreatorTask) getValueChangeForAccountActivity(heightMeta HeightMeta, currHeightItems []model.AccountActivitySeq, prevHeightItems []model.AccountActivitySeq) ([]model.SystemEvent, error) {
 	return t.getValueChangeForAccountActivityByKind(heightMeta, currHeightItems, prevHeightItems, OperationTypeValidatorEpochPaymentDistributedForGroup)
 }
 
-func (t *systemEventCreatorTask) getValueChangeForAccountActivityByKind(heightMeta HeightMeta, currHeightItems []model.AccountActivitySeq, prevHeightItems []model.AccountActivitySeq, kind string) ([]*model.SystemEvent, error) {
+func (t *systemEventCreatorTask) getValueChangeForAccountActivityByKind(heightMeta HeightMeta, currHeightItems []model.AccountActivitySeq, prevHeightItems []model.AccountActivitySeq, kind string) ([]model.SystemEvent, error) {
 	filteredCurrHeightItems := t.filterAccountActivitiesByKind(currHeightItems, kind)
 	filteredPrevHeightItems := t.filterAccountActivitiesByKind(prevHeightItems, kind)
 
@@ -283,7 +287,7 @@ func (t *systemEventCreatorTask) getValueChangeForAccountActivityByKind(heightMe
 		return nil, err
 	}
 
-	var systemEvents []*model.SystemEvent
+	var systemEvents []model.SystemEvent
 
 	for currAddress, currAmount := range aggregatedCurrHeightItems {
 		var previousAmount int64
@@ -312,13 +316,13 @@ func (t *systemEventCreatorTask) getValueChangeForAccountActivityByKind(heightMe
 			newSystemEvent.Time = *heightMeta.Time
 			newSystemEvent.Actor = currAddress
 			logger.Debug(fmt.Sprintf("group reward change for address %s occured [kind=%s]", currAddress, newSystemEvent.Kind))
-			systemEvents = append(systemEvents, newSystemEvent)
+			systemEvents = append(systemEvents, *newSystemEvent)
 		}
 	}
 
 	for prevAddress, prevAmount := range aggregatedPrevHeightItems {
 		found := false
-		for currAddress, _ := range aggregatedCurrHeightItems {
+		for currAddress := range aggregatedCurrHeightItems {
 			if prevAddress == currAddress {
 				found = true
 				break
@@ -339,7 +343,7 @@ func (t *systemEventCreatorTask) getValueChangeForAccountActivityByKind(heightMe
 				newSystemEvent.Time = *heightMeta.Time
 				newSystemEvent.Actor = prevAddress
 				logger.Debug(fmt.Sprintf("group reward change for address %s occured [kind=%s]", prevAddress, newSystemEvent.Kind))
-				systemEvents = append(systemEvents, newSystemEvent)
+				systemEvents = append(systemEvents, *newSystemEvent)
 			}
 		}
 	}

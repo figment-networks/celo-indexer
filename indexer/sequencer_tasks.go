@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/metric"
-	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"time"
@@ -29,14 +29,14 @@ var (
 )
 
 // NewBlockSeqCreatorTask creates block sequences
-func NewBlockSeqCreatorTask(db *store.Store) *blockSeqCreatorTask {
+func NewBlockSeqCreatorTask(blockSeqDb store.BlockSeq) *blockSeqCreatorTask {
 	return &blockSeqCreatorTask{
-		db: db,
+		blockSeqDb: blockSeqDb,
 	}
 }
 
 type blockSeqCreatorTask struct {
-	db *store.Store
+	blockSeqDb store.BlockSeq
 }
 
 func (t *blockSeqCreatorTask) GetName() string {
@@ -55,9 +55,9 @@ func (t *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error
 		return err
 	}
 
-	blockSeq, err := t.db.BlockSeq.FindByHeight(payload.CurrentHeight)
+	blockSeq, err := t.blockSeqDb.FindByHeight(payload.CurrentHeight)
 	if err != nil {
-		if err == store.ErrNotFound {
+		if err == psql.ErrNotFound {
 			payload.NewBlockSequence = mappedBlockSeq
 			return nil
 		} else {
@@ -72,16 +72,15 @@ func (t *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error
 }
 
 // NewValidatorSeqCreatorTask creates validator sequences
-func NewValidatorSeqCreatorTask(cfg *config.Config, db *store.Store) *validatorSeqCreatorTask {
+func NewValidatorSeqCreatorTask(cfg *config.Config) *validatorSeqCreatorTask {
 	return &validatorSeqCreatorTask{
-		cfg: cfg,
-		db:  db,
+		cfg:            cfg,
 	}
 }
 
 type validatorSeqCreatorTask struct {
-	cfg *config.Config
-	db  *store.Store
+	cfg            *config.Config
+	validatorSeqDb store.ValidatorSeq
 }
 
 func (t *validatorSeqCreatorTask) GetName() string {
@@ -100,40 +99,20 @@ func (t *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 		return err
 	}
 
-	var newValidatorSeqs []model.ValidatorSeq
-	var updatedValidatorSeqs []model.ValidatorSeq
-	for _, rawValidatorSeq := range mappedValidatorSeqs {
-		validatorSessionSeq, err := t.db.ValidatorSeq.FindByHeightAndAddress(payload.Syncable.Height, rawValidatorSeq.Address)
-		if err != nil {
-			if err == store.ErrNotFound {
-				newValidatorSeqs = append(newValidatorSeqs, rawValidatorSeq)
-				continue
-			} else {
-				return err
-			}
-		}
-
-		validatorSessionSeq.Update(rawValidatorSeq)
-		updatedValidatorSeqs = append(updatedValidatorSeqs, *validatorSessionSeq)
-	}
-
-	payload.NewValidatorSequences = newValidatorSeqs
-	payload.UpdatedValidatorSequences = updatedValidatorSeqs
+	payload.ValidatorSequences = mappedValidatorSeqs
 
 	return nil
 }
 
 // NewValidatorGroupSeqCreatorTask creates validator era sequences
-func NewValidatorGroupSeqCreatorTask(cfg *config.Config, db *store.Store) *validatorGroupSeqCreatorTask {
+func NewValidatorGroupSeqCreatorTask(cfg *config.Config) *validatorGroupSeqCreatorTask {
 	return &validatorGroupSeqCreatorTask{
 		cfg: cfg,
-		db:  db,
 	}
 }
 
 type validatorGroupSeqCreatorTask struct {
 	cfg *config.Config
-	db  *store.Store
 }
 
 func (t *validatorGroupSeqCreatorTask) GetName() string {
@@ -152,40 +131,20 @@ func (t *validatorGroupSeqCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 		return err
 	}
 
-	var newValidatorGroupSeqs []model.ValidatorGroupSeq
-	var updatedValidatorGroupSeqs []model.ValidatorGroupSeq
-	for _, rawValidatorGroupSeq := range mappedValidatorGroupSeqs {
-		validatorEraSeq, err := t.db.ValidatorGroupSeq.FindByHeightAndAddress(payload.Syncable.Height, rawValidatorGroupSeq.Address)
-		if err != nil {
-			if err == store.ErrNotFound {
-				newValidatorGroupSeqs = append(newValidatorGroupSeqs, rawValidatorGroupSeq)
-				continue
-			} else {
-				return err
-			}
-		}
-
-		validatorEraSeq.Update(rawValidatorGroupSeq)
-		updatedValidatorGroupSeqs = append(updatedValidatorGroupSeqs, *validatorEraSeq)
-	}
-
-	payload.NewValidatorGroupSequences = newValidatorGroupSeqs
-	payload.UpdatedValidatorGroupSequences = updatedValidatorGroupSeqs
+	payload.ValidatorGroupSequences = mappedValidatorGroupSeqs
 
 	return nil
 }
 
 // NewAccountActivitySeqCreatorTask creates account activity sequences
-func NewAccountActivitySeqCreatorTask(cfg *config.Config, db *store.Store) *accountActivitySeqCreatorTask {
+func NewAccountActivitySeqCreatorTask(cfg *config.Config) *accountActivitySeqCreatorTask {
 	return &accountActivitySeqCreatorTask{
 		cfg: cfg,
-		db:  db,
 	}
 }
 
 type accountActivitySeqCreatorTask struct {
 	cfg *config.Config
-	db  *store.Store
 }
 
 func (t *accountActivitySeqCreatorTask) GetName() string {
@@ -210,16 +169,14 @@ func (t *accountActivitySeqCreatorTask) Run(ctx context.Context, p pipeline.Payl
 }
 
 // NewGovernanceActivitySeqCreatorTask creates account activity sequences
-func NewGovernanceActivitySeqCreatorTask(cfg *config.Config, db *store.Store) *governanceActivitySeqCreatorTask {
+func NewGovernanceActivitySeqCreatorTask(cfg *config.Config) *governanceActivitySeqCreatorTask {
 	return &governanceActivitySeqCreatorTask{
 		cfg: cfg,
-		db:  db,
 	}
 }
 
 type governanceActivitySeqCreatorTask struct {
 	cfg *config.Config
-	db  *store.Store
 }
 
 func (t *governanceActivitySeqCreatorTask) GetName() string {

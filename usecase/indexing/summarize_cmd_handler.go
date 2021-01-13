@@ -5,19 +5,19 @@ import (
 	"fmt"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 )
 
 type SummarizeCmdHandler struct {
 	cfg    *config.Config
-	db     *store.Store
+	db     *psql.Store
 	client figmentclient.Client
 
 	useCase *summarizeUseCase
 }
 
-func NewSummarizeCmdHandler(cfg *config.Config, db *store.Store, c figmentclient.Client) *SummarizeCmdHandler {
+func NewSummarizeCmdHandler(cfg *config.Config, db *psql.Store, c figmentclient.Client) *SummarizeCmdHandler {
 	return &SummarizeCmdHandler{
 		cfg:    cfg,
 		db:     db,

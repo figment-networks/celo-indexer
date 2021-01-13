@@ -5,6 +5,7 @@ import (
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/pkg/errors"
 )
@@ -20,11 +21,12 @@ type IndexSourceConfig struct {
 	StartHeight    int64
 }
 
-func NewIndexSource(cfg *config.Config, db *store.Store, client figmentclient.Client, sourceCfg *IndexSourceConfig) (*indexSource, error) {
+func NewIndexSource(cfg *config.Config, client figmentclient.Client, syncableDb store.Syncables, sourceCfg *IndexSourceConfig) (*indexSource, error) {
 	src := &indexSource{
 		cfg:    cfg,
-		db:     db,
 		client: client,
+
+		syncableDb: syncableDb,
 
 		sourceCfg: sourceCfg,
 	}
@@ -36,8 +38,9 @@ func NewIndexSource(cfg *config.Config, db *store.Store, client figmentclient.Cl
 
 type indexSource struct {
 	cfg           *config.Config
-	db            *store.Store
 	client        figmentclient.Client
+
+	syncableDb store.Syncables
 
 	sourceCfg *IndexSourceConfig
 
@@ -45,6 +48,10 @@ type indexSource struct {
 	startHeight   int64
 	endHeight     int64
 	err           error
+}
+
+func (s *indexSource) Skip(pipeline.StageName) bool {
+	return false
 }
 
 func (s *indexSource) Next(context.Context, pipeline.Payload) bool {
@@ -86,9 +93,9 @@ func (s *indexSource) setStartHeight() error {
 	if s.sourceCfg.StartHeight > 0 {
 		startH = s.sourceCfg.StartHeight
 	} else {
-		syncable, err := s.db.Syncables.FindMostRecent()
+		syncable, err := s.syncableDb.FindMostRecent()
 		if err != nil {
-			if err != store.ErrNotFound {
+			if err != psql.ErrNotFound {
 				return err
 			}
 			// No syncables found, get first block number from config

@@ -2,7 +2,7 @@ package validator
 
 import (
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/usecase/http"
 	"github.com/figment-networks/celo-indexer/utils/logger"
@@ -15,13 +15,13 @@ var (
 )
 
 type getForMinHeightHttpHandler struct {
-	db     *store.Store
+	db     *psql.Store
 	client figmentclient.Client
 
 	useCase *getForMinHeightUseCase
 }
 
-func NewGetForMinHeightHttpHandler(db *store.Store, c figmentclient.Client) *getForMinHeightHttpHandler {
+func NewGetForMinHeightHttpHandler(db *psql.Store, c figmentclient.Client) *getForMinHeightHttpHandler {
 	return &getForMinHeightHttpHandler{
 		db:     db,
 		client: c,

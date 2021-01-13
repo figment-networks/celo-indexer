@@ -25,14 +25,14 @@ const (
 )
 
 // NewSyncerPersistorTask is responsible for storing syncable to persistence layer
-func NewSyncerPersistorTask(db *store.Store) pipeline.Task {
+func NewSyncerPersistorTask(syncableDb store.Syncables) pipeline.Task {
 	return &syncerPersistorTask{
-		db: db,
+		syncableDb: syncableDb,
 	}
 }
 
 type syncerPersistorTask struct {
-	db *store.Store
+	syncableDb store.Syncables
 }
 
 func (t *syncerPersistorTask) GetName() string {
@@ -46,18 +46,18 @@ func (t *syncerPersistorTask) Run(ctx context.Context, p pipeline.Payload) error
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
-	return t.db.Syncables.CreateOrUpdate(payload.Syncable)
+	return t.syncableDb.CreateOrUpdate(payload.Syncable)
 }
 
 // NewBlockSeqPersistorTask is responsible for storing block to persistence layer
-func NewBlockSeqPersistorTask(db *store.Store) pipeline.Task {
+func NewBlockSeqPersistorTask(blockSeqDb store.BlockSeq) pipeline.Task {
 	return &blockSeqPersistorTask{
-		db: db,
+		blockSeqDb: blockSeqDb,
 	}
 }
 
 type blockSeqPersistorTask struct {
-	db *store.Store
+	blockSeqDb store.BlockSeq
 }
 
 func (t *blockSeqPersistorTask) GetName() string {
@@ -72,25 +72,25 @@ func (t *blockSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) err
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
 	if payload.NewBlockSequence != nil {
-		return t.db.BlockSeq.Create(payload.NewBlockSequence)
+		return t.blockSeqDb.Create(payload.NewBlockSequence)
 	}
 
 	if payload.UpdatedBlockSequence != nil {
-		return t.db.BlockSeq.Save(payload.UpdatedBlockSequence)
+		return t.blockSeqDb.Save(payload.UpdatedBlockSequence)
 	}
 
 	return nil
 }
 
 // NewValidatorSeqPersistorTask is responsible for storing validator info to persistence layer
-func NewValidatorSeqPersistorTask(db *store.Store) pipeline.Task {
+func NewValidatorSeqPersistorTask(validatorSeqDb store.ValidatorSeq) pipeline.Task {
 	return &validatorSeqPersistorTask{
-		db: db,
+		validatorSeqDb: validatorSeqDb,
 	}
 }
 
 type validatorSeqPersistorTask struct {
-	db *store.Store
+	validatorSeqDb store.ValidatorSeq
 }
 
 func (t *validatorSeqPersistorTask) GetName() string {
@@ -104,30 +104,22 @@ func (t *validatorSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
-	for _, sequence := range payload.NewValidatorSequences {
-		if err := t.db.ValidatorSeq.Create(&sequence); err != nil {
-			return err
-		}
-	}
-
-	for _, sequence := range payload.UpdatedValidatorSequences {
-		if err := t.db.ValidatorSeq.Save(&sequence); err != nil {
-			return err
-		}
+	if err := t.validatorSeqDb.BulkUpsert(payload.ValidatorSequences); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // NewAccountActivitySeqPersistorTask is responsible for storing validator info to persistence layer
-func NewAccountActivitySeqPersistorTask(db *store.Store) pipeline.Task {
+func NewAccountActivitySeqPersistorTask(accountActivitySeqDb store.AccountActivitySeq) pipeline.Task {
 	return &accountActivitySeqPersistorTask{
-		db: db,
+		accountActivitySeqDb: accountActivitySeqDb,
 	}
 }
 
 type accountActivitySeqPersistorTask struct {
-	db *store.Store
+	accountActivitySeqDb store.AccountActivitySeq
 }
 
 func (t *accountActivitySeqPersistorTask) GetName() string {
@@ -141,67 +133,57 @@ func (t *accountActivitySeqPersistorTask) Run(ctx context.Context, p pipeline.Pa
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
-	// Delete current account activities first
-	_, err := t.db.AccountActivitySeq.DeleteForHeight(payload.CurrentHeight)
+	// Delete current account activities first since it is not possible to find unique activities since the same activity kind could be found multiple times in one block
+	_, err := t.accountActivitySeqDb.DeleteForHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
 
-	for _, sequence := range payload.AccountActivitySequences {
-		if err := t.db.AccountActivitySeq.Create(&sequence); err != nil {
-			return err
-		}
+	if err := t.accountActivitySeqDb.BulkUpsert(payload.AccountActivitySequences); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // NewValidatorGroupSeqPersistorTask is responsible for storing validator era info to persistence layer
-func NewValidatorGroupSeqPersistorTask(db *store.Store) pipeline.Task {
-	return &validatorEraSeqPersistorTask{
-		db: db,
+func NewValidatorGroupSeqPersistorTask(validatorGroupSeqDb store.ValidatorGroupSeq) pipeline.Task {
+	return &validatorGroupSeqPersistorTask{
+		validatorGroupSeqDb: validatorGroupSeqDb,
 	}
 }
 
-type validatorEraSeqPersistorTask struct {
-	db *store.Store
+type validatorGroupSeqPersistorTask struct {
+	validatorGroupSeqDb store.ValidatorGroupSeq
 }
 
-func (t *validatorEraSeqPersistorTask) GetName() string {
+func (t *validatorGroupSeqPersistorTask) GetName() string {
 	return ValidatorGroupSeqPersistorTaskName
 }
 
-func (t *validatorEraSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
+func (t *validatorGroupSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
 	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
-	for _, sequence := range payload.NewValidatorGroupSequences {
-		if err := t.db.ValidatorGroupSeq.Create(&sequence); err != nil {
-			return err
-		}
-	}
-
-	for _, sequence := range payload.UpdatedValidatorGroupSequences {
-		if err := t.db.ValidatorGroupSeq.Save(&sequence); err != nil {
-			return err
-		}
+	if err := t.validatorGroupSeqDb.BulkUpsert(payload.ValidatorGroupSequences); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // NewValidatorAggPersistorTask store validator aggregate to persistence layer
-func NewValidatorAggPersistorTask(db *store.Store) pipeline.Task {
+func NewValidatorAggPersistorTask(validatorAggDb store.ValidatorAgg) pipeline.Task {
 	return &validatorAggPersistorTask{
-		db: db,
+		validatorAggDb: validatorAggDb,
 	}
 }
 
 type validatorAggPersistorTask struct {
-	db *store.Store
+	validatorAggDb store.ValidatorAgg
 }
 
 func (t *validatorAggPersistorTask) GetName() string {
@@ -216,13 +198,13 @@ func (t *validatorAggPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
 	for _, aggregate := range payload.NewValidatorAggregates {
-		if err := t.db.ValidatorAgg.Create(&aggregate); err != nil {
+		if err := t.validatorAggDb.Create(&aggregate); err != nil {
 			return err
 		}
 	}
 
 	for _, aggregate := range payload.UpdatedValidatorAggregates {
-		if err := t.db.ValidatorAgg.Save(&aggregate); err != nil {
+		if err := t.validatorAggDb.Save(&aggregate); err != nil {
 			return err
 		}
 	}
@@ -230,15 +212,15 @@ func (t *validatorAggPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 	return nil
 }
 
-// NewValidatorGroupAggPersistorTask store validator group aggregate to persistence layer
-func NewValidatorGroupAggPersistorTask(db *store.Store) pipeline.Task {
+// NewValidatorGroupAggPersistorTask psql validator group aggregate to persistence layer
+func NewValidatorGroupAggPersistorTask(validatorGroupAggDb store.ValidatorGroupAgg) pipeline.Task {
 	return &validatorGroupAggPersistorTask{
-		db: db,
+		validatorGroupAggDb: validatorGroupAggDb,
 	}
 }
 
 type validatorGroupAggPersistorTask struct {
-	db *store.Store
+	validatorGroupAggDb store.ValidatorGroupAgg
 }
 
 func (t *validatorGroupAggPersistorTask) GetName() string {
@@ -253,13 +235,13 @@ func (t *validatorGroupAggPersistorTask) Run(ctx context.Context, p pipeline.Pay
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
 	for _, aggregate := range payload.NewValidatorGroupAggregates {
-		if err := t.db.ValidatorGroupAgg.Create(&aggregate); err != nil {
+		if err := t.validatorGroupAggDb.Create(&aggregate); err != nil {
 			return err
 		}
 	}
 
 	for _, aggregate := range payload.UpdatedValidatorGroupAggregates {
-		if err := t.db.ValidatorGroupAgg.Save(&aggregate); err != nil {
+		if err := t.validatorGroupAggDb.Save(&aggregate); err != nil {
 			return err
 		}
 	}
@@ -267,15 +249,15 @@ func (t *validatorGroupAggPersistorTask) Run(ctx context.Context, p pipeline.Pay
 	return nil
 }
 
-// NewProposalAggPersistorTask store validator aggregate to persistence layer
-func NewProposalAggPersistorTask(db *store.Store) pipeline.Task {
+// NewProposalAggPersistorTask psql validator aggregate to persistence layer
+func NewProposalAggPersistorTask(proposalAggDb store.ProposalAgg) pipeline.Task {
 	return &proposalAggPersistorTask{
-		db: db,
+		proposalAggDb: proposalAggDb,
 	}
 }
 
 type proposalAggPersistorTask struct {
-	db *store.Store
+	proposalAggDb store.ProposalAgg
 }
 
 func (t *proposalAggPersistorTask) GetName() string {
@@ -290,13 +272,13 @@ func (t *proposalAggPersistorTask) Run(ctx context.Context, p pipeline.Payload) 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
 	for _, aggregate := range payload.NewProposalAggregates {
-		if err := t.db.ProposalAgg.Create(&aggregate); err != nil {
+		if err := t.proposalAggDb.Create(&aggregate); err != nil {
 			return err
 		}
 	}
 
 	for _, aggregate := range payload.UpdatedProposalAggregates {
-		if err := t.db.ProposalAgg.Save(&aggregate); err != nil {
+		if err := t.proposalAggDb.Save(&aggregate); err != nil {
 			return err
 		}
 	}
@@ -304,16 +286,16 @@ func (t *proposalAggPersistorTask) Run(ctx context.Context, p pipeline.Payload) 
 	return nil
 }
 
-//NewSystemEventPersistorTask store system events to persistance layer
-func NewSystemEventPersistorTask(db *store.Store) pipeline.Task {
+//NewSystemEventPersistorTask psql system events to persistance layer
+func NewSystemEventPersistorTask(systemEventDb store.SystemEvents) pipeline.Task {
 	return &systemEventPersistorTask{
-		db:             db,
+		systemEventDb:  systemEventDb,
 		metricObserver: indexerTaskDuration.WithLabels(TaskNameSystemEventPersistor),
 	}
 }
 
 type systemEventPersistorTask struct {
-	db             *store.Store
+	systemEventDb  store.SystemEvents
 	metricObserver metrics.Observer
 }
 
@@ -329,24 +311,22 @@ func (t *systemEventPersistorTask) Run(ctx context.Context, p pipeline.Payload) 
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
-	for _, systemEvent := range payload.SystemEvents {
-		if err := t.db.SystemEvents.CreateOrUpdate(systemEvent); err != nil {
-			return err
-		}
+	if err := t.systemEventDb.BulkUpsert(payload.SystemEvents); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // NewGovernanceActivitySeqPersistorTask is responsible for storing validator info to persistence layer
-func NewGovernanceActivitySeqPersistorTask(db *store.Store) pipeline.Task {
+func NewGovernanceActivitySeqPersistorTask(governanceActivitySeqDb store.GovernanceActivitySeq) pipeline.Task {
 	return &governanceActivitySeqPersistorTask{
-		db: db,
+		governanceActivitySeqDb: governanceActivitySeqDb,
 	}
 }
 
 type governanceActivitySeqPersistorTask struct {
-	db *store.Store
+	governanceActivitySeqDb store.GovernanceActivitySeq
 }
 
 func (t *governanceActivitySeqPersistorTask) GetName() string {
@@ -361,15 +341,13 @@ func (t *governanceActivitySeqPersistorTask) Run(ctx context.Context, p pipeline
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
 	// Delete current governance activities first
-	_, err := t.db.GovernanceActivitySeq.DeleteForHeight(payload.CurrentHeight)
+	_, err := t.governanceActivitySeqDb.DeleteForHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
 
-	for _, sequence := range payload.GovernanceActivitySequences {
-		if err := t.db.GovernanceActivitySeq.Create(&sequence); err != nil {
-			return err
-		}
+	if err := t.governanceActivitySeqDb.BulkUpsert(payload.GovernanceActivitySequences); err != nil {
+		return err
 	}
 
 	return nil

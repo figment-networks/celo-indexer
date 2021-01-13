@@ -1,9 +1,9 @@
 package http
 
 import (
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"net/http"
 
-	"github.com/figment-networks/celo-indexer/store"
 	"github.com/gin-gonic/gin"
 )
 
@@ -56,7 +56,7 @@ func ShouldReturn(c *gin.Context, err error) bool {
 		return false
 	}
 
-	if err == store.ErrNotFound {
+	if err == psql.ErrNotFound {
 		NotFound(c, err)
 	} else {
 		ServerError(c, err)

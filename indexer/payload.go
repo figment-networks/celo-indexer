@@ -48,17 +48,15 @@ type payload struct {
 	UpdatedProposalAggregates       []model.ProposalAgg
 
 	// Sequencer stage
-	NewBlockSequence               *model.BlockSeq
-	UpdatedBlockSequence           *model.BlockSeq
-	NewValidatorSequences          []model.ValidatorSeq
-	UpdatedValidatorSequences      []model.ValidatorSeq
-	NewValidatorGroupSequences     []model.ValidatorGroupSeq
-	UpdatedValidatorGroupSequences []model.ValidatorGroupSeq
-	AccountActivitySequences       []model.AccountActivitySeq
-	GovernanceActivitySequences    []model.GovernanceActivitySeq
+	NewBlockSequence            *model.BlockSeq
+	UpdatedBlockSequence        *model.BlockSeq
+	ValidatorSequences          []model.ValidatorSeq
+	ValidatorGroupSequences     []model.ValidatorGroupSeq
+	AccountActivitySequences    []model.AccountActivitySeq
+	GovernanceActivitySequences []model.GovernanceActivitySeq
 
 	// Analyzer
-	SystemEvents []*model.SystemEvent
+	SystemEvents []model.SystemEvent
 }
 
 func (p *payload) MarkAsProcessed() {}

@@ -58,6 +58,13 @@ var (
 		Help: "The size of the database after indexing of height",
 	})
 
+	IndexerRequestCountAfterHeight = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "figment",
+		Subsystem: "indexer",
+		Name: "requests_count",
+		Help: "The total number of requests made for one height",
+	})
+
 )
 
 // IndexerMetric handles HTTP requests

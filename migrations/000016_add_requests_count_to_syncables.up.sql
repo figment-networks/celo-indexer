@@ -1,0 +1,1 @@
+ALTER TABLE syncables ADD COLUMN requests_count INTEGER NOT NULL DEFAULT 0;

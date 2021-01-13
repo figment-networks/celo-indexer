@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 )
@@ -15,13 +15,13 @@ var (
 
 type summarizeWorkerHandler struct {
 	cfg    *config.Config
-	db     *store.Store
+	db     *psql.Store
 	client figmentclient.Client
 
 	useCase *summarizeUseCase
 }
 
-func NewSummarizeWorkerHandler(cfg *config.Config, db *store.Store, c figmentclient.Client) *summarizeWorkerHandler {
+func NewSummarizeWorkerHandler(cfg *config.Config, db *psql.Store, c figmentclient.Client) *summarizeWorkerHandler {
 	return &summarizeWorkerHandler{
 		cfg:    cfg,
 		db:     db,

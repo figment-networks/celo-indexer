@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"github.com/celo-org/kliento/contracts"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
+	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"time"
 
 	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/model"
-	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/indexing-engine/pipeline"
 )
@@ -26,14 +27,14 @@ var (
 	_ pipeline.Task = (*validatorGroupAggCreatorTask)(nil)
 )
 
-func NewValidatorAggCreatorTask(db *store.Store) *validatorAggCreatorTask {
+func NewValidatorAggCreatorTask(validatorAggDb store.ValidatorAgg) *validatorAggCreatorTask {
 	return &validatorAggCreatorTask{
-		db: db,
+		validatorAggDb: validatorAggDb,
 	}
 }
 
 type validatorAggCreatorTask struct {
-	db *store.Store
+	validatorAggDb store.ValidatorAgg
 }
 
 func (t *validatorAggCreatorTask) GetName() string {
@@ -52,9 +53,9 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	var newValidatorAggs []model.ValidatorAgg
 	var updatedValidatorAggs []model.ValidatorAgg
 	for _, rawValidator := range rawValidators {
-		existing, err := t.db.ValidatorAgg.FindByAddress(rawValidator.Address)
+		existing, err := t.validatorAggDb.FindByAddress(rawValidator.Address)
 		if err != nil {
-			if err == store.ErrNotFound {
+			if err == psql.ErrNotFound {
 				// Create new
 
 				validator := model.ValidatorAgg{
@@ -98,7 +99,10 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 				RecentAsValidatorHeight: payload.Syncable.Height,
 			}
 
-			if rawValidator.Signed != nil {
+			if rawValidator.Signed == nil {
+				validator.AccumulatedUptime = existing.AccumulatedUptime
+				validator.AccumulatedUptimeCount = existing.AccumulatedUptimeCount
+			} else {
 				if *rawValidator.Signed {
 					validator.AccumulatedUptime = existing.AccumulatedUptime + 1
 				} else {
@@ -126,14 +130,14 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	return nil
 }
 
-func NewValidatorGroupAggCreatorTask(db *store.Store) *validatorGroupAggCreatorTask {
+func NewValidatorGroupAggCreatorTask(validatorGroupAggDb store.ValidatorGroupAgg) *validatorGroupAggCreatorTask {
 	return &validatorGroupAggCreatorTask{
-		db: db,
+		validatorGroupAggDb: validatorGroupAggDb,
 	}
 }
 
 type validatorGroupAggCreatorTask struct {
-	db *store.Store
+	validatorGroupAggDb store.ValidatorGroupAgg
 }
 
 func (t *validatorGroupAggCreatorTask) GetName() string {
@@ -152,9 +156,9 @@ func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 	var newValidatorGroupAggs []model.ValidatorGroupAgg
 	var updatedValidatorGroupAggs []model.ValidatorGroupAgg
 	for _, rawGroup := range rawValidatorGroups {
-		existing, err := t.db.ValidatorGroupAgg.FindByAddress(rawGroup.Address)
+		existing, err := t.validatorGroupAggDb.FindByAddress(rawGroup.Address)
 		if err != nil {
-			if err == store.ErrNotFound {
+			if err == psql.ErrNotFound {
 				// Create new
 
 				group := model.ValidatorGroupAgg{
@@ -202,14 +206,14 @@ func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 	return nil
 }
 
-func NewProposalAggCreatorTask(db *store.Store) *proposalAggCreatorTask {
+func NewProposalAggCreatorTask(proposalAggDb store.ProposalAgg) *proposalAggCreatorTask {
 	return &proposalAggCreatorTask{
-		db: db,
+		proposalAggDb: proposalAggDb,
 	}
 }
 
 type proposalAggCreatorTask struct {
-	db *store.Store
+	proposalAggDb store.ProposalAgg
 }
 
 func (t *proposalAggCreatorTask) GetName() string {
@@ -228,9 +232,9 @@ func (t *proposalAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 	var newProposalAggs []model.ProposalAgg
 	var updatedProposalAggs []model.ProposalAgg
 	for _, log := range parsedGovernanceLogs {
-		existing, err := t.db.ProposalAgg.FindByProposalId(log.ProposalId)
+		existing, err := t.proposalAggDb.FindByProposalId(log.ProposalId)
 		if err != nil {
-			if err == store.ErrNotFound {
+			if err == psql.ErrNotFound {
 				// Create new
 
 				proposal := model.ProposalAgg{

@@ -2,7 +2,7 @@ package governance
 
 import (
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/usecase/http"
 	"github.com/figment-networks/celo-indexer/utils/logger"
@@ -16,13 +16,13 @@ var (
 )
 
 type getActivityHttpHandler struct {
-	db     *store.Store
+	db     *psql.Store
 	client figmentclient.Client
 
 	useCase *getActivityUseCase
 }
 
-func NewGetActivityHttpHandler(db *store.Store, c figmentclient.Client) *getActivityHttpHandler {
+func NewGetActivityHttpHandler(db *psql.Store, c figmentclient.Client) *getActivityHttpHandler {
 	return &getActivityHttpHandler{
 		db:     db,
 		client: c,

@@ -3,23 +3,23 @@ package indexing
 import (
 	"context"
 	"fmt"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"time"
 
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/indexer"
 	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/model"
-	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 )
 
 type summarizeUseCase struct {
 	cfg *config.Config
-	db  *store.Store
+	db  *psql.Store
 }
 
-func NewSummarizeUseCase(cfg *config.Config, db *store.Store) *summarizeUseCase {
+func NewSummarizeUseCase(cfg *config.Config, db *psql.Store) *summarizeUseCase {
 	return &summarizeUseCase{
 		cfg: cfg,
 		db:  db,
@@ -65,12 +65,12 @@ func (uc *summarizeUseCase) Execute(ctx context.Context) error {
 func (uc *summarizeUseCase) summarizeBlockSeq(interval types.SummaryInterval, currentIndexVersion int64) error {
 	logger.Info(fmt.Sprintf("summarizing block sequences... [interval=%s]", interval))
 
-	activityPeriods, err := uc.db.BlockSummary.FindActivityPeriods(interval, currentIndexVersion)
+	activityPeriods, err := uc.db.GetBlocks().BlockSummary.FindActivityPeriods(interval, currentIndexVersion)
 	if err != nil {
 		return err
 	}
 
-	rawSummaryItems, err := uc.db.BlockSeq.Summarize(interval, activityPeriods)
+	rawSummaryItems, err := uc.db.GetBlocks().BlockSeq.Summarize(interval, activityPeriods)
 	if err != nil {
 		return err
 	}
@@ -87,16 +87,16 @@ func (uc *summarizeUseCase) summarizeBlockSeq(interval types.SummaryInterval, cu
 			Summary: summary,
 		}
 
-		existingBlockSummary, err := uc.db.BlockSummary.Find(&query)
+		existingBlockSummary, err := uc.db.GetBlocks().BlockSummary.Find(&query)
 		if err != nil {
-			if err == store.ErrNotFound {
+			if err == psql.ErrNotFound {
 				blockSummary := model.BlockSummary{
 					Summary: summary,
 
 					Count:        rawSummary.Count,
 					BlockTimeAvg: rawSummary.BlockTimeAvg,
 				}
-				if err := uc.db.BlockSummary.Create(&blockSummary); err != nil {
+				if err := uc.db.GetBlocks().BlockSummary.Create(&blockSummary); err != nil {
 					return err
 				}
 				newModels = append(newModels, blockSummary)
@@ -107,7 +107,7 @@ func (uc *summarizeUseCase) summarizeBlockSeq(interval types.SummaryInterval, cu
 			existingBlockSummary.Count = rawSummary.Count
 			existingBlockSummary.BlockTimeAvg = rawSummary.BlockTimeAvg
 
-			if err := uc.db.BlockSummary.Save(existingBlockSummary); err != nil {
+			if err := uc.db.GetBlocks().BlockSummary.Save(existingBlockSummary); err != nil {
 				return err
 			}
 			existingModels = append(existingModels, *existingBlockSummary)
@@ -122,12 +122,12 @@ func (uc *summarizeUseCase) summarizeBlockSeq(interval types.SummaryInterval, cu
 func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval, currentIndexVersion int64) error {
 	logger.Info(fmt.Sprintf("summarizing validator sequences... [interval=%s]", interval))
 
-	activityPeriods, err := uc.db.ValidatorSummary.FindActivityPeriods(interval, currentIndexVersion)
+	activityPeriods, err := uc.db.GetValidators().ValidatorSummary.FindActivityPeriods(interval, currentIndexVersion)
 	if err != nil {
 		return err
 	}
 
-	rawSeqSummaryItems, err := uc.db.ValidatorSeq.Summarize(interval, activityPeriods)
+	rawSeqSummaryItems, err := uc.db.GetValidators().ValidatorSeq.Summarize(interval, activityPeriods)
 	if err != nil {
 		return err
 	}
@@ -146,9 +146,9 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 			Address: rawSeqSummaryItem.Address,
 		}
 
-		existingValidatorSummary, err := uc.db.ValidatorSummary.Find(&query)
+		existingValidatorSummary, err := uc.db.GetValidators().ValidatorSummary.Find(&query)
 		if err != nil {
-			if err == store.ErrNotFound {
+			if err == psql.ErrNotFound {
 				validatorSummary := model.ValidatorSummary{
 					Summary: summary,
 
@@ -162,7 +162,7 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 					SignedMax: rawSeqSummaryItem.SignedMax,
 				}
 
-				if err := uc.db.ValidatorSummary.Create(&validatorSummary); err != nil {
+				if err := uc.db.GetValidators().ValidatorSummary.Create(&validatorSummary); err != nil {
 					return err
 				}
 				newModels = append(newModels, validatorSummary)
@@ -177,7 +177,7 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 			existingValidatorSummary.SignedMin = rawSeqSummaryItem.SignedMin
 			existingValidatorSummary.SignedMax = rawSeqSummaryItem.SignedMax
 
-			if err := uc.db.ValidatorSummary.Save(existingValidatorSummary); err != nil {
+			if err := uc.db.GetValidators().ValidatorSummary.Save(existingValidatorSummary); err != nil {
 				return err
 			}
 			existingModels = append(existingModels, *existingValidatorSummary)
@@ -192,12 +192,12 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 func (uc *summarizeUseCase) summarizeValidatorGroupSeq(interval types.SummaryInterval, currentIndexVersion int64) error {
 	logger.Info(fmt.Sprintf("summarizing validator group sequences... [interval=%s]", interval))
 
-	activityPeriods, err := uc.db.ValidatorGroupSummary.FindActivityPeriods(interval, currentIndexVersion)
+	activityPeriods, err := uc.db.GetValidatorGroups().ValidatorGroupSummary.FindActivityPeriods(interval, currentIndexVersion)
 	if err != nil {
 		return err
 	}
 
-	rawSeqSummaryItems, err := uc.db.ValidatorGroupSeq.Summarize(interval, activityPeriods)
+	rawSeqSummaryItems, err := uc.db.GetValidatorGroups().ValidatorGroupSeq.Summarize(interval, activityPeriods)
 	if err != nil {
 		return err
 	}
@@ -216,9 +216,9 @@ func (uc *summarizeUseCase) summarizeValidatorGroupSeq(interval types.SummaryInt
 			Address: rawSeqSummaryItem.Address,
 		}
 
-		existingValidatorGroupSummary, err := uc.db.ValidatorGroupSummary.Find(&query)
+		existingValidatorGroupSummary, err := uc.db.GetValidatorGroups().ValidatorGroupSummary.Find(&query)
 		if err != nil {
-			if err == store.ErrNotFound {
+			if err == psql.ErrNotFound {
 				validatorGroupSummary := model.ValidatorGroupSummary{
 					Summary: summary,
 
@@ -238,7 +238,7 @@ func (uc *summarizeUseCase) summarizeValidatorGroupSeq(interval types.SummaryInt
 					PendingVotesMax: rawSeqSummaryItem.PendingVotesMax,
 				}
 
-				if err := uc.db.ValidatorGroupSummary.Create(&validatorGroupSummary); err != nil {
+				if err := uc.db.GetValidatorGroups().ValidatorGroupSummary.Create(&validatorGroupSummary); err != nil {
 					return err
 				}
 				newModels = append(newModels, validatorGroupSummary)
@@ -259,7 +259,7 @@ func (uc *summarizeUseCase) summarizeValidatorGroupSeq(interval types.SummaryInt
 			existingValidatorGroupSummary.PendingVotesMin = rawSeqSummaryItem.PendingVotesMin
 			existingValidatorGroupSummary.PendingVotesMax = rawSeqSummaryItem.PendingVotesMax
 
-			if err := uc.db.ValidatorGroupSummary.Save(existingValidatorGroupSummary); err != nil {
+			if err := uc.db.GetValidatorGroups().ValidatorGroupSummary.Save(existingValidatorGroupSummary); err != nil {
 				return err
 			}
 			existingModels = append(existingModels, *existingValidatorGroupSummary)

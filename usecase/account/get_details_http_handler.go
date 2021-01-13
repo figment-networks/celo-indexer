@@ -2,7 +2,7 @@ package account
 
 import (
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/usecase/http"
 	"github.com/figment-networks/celo-indexer/utils/logger"
@@ -16,13 +16,13 @@ var (
 )
 
 type getDetailsHttpHandler struct {
-	db     *store.Store
+	db     *psql.Store
 	client figmentclient.Client
 
 	useCase *getDetailsUseCase
 }
 
-func NewGetDetailsHttpHandler(db *store.Store, c figmentclient.Client) *getDetailsHttpHandler {
+func NewGetDetailsHttpHandler(db *psql.Store, c figmentclient.Client) *getDetailsHttpHandler {
 	return &getDetailsHttpHandler{
 		db: db,
 		client: c,

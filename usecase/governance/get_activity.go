@@ -3,15 +3,15 @@ package governance
 import (
 	"context"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 )
 
 type getActivityUseCase struct {
-	db     *store.Store
+	db     *psql.Store
 	client figmentclient.Client
 }
 
-func NewGetActivityUseCase(c figmentclient.Client, db *store.Store) *getActivityUseCase {
+func NewGetActivityUseCase(c figmentclient.Client, db *psql.Store) *getActivityUseCase {
 	return &getActivityUseCase{
 		client: c,
 		db:     db,
@@ -24,7 +24,7 @@ func (uc *getActivityUseCase) Execute(ctx context.Context, proposalId uint64, pa
 		limit = 15
 	}
 
-	activities, nextCursor, err := uc.db.GovernanceActivitySeq.FindByProposalId(proposalId, limit, cursor)
+	activities, nextCursor, err := uc.db.GetGovernance().GovernanceActivitySeq.FindByProposalId(proposalId, limit, cursor)
 	if err != nil {
 		return nil, err
 	}

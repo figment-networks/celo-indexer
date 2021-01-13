@@ -6,7 +6,7 @@ import (
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/client/theceloclient"
 	"github.com/figment-networks/celo-indexer/config"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/celo-indexer/utils/reporting"
 	"github.com/pkg/errors"
@@ -130,8 +130,7 @@ func initConfig(path string) (*config.Config, error) {
 }
 
 func initLogger(cfg *config.Config) error {
-	_, err := logger.Init(cfg)
-	return err
+	return logger.Init(cfg)
 }
 
 func initClient(cfg *config.Config) (figmentclient.Client, error) {
@@ -142,8 +141,8 @@ func initTheCeloClient(cfg *config.Config) (theceloclient.Client, error) {
 	return theceloclient.New(cfg.TheCeloBaseUrl)
 }
 
-func initStore(cfg *config.Config) (*store.Store, error) {
-	db, err := store.New(cfg.DatabaseDSN)
+func initStore(cfg *config.Config) (*psql.Store, error) {
+	db, err := psql.New(cfg.DatabaseDSN)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,7 @@ package block
 
 import (
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/usecase/http"
 	"github.com/gin-gonic/gin"
@@ -15,13 +15,13 @@ var (
 )
 
 type getBlockTimesHttpHandler struct {
-	db     *store.Store
+	db     *psql.Store
 	client figmentclient.Client
 
 	useCase *getBlockTimesUseCase
 }
 
-func NewGetBlockTimesHttpHandler(db *store.Store, client figmentclient.Client) *getBlockTimesHttpHandler {
+func NewGetBlockTimesHttpHandler(db *psql.Store, client figmentclient.Client) *getBlockTimesHttpHandler {
 	return &getBlockTimesHttpHandler{
 		db:     db,
 		client: client,

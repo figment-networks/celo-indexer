@@ -7,6 +7,7 @@ import (
 	"github.com/celo-org/kliento/contracts"
 	"github.com/celo-org/kliento/registry"
 	"github.com/ethereum/go-ethereum/common"
+	base "github.com/figment-networks/celo-indexer/client"
 	"math/big"
 )
 
@@ -14,25 +15,27 @@ var (
 	ErrContractNotDeployed = errors.New("contract not deployed")
 )
 
-func NewContractsRegistry(cc *kliento.CeloClient, height *big.Int) (*contractsRegistry, error) {
+func NewContractsRegistry(cc *kliento.CeloClient, rc base.RequestCounter, height *big.Int) (*contractsRegistry, error) {
 	reg, err := registry.New(cc)
 	if err != nil {
 		return nil, err
 	}
 
 	return &contractsRegistry{
-		cc:     cc,
-		reg:    reg,
-		height: height,
+		cc:             cc,
+		reg:            reg,
+		height:         height,
+		requestCounter: rc,
 
 		addresses: map[registry.ContractID]common.Address{},
 	}, nil
 }
 
 type contractsRegistry struct {
-	cc     *kliento.CeloClient
-	reg    registry.Registry
-	height *big.Int
+	cc             *kliento.CeloClient
+	reg            registry.Registry
+	height         *big.Int
+	requestCounter base.RequestCounter
 
 	addresses map[registry.ContractID]common.Address
 
@@ -133,6 +136,7 @@ func (l *contractsRegistry) setupReserveContract(ctx context.Context) error {
 	if err != nil {
 		return checkErr(err)
 	}
+	l.requestCounter.IncrementCounter()
 	contract, err := contracts.NewReserve(address, l.cc.Eth)
 	if err != nil {
 		return err
@@ -148,6 +152,7 @@ func (l *contractsRegistry) setupStableTokenContract(ctx context.Context) error 
 	if err != nil {
 		return checkErr(err)
 	}
+	l.requestCounter.IncrementCounter()
 	contract, err := contracts.NewStableToken(address, l.cc.Eth)
 	if err != nil {
 		return err
@@ -163,6 +168,7 @@ func (l *contractsRegistry) setupValidatorsContract(ctx context.Context) error {
 	if err != nil {
 		return checkErr(err)
 	}
+	l.requestCounter.IncrementCounter()
 	contract, err := contracts.NewValidators(address, l.cc.Eth)
 	if err != nil {
 		return err
@@ -178,6 +184,7 @@ func (l *contractsRegistry) setupLockedGoldContract(ctx context.Context) error {
 	if err != nil {
 		return checkErr(err)
 	}
+	l.requestCounter.IncrementCounter()
 	contract, err := contracts.NewLockedGold(address, l.cc.Eth)
 	if err != nil {
 		return err
@@ -193,6 +200,7 @@ func (l *contractsRegistry) setupElectionContract(ctx context.Context) error {
 	if err != nil {
 		return checkErr(err)
 	}
+	l.requestCounter.IncrementCounter()
 	contract, err := contracts.NewElection(address, l.cc.Eth)
 	if err != nil {
 		return err
@@ -208,6 +216,7 @@ func (l *contractsRegistry) setupAccountsContract(ctx context.Context) error {
 	if err != nil {
 		return checkErr(err)
 	}
+	l.requestCounter.IncrementCounter()
 	contract, err := contracts.NewAccounts(address, l.cc.Eth)
 	if err != nil {
 		return err
@@ -223,6 +232,7 @@ func (l *contractsRegistry) setupGoldTokenContract(ctx context.Context) error {
 	if err != nil {
 		return checkErr(err)
 	}
+	l.requestCounter.IncrementCounter()
 	contract, err := contracts.NewGoldToken(address, l.cc.Eth)
 	if err != nil {
 		return err
@@ -238,6 +248,7 @@ func (l *contractsRegistry) setupChainParamsContract(ctx context.Context) error 
 	if err != nil {
 		return checkErr(err)
 	}
+	l.requestCounter.IncrementCounter()
 	contract, err := contracts.NewBlockchainParameters(address, l.cc.Eth)
 	if err != nil {
 		return err
@@ -253,6 +264,7 @@ func (l *contractsRegistry) setupEpochRewardsContract(ctx context.Context) error
 	if err != nil {
 		return checkErr(err)
 	}
+	l.requestCounter.IncrementCounter()
 	contract, err := contracts.NewEpochRewards(address, l.cc.Eth)
 	if err != nil {
 		return err
@@ -268,6 +280,7 @@ func (l *contractsRegistry) setupGovernanceContract(ctx context.Context) error {
 	if err != nil {
 		return checkErr(err)
 	}
+	l.requestCounter.IncrementCounter()
 	contract, err := contracts.NewGovernance(address, l.cc.Eth)
 	if err != nil {
 		return err

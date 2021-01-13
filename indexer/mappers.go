@@ -93,6 +93,7 @@ func ToValidatorGroupSequence(syncable *model.Syncable, rawValidatorGroups []*fi
 			ActiveVotes:     types.NewQuantity(rawValidatorGroup.ActiveVotes),
 			ActiveVoteUnits: types.NewQuantity(rawValidatorGroup.ActiveVotesUnits),
 			PendingVotes:    types.NewQuantity(rawValidatorGroup.PendingVotes),
+			VotingCap:       types.NewQuantity(rawValidatorGroup.VotingCap),
 			MembersCount:    len(rawValidatorGroup.Members),
 		}
 
@@ -365,7 +366,7 @@ func ToGovernanceActivitySequence(syncable *model.Syncable, parsedGovernanceLogs
 		}
 
 		governanceActivities = append(governanceActivities, model.GovernanceActivitySeq{
-			Sequence:        &model.Sequence{
+			Sequence: &model.Sequence{
 				Height: syncable.Height,
 				Time:   *syncable.Time,
 			},

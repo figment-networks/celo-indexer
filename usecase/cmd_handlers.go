@@ -4,13 +4,13 @@ import (
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/client/theceloclient"
 	"github.com/figment-networks/celo-indexer/config"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/usecase/chain"
 	"github.com/figment-networks/celo-indexer/usecase/governance"
 	"github.com/figment-networks/celo-indexer/usecase/indexing"
 )
 
-func NewCmdHandlers(cfg *config.Config, db *store.Store, nodeClient figmentclient.Client, theCeloClient theceloclient.Client) *CmdHandlers {
+func NewCmdHandlers(cfg *config.Config, db *psql.Store, nodeClient figmentclient.Client, theCeloClient theceloclient.Client) *CmdHandlers {
 	return &CmdHandlers{
 		GetStatus:        chain.NewGetStatusCmdHandler(db, nodeClient),
 		StartIndexer:     indexing.NewStartCmdHandler(cfg, db, nodeClient),

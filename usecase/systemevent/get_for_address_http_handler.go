@@ -3,7 +3,7 @@ package systemevent
 import (
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/model"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/usecase/http"
 	"github.com/gin-gonic/gin"
@@ -15,13 +15,13 @@ var (
 )
 
 type getForAddressHttpHandler struct {
-	db     *store.Store
+	db     *psql.Store
 	client figmentclient.Client
 
 	useCase *getForAddressUseCase
 }
 
-func NewGetForAddressHttpHandler(db *store.Store, c figmentclient.Client) *getForAddressHttpHandler {
+func NewGetForAddressHttpHandler(db *psql.Store, c figmentclient.Client) *getForAddressHttpHandler {
 	return &getForAddressHttpHandler{
 		db:     db,
 		client: c,

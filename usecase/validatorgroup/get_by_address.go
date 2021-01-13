@@ -3,21 +3,21 @@ package validatorgroup
 import (
 	"github.com/figment-networks/celo-indexer/indexer"
 	"github.com/figment-networks/celo-indexer/model"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 )
 
 type getByAddressUseCase struct {
-	db *store.Store
+	db *psql.Store
 }
 
-func NewGetByAddressUseCase(db *store.Store) *getByAddressUseCase {
+func NewGetByAddressUseCase(db *psql.Store) *getByAddressUseCase {
 	return &getByAddressUseCase{
 		db: db,
 	}
 }
 
 func (uc *getByAddressUseCase) Execute(address string, sequencesLimit int64) (*AggDetailsView, error) {
-	validatorGroupAggs, err := uc.db.ValidatorGroupAgg.FindByAddress(address)
+	validatorGroupAggs, err := uc.db.GetValidatorGroups().ValidatorGroupAgg.FindByAddress(address)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func (uc *getByAddressUseCase) Execute(address string, sequencesLimit int64) (*A
 		return nil, err
 	}
 
-	delegations, err := uc.db.AccountActivitySeq.FindLastByAddressAndKind(address, indexer.OperationTypeValidatorGroupVoteActivatedReceived, sequencesLimit)
+	delegations, err := uc.db.GetAccounts().AccountActivitySeq.FindLastByAddressAndKind(address, indexer.OperationTypeValidatorGroupVoteActivatedReceived, sequencesLimit)
 
 	return ToAggDetailsView(validatorGroupAggs, sequences, delegations), nil
 }
@@ -36,7 +36,7 @@ func (uc *getByAddressUseCase) getSessionSequences(address string, sequencesLimi
 	var sequences []model.ValidatorGroupSeq
 	var err error
 	if sequencesLimit > 0 {
-		sequences, err = uc.db.ValidatorGroupSeq.FindLastByAddress(address, sequencesLimit)
+		sequences, err = uc.db.GetValidatorGroups().ValidatorGroupSeq.FindLastByAddress(address, sequencesLimit)
 		if err != nil {
 			return nil, err
 		}

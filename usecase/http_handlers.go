@@ -3,7 +3,7 @@ package usecase
 import (
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
-	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/usecase/account"
 	"github.com/figment-networks/celo-indexer/usecase/block"
@@ -16,7 +16,7 @@ import (
 	"github.com/figment-networks/celo-indexer/usecase/validatorgroup"
 )
 
-func NewHttpHandlers(cfg *config.Config, db *store.Store, c figmentclient.Client) *HttpHandlers {
+func NewHttpHandlers(cfg *config.Config, db *psql.Store, c figmentclient.Client) *HttpHandlers {
 	return &HttpHandlers{
 		Health:                     health.NewHealthHttpHandler(),
 		GetStatus:                  chain.NewGetStatusHttpHandler(db, c),
