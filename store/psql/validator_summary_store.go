@@ -3,6 +3,7 @@ package psql
 import (
 	"fmt"
 	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/indexing-engine/store/bulk"
 	"time"
 
 	"github.com/figment-networks/celo-indexer/model"
@@ -19,6 +20,38 @@ func NewValidatorSummaryStore(db *gorm.DB) *ValidatorSummary {
 // ValidatorSummary handles operations on validators
 type ValidatorSummary struct {
 	baseStore
+}
+
+// BulkUpsert insert validator sequences in bulk
+func (s ValidatorSummary) BulkUpsert(records []model.ValidatorSummary) error {
+	var err error
+
+	for i := 0; i < len(records); i += batchSize {
+		j := i + batchSize
+		if j > len(records) {
+			j = len(records)
+		}
+
+		err = s.baseStore.BulkUpsert(bulkInsertValidatorSummaries, j-i, func(k int) bulk.Row {
+			r := records[i+k]
+			return bulk.Row{
+				r.TimeInterval,
+				r.TimeBucket,
+				r.IndexVersion,
+				r.Address,
+				r.ScoreAvg.String(),
+				r.ScoreMax.String(),
+				r.ScoreMin.String(),
+				r.SignedAvg,
+				r.SignedMax,
+				r.SignedMin,
+			}
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Find find validator summary by query

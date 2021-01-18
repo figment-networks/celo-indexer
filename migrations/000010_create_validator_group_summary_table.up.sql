@@ -1,8 +1,6 @@
 CREATE TABLE IF NOT EXISTS validator_group_summary
 (
     id                    BIGSERIAL                NOT NULL,
-    created_at            TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at            TIMESTAMP WITH TIME ZONE NOT NULL,
 
     time_interval         VARCHAR                  NOT NULL,
     time_bucket           TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -15,9 +13,6 @@ CREATE TABLE IF NOT EXISTS validator_group_summary
     active_votes_avg      DECIMAL(65, 0)           NOT NULL,
     active_votes_max      DECIMAL(65, 0)           NOT NULL,
     active_votes_min      DECIMAL(65, 0)           NOT NULL,
-    active_vote_units_avg DECIMAL(65, 0)           NOT NULL,
-    active_vote_units_max DECIMAL(65, 0)           NOT NULL,
-    active_vote_units_min DECIMAL(65, 0)           NOT NULL,
     pending_votes_avg     DECIMAL(65, 0)           NOT NULL,
     pending_votes_max     DECIMAL(65, 0)           NOT NULL,
     pending_votes_min     DECIMAL(65, 0)           NOT NULL,

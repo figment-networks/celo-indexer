@@ -1,12 +1,11 @@
 package validator
 
 import (
-	"context"
+	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/store/psql"
 
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
-	"github.com/figment-networks/celo-indexer/indexer"
 	"github.com/pkg/errors"
 )
 
@@ -41,45 +40,14 @@ func (uc *getByHeightUseCase) Execute(height *int64) (SeqListView, error) {
 		return SeqListView{}, errors.New("height is not indexed yet")
 	}
 
-	validatorSeqs, err := uc.db.GetValidators().ValidatorSeq.FindByHeight(*height)
-	if len(validatorSeqs) == 0 || err != nil {
-		syncable, err := uc.db.GetCore().Syncables.FindByHeight(*height)
-		if err != nil {
-			return SeqListView{}, err
-		}
-
-		indexingPipeline, err := indexer.NewPipeline(
-			uc.cfg,
-			uc.client,
-			uc.db.GetCore().Syncables,
-			uc.db.GetCore().Database,
-			uc.db.GetCore().Reports,
-			uc.db.GetBlocks().BlockSeq,
-			uc.db.GetValidators().ValidatorSeq,
-			uc.db.GetAccounts().AccountActivitySeq,
-			uc.db.GetValidatorGroups().ValidatorGroupSeq,
-			uc.db.GetValidators().ValidatorAgg,
-			uc.db.GetValidatorGroups().ValidatorGroupAgg,
-			uc.db.GetGovernance().ProposalAgg,
-			uc.db.GetCore().SystemEvents,
-			uc.db.GetGovernance().GovernanceActivitySeq,
-		)
-		if err != nil {
-			return SeqListView{}, err
-		}
-
-		ctx := context.Background()
-		payload, err := indexingPipeline.Run(ctx, indexer.RunConfig{
-			Height:           syncable.Height,
-			DesiredTargetIDs: []int64{indexer.TargetIndexValidatorSequences},
-			Dry:              true,
-		})
-		if err != nil {
-			return SeqListView{}, err
-		}
-
-		validatorSeqs = payload.ValidatorSequences
+	validatorSeqs, err := uc.getValidatorSeqs(height)
+	if err != nil {
+		return SeqListView{}, err
 	}
 
 	return ToSeqListView(validatorSeqs), nil
+}
+
+func (uc *getByHeightUseCase) getValidatorSeqs(height *int64) ([]model.ValidatorSeq, error) {
+	return uc.db.GetValidators().ValidatorSeq.FindByHeight(*height)
 }

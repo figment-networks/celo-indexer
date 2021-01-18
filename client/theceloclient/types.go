@@ -12,7 +12,7 @@ type ProposalDetails struct {
 	Status         string   `json:"status"`
 	Timespan       int64    `json:"timespan"`
 	Title          string   `json:"title"`
-	DescriptionUrl string   `json:"description_url"`
+	DescriptionUrl string   `json:"descriptionUrl"`
 	Proposer       Proposer `json:"proposer"`
 	Upvoted        Upvoted  `json:"upvoted"`
 	Dequeue        Dequeue  `json:"dequeue"`

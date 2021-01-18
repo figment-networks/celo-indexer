@@ -3,6 +3,7 @@ package psql
 import (
 	"fmt"
 	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/indexing-engine/store/bulk"
 	"time"
 
 	"github.com/figment-networks/celo-indexer/model"
@@ -20,6 +21,42 @@ func NewValidatorGroupSummaryStore(db *gorm.DB) *ValidatorGroupSummary {
 type ValidatorGroupSummary struct {
 	baseStore
 }
+
+// BulkUpsert insert validator sequences in bulk
+func (s ValidatorGroupSummary) BulkUpsert(records []model.ValidatorGroupSummary) error {
+	var err error
+
+	for i := 0; i < len(records); i += batchSize {
+		j := i + batchSize
+		if j > len(records) {
+			j = len(records)
+		}
+
+		err = s.baseStore.BulkUpsert(bulkInsertValidatorGroupSummaries, j-i, func(k int) bulk.Row {
+			r := records[i+k]
+			return bulk.Row{
+				r.TimeInterval,
+				r.TimeBucket,
+				r.IndexVersion,
+				r.Address,
+				r.CommissionAvg.String(),
+				r.CommissionMax.String(),
+				r.CommissionMin.String(),
+				r.ActiveVotesAvg.String(),
+				r.ActiveVotesMax.String(),
+				r.ActiveVotesMin.String(),
+				r.PendingVotesAvg.String(),
+				r.PendingVotesMax.String(),
+				r.PendingVotesMin.String(),
+			}
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 
 // Find find validator group summary by query
 func (s ValidatorGroupSummary) Find(query *model.ValidatorGroupSummary) (*model.ValidatorGroupSummary, error) {

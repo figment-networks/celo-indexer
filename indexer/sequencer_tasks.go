@@ -74,7 +74,7 @@ func (t *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error
 // NewValidatorSeqCreatorTask creates validator sequences
 func NewValidatorSeqCreatorTask(cfg *config.Config) *validatorSeqCreatorTask {
 	return &validatorSeqCreatorTask{
-		cfg:            cfg,
+		cfg: cfg,
 	}
 }
 

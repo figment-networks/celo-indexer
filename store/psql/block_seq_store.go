@@ -1,7 +1,6 @@
 package psql
 
 import (
-	"fmt"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
@@ -115,8 +114,6 @@ func (s *BlockSeq) Summarize(interval types.SummaryInterval, activityPeriods []s
 		Select(summarizeBlocksQuerySelect, interval).
 		Order("time_bucket").
 		Group("time_bucket")
-
-	fmt.Println("INT", interval, activityPeriods)
 
 	if len(activityPeriods) == 1 {
 		activityPeriod := activityPeriods[0]

@@ -37,7 +37,7 @@ func (s AccountActivitySeq) BulkUpsert(records []model.AccountActivitySeq) error
 				r.Time,
 				r.TransactionHash,
 				r.Address,
-				r.Amount,
+				r.Amount.String(),
 				r.Kind,
 				r.Data,
 			}

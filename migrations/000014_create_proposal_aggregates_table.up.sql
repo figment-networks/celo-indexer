@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS proposal_aggregates
     proposal_id                BIGINT                   NOT NULL,
     proposer_address           TEXT                     NOT NULL,
     description_url            TEXT,
-    deposit                    DECIMAL(65, 0)           NOT NULL,
+    deposit                    TEXT                     NOT NULL,
     transaction_count          BIGINT                   NOT NULL,
     proposed_at                TIMESTAMP WITH TIME ZONE NOT NULL,
     proposed_at_height         DECIMAL(65, 0)           NOT NULL,
@@ -34,14 +34,15 @@ CREATE TABLE IF NOT EXISTS proposal_aggregates
     expired_at                 TIMESTAMP WITH TIME ZONE,
     expired_at_height          DECIMAL(65, 0),
 
-    upvotes_total              BIGINT         DEFAULT 0,
-    yes_votes_total            BIGINT         DEFAULT 0,
-    yes_votes_weight_total     DECIMAL(65, 0) DEFAULT 0,
-    no_votes_total             BIGINT         DEFAULT 0,
-    no_votes_weight_total      DECIMAL(65, 0) DEFAULT 0,
-    abstain_votes_total        BIGINT         DEFAULT 0,
-    abstain_votes_weight_total DECIMAL(65, 0) DEFAULT 0,
-    votes_wight_total          BIGINT         DEFAULT 0,
+    upvotes_total              TEXT   DEFAULT '0',
+    yes_votes_total            BIGINT DEFAULT 0,
+    yes_votes_weight_total     TEXT   DEFAULT '0',
+    no_votes_total             BIGINT DEFAULT 0,
+    no_votes_weight_total      TEXT   DEFAULT '0',
+    abstain_votes_total        BIGINT DEFAULT 0,
+    abstain_votes_weight_total TEXT   DEFAULT '0',
+    votes_total                BIGINT DEFAULT 0,
+    votes_weight_total         TEXT   DEFAULT '0',
 
     PRIMARY KEY (id)
 );

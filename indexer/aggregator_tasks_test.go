@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
+	clientMock "github.com/figment-networks/celo-indexer/mock/client"
 	mock "github.com/figment-networks/celo-indexer/mock/store"
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/store/psql"
@@ -49,6 +50,8 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 						RecentAt:        *syncTime,
 					},
 					Address:                 "acct1",
+					RecentName:              "test",
+					RecentMetadataUrl:       "http://test.com",
 					RecentAsValidatorHeight: syncHeight,
 					AccumulatedUptime:       0,
 					AccumulatedUptimeCount:  0,
@@ -61,6 +64,8 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 						RecentAt:        *syncTime,
 					},
 					Address:                 "acct2",
+					RecentName:              "test",
+					RecentMetadataUrl:       "http://test.com",
 					RecentAsValidatorHeight: syncHeight,
 					AccumulatedUptime:       1,
 					AccumulatedUptimeCount:  1,
@@ -73,6 +78,8 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 						RecentAt:        *syncTime,
 					},
 					Address:                 "acct3",
+					RecentName:              "test",
+					RecentMetadataUrl:       "http://test.com",
 					RecentAsValidatorHeight: syncHeight,
 					AccumulatedUptime:       0,
 					AccumulatedUptimeCount:  1,
@@ -100,6 +107,7 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 			ctx := context.Background()
 
 			dbMock := mock.NewMockValidatorAgg(ctrl)
+			cMock := clientMock.NewMockClient(ctrl)
 
 			pld := &payload{
 				RawValidators: tt.rawValidators,
@@ -112,9 +120,13 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 					break
 				}
 				dbMock.EXPECT().FindByAddress(rawValidator.Address).Return(nil, psql.ErrNotFound).Times(1)
+				cMock.EXPECT().GetIdentityByHeight(ctx, gomock.Any(), gomock.Any()).Return(&figmentclient.Identity{
+					Name:        "test",
+					MetadataUrl: "http://test.com",
+				}, nil)
 			}
 
-			task := NewValidatorAggCreatorTask(dbMock)
+			task := NewValidatorAggCreatorTask(cMock, dbMock)
 			if err := task.Run(ctx, pld); err != tt.expectErr {
 				t.Errorf("unexpected error, got: %v; want: %v", err, tt.expectErr)
 				return
@@ -254,6 +266,7 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 			ctx := context.Background()
 
 			dbMock := mock.NewMockValidatorAgg(ctrl)
+			cMock := clientMock.NewMockClient(ctrl)
 
 			pld := &payload{
 				RawValidators: tt.rawValidators,
@@ -263,9 +276,13 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 			for _, validator := range tt.returnValidators {
 				expect := validator
 				dbMock.EXPECT().FindByAddress(validator.Address).Return(&expect, nil).Times(1)
+				cMock.EXPECT().GetIdentityByHeight(ctx, gomock.Any(), gomock.Any()).Return(&figmentclient.Identity{
+					Name:        "test",
+					MetadataUrl: "http://test.com",
+				}, nil)
 			}
 
-			task := NewValidatorAggCreatorTask(dbMock)
+			task := NewValidatorAggCreatorTask(cMock, dbMock)
 			if err := task.Run(ctx, pld); err != nil {
 				t.Errorf("unexpected error, got: %v", err)
 				return

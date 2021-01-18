@@ -104,17 +104,16 @@ func NewPipeline(
 			pipeline.RetryingTask(NewValidatorSeqCreatorTask(cfg), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorGroupSeqCreatorTask(cfg), isTransient, maxRetries),
 			pipeline.RetryingTask(NewAccountActivitySeqCreatorTask(cfg), isTransient, maxRetries),
-			pipeline.RetryingTask(NewSystemEventPersistorTask(systemEventDb), isTransient, maxRetries),
 			pipeline.RetryingTask(NewGovernanceActivitySeqCreatorTask(cfg), isTransient, maxRetries),
 		),
 	)
 
 	// Set aggregator stage
 	p.AddStage(
-		pipeline.NewStageWithTasks(
+		pipeline.NewAsyncStageWithTasks(
 			pipeline.StageAggregator,
-			pipeline.RetryingTask(NewValidatorAggCreatorTask(validatorAggDb), isTransient, maxRetries),
-			pipeline.RetryingTask(NewValidatorGroupAggCreatorTask(validatorGroupAggDb), isTransient, maxRetries),
+			pipeline.RetryingTask(NewValidatorAggCreatorTask(client, validatorAggDb), isTransient, maxRetries),
+			pipeline.RetryingTask(NewValidatorGroupAggCreatorTask(client, validatorGroupAggDb), isTransient, maxRetries),
 			pipeline.RetryingTask(NewProposalAggCreatorTask(proposalAggDb), isTransient, maxRetries),
 		),
 	)
@@ -132,6 +131,7 @@ func NewPipeline(
 		pipeline.NewAsyncStageWithTasks(
 			pipeline.StagePersistor,
 			pipeline.RetryingTask(NewSyncerPersistorTask(syncableDb), isTransient, maxRetries),
+			pipeline.RetryingTask(NewSystemEventPersistorTask(systemEventDb), isTransient, maxRetries),
 			pipeline.RetryingTask(NewBlockSeqPersistorTask(blockSeqDb), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorSeqPersistorTask(validatorSeqDb), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorGroupSeqPersistorTask(validatorGroupSeqDb), isTransient, maxRetries),

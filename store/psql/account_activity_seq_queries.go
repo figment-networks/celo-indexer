@@ -11,13 +11,6 @@ var (
 		  kind,
           data
 		)
-		VALUES @values
-		
-		ON CONFLICT (height, transaction_hash) DO UPDATE
-		SET
-		  address = excluded.address,
-		  amount = excluded.amount,
-		  kind = excluded.kind,
-		  data = excluded.data;
+		VALUES @values;
 	`
 )

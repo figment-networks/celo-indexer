@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS governance_activity_sequences
 
     transaction_hash TEXT                     NOT NULL,
     proposal_id      DECIMAL(65, 0)           NOT NULL,
+    account          TEXT,
     kind             TEXT                     NOT NULL,
     data             JSONB                    NOT NULL,
 

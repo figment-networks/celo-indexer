@@ -1152,6 +1152,20 @@ func (m *MockValidatorSummary) EXPECT() *MockValidatorSummaryMockRecorder {
 	return m.recorder
 }
 
+// BulkUpsert mocks base method
+func (m *MockValidatorSummary) BulkUpsert(arg0 []model.ValidatorSummary) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BulkUpsert", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BulkUpsert indicates an expected call of BulkUpsert
+func (mr *MockValidatorSummaryMockRecorder) BulkUpsert(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BulkUpsert", reflect.TypeOf((*MockValidatorSummary)(nil).BulkUpsert), arg0)
+}
+
 // DeleteOlderThan mocks base method
 func (m *MockValidatorSummary) DeleteOlderThan(arg0 types.SummaryInterval, arg1 time.Time) (*int64, error) {
 	m.ctrl.T.Helper()
@@ -1530,6 +1544,20 @@ func NewMockValidatorGroupSummary(ctrl *gomock.Controller) *MockValidatorGroupSu
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockValidatorGroupSummary) EXPECT() *MockValidatorGroupSummaryMockRecorder {
 	return m.recorder
+}
+
+// BulkUpsert mocks base method
+func (m *MockValidatorGroupSummary) BulkUpsert(arg0 []model.ValidatorGroupSummary) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BulkUpsert", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BulkUpsert indicates an expected call of BulkUpsert
+func (mr *MockValidatorGroupSummaryMockRecorder) BulkUpsert(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BulkUpsert", reflect.TypeOf((*MockValidatorGroupSummary)(nil).BulkUpsert), arg0)
 }
 
 // DeleteOlderThan mocks base method

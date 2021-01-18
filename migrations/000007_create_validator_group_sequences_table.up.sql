@@ -6,11 +6,8 @@ CREATE TABLE IF NOT EXISTS validator_group_sequences
     time               TIMESTAMP WITH TIME ZONE NOT NULL,
 
     address            TEXT                     NOT NULL,
-    name               TEXT,
-    metadata_url       TEXT,
     commission         DECIMAL(65, 0)           NOT NULL,
     active_votes       DECIMAL(65, 0)           NOT NULL,
-    active_vote_units  DECIMAL(65, 0)           NOT NULL,
     pending_votes      DECIMAL(65, 0)           NOT NULL,
     voting_cap         DECIMAL(65, 0)           NOT NULL,
     members_count      INT                      NOT NULL,

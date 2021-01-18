@@ -1,6 +1,31 @@
 package psql
 
 const (
+	bulkInsertValidatorSummaries = `
+		INSERT INTO validator_summary (
+	      	time_interval,
+			time_bucket,
+			index_version,
+			address,
+			score_avg,
+			score_max,
+			score_min,
+			signed_avg,
+			signed_min,
+			signed_max
+		)
+		VALUES @values
+		
+		ON CONFLICT (time_interval, time_bucket, index_version, address) DO UPDATE
+		SET
+		  score_avg = excluded.score_avg,
+		  score_max = excluded.score_max,
+		  score_min = excluded.score_min,
+		  signed_avg = excluded.signed_avg,
+		  signed_min = excluded.signed_min,
+		  signed_max = excluded.signed_max;
+	`
+
 	validatorSummaryForIntervalQuery = `
 		SELECT * 
 		FROM validator_summary 

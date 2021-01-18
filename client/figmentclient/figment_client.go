@@ -12,6 +12,7 @@ import (
 	celoTypes "github.com/ethereum/go-ethereum/core/types"
 	base "github.com/figment-networks/celo-indexer/client"
 	"github.com/figment-networks/celo-indexer/utils"
+	"github.com/figment-networks/celo-indexer/utils/logger"
 	"math/big"
 )
 
@@ -140,7 +141,12 @@ func (l *client) GetChainParams(ctx context.Context) (*ChainParams, error) {
 }
 
 func (l *client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, error) {
-	height := big.NewInt(h)
+	var height *big.Int
+	if h == 0 {
+		height = nil
+	} else {
+		height = big.NewInt(h)
+	}
 
 	heightMeta := &HeightMeta{
 		Height: h,
@@ -186,7 +192,13 @@ func (l *client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, err
 }
 
 func (l *client) GetBlockByHeight(ctx context.Context, h int64) (*Block, error) {
-	height := big.NewInt(h)
+	var height *big.Int
+	if h == 0 {
+		height = nil
+	} else {
+		height = big.NewInt(h)
+	}
+
 	rawBlock, err := l.cc.Eth.BlockByNumber(ctx, height)
 	if err != nil {
 		return nil, err
@@ -241,7 +253,12 @@ func (l *client) GetBlockByHeight(ctx context.Context, h int64) (*Block, error) 
 }
 
 func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Transaction, error) {
-	height := big.NewInt(h)
+	var height *big.Int
+	if h == 0 {
+		height = nil
+	} else {
+		height = big.NewInt(h)
+	}
 
 	cr, err := NewContractsRegistry(l.cc, l.requestCounter, height)
 	if err != nil {
@@ -339,99 +356,85 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 	var operations []*Operation
 	for _, eventLog := range logs {
 		if eventLog.Address == cr.addresses[registry.ElectionContractID] && cr.contractDeployed(registry.ElectionContractID) {
-			eventName, eventRaw, ok, err := cr.electionContract.TryParseLog(*eventLog)
+			eventName, eventRaw, _, err := cr.electionContract.TryParseLog(*eventLog)
 			if err != nil {
-				return nil, fmt.Errorf("can't parse Election event: %w", err)
-			}
-			if !ok {
-				continue
+				logger.Error(fmt.Errorf("can't parse Election event: %w", err))
+			} else {
+				operations = append(operations, &Operation{
+					Name:    eventName,
+					Details: eventRaw,
+				})
 			}
 
-			operations = append(operations, &Operation{
-				Name:    eventName,
-				Details: eventRaw,
-			})
 
 		} else if eventLog.Address == cr.addresses[registry.AccountsContractID] && cr.contractDeployed(registry.AccountsContractID) {
-			eventName, eventRaw, ok, err := cr.accountsContract.TryParseLog(*eventLog)
+			eventName, eventRaw, _, err := cr.accountsContract.TryParseLog(*eventLog)
 			if err != nil {
-				return nil, fmt.Errorf("can't parse Accounts event: %w", err)
-			}
-			if !ok {
-				continue
+				logger.Error(fmt.Errorf("can't parse Accounts event: %w", err))
+			} else {
+				operations = append(operations, &Operation{
+					Name:    eventName,
+					Details: eventRaw,
+				})
 			}
 
-			operations = append(operations, &Operation{
-				Name:    eventName,
-				Details: eventRaw,
-			})
 
 		} else if eventLog.Address == cr.addresses[registry.LockedGoldContractID] && cr.contractDeployed(registry.LockedGoldContractID) {
-			eventName, eventRaw, ok, err := cr.lockedGoldContract.TryParseLog(*eventLog)
+			eventName, eventRaw, _, err := cr.lockedGoldContract.TryParseLog(*eventLog)
 			if err != nil {
-				return nil, fmt.Errorf("can't parse LockedGold event: %w", err)
-			}
-			if !ok {
-				continue
+				logger.Error(fmt.Errorf("can't parse LockedGold event: %w", err))
+			} else {
+				operations = append(operations, &Operation{
+					Name:    eventName,
+					Details: eventRaw,
+				})
 			}
 
-			operations = append(operations, &Operation{
-				Name:    eventName,
-				Details: eventRaw,
-			})
 
 		} else if eventLog.Address == cr.addresses[registry.StableTokenContractID] && cr.contractDeployed(registry.StableTokenContractID) {
-			eventName, eventRaw, ok, err := cr.stableTokenContract.TryParseLog(*eventLog)
+			eventName, eventRaw, _, err := cr.stableTokenContract.TryParseLog(*eventLog)
 			if err != nil {
-				return nil, fmt.Errorf("can't parse StableToken event: %w", err)
-			}
-			if !ok {
-				continue
+				logger.Error(fmt.Errorf("can't parse StableToken event: %w", err))
+			} else {
+				operations = append(operations, &Operation{
+					Name:    eventName,
+					Details: eventRaw,
+				})
 			}
 
-			operations = append(operations, &Operation{
-				Name:    eventName,
-				Details: eventRaw,
-			})
 		} else if eventLog.Address == cr.addresses[registry.GoldTokenContractID] && cr.contractDeployed(registry.GoldTokenContractID) {
-			eventName, eventRaw, ok, err := cr.goldTokenContract.TryParseLog(*eventLog)
+			eventName, eventRaw, _, err := cr.goldTokenContract.TryParseLog(*eventLog)
 			if err != nil {
-				return nil, fmt.Errorf("can't parse GoldToken event: %w", err)
-			}
-			if !ok {
-				continue
+				logger.Error(fmt.Errorf("can't parse GoldToken event: %w", err))
+			} else {
+				operations = append(operations, &Operation{
+					Name:    eventName,
+					Details: eventRaw,
+				})
 			}
 
-			operations = append(operations, &Operation{
-				Name:    eventName,
-				Details: eventRaw,
-			})
 		} else if eventLog.Address == cr.addresses[registry.ValidatorsContractID] && cr.contractDeployed(registry.ValidatorsContractID) {
-			eventName, eventRaw, ok, err := cr.validatorsContract.TryParseLog(*eventLog)
+			eventName, eventRaw, _, err := cr.validatorsContract.TryParseLog(*eventLog)
 			if err != nil {
-				return nil, fmt.Errorf("can't parse Validators event: %w", err)
-			}
-			if !ok {
-				continue
+				logger.Error(fmt.Errorf("can't parse Validators event: %w", err))
+			} else {
+				operations = append(operations, &Operation{
+					Name:    eventName,
+					Details: eventRaw,
+				})
 			}
 
-			operations = append(operations, &Operation{
-				Name:    eventName,
-				Details: eventRaw,
-			})
 		} else if eventLog.Address == cr.addresses[registry.GovernanceContractID] && cr.contractDeployed(registry.GovernanceContractID) {
-			eventName, eventRaw, ok, err := cr.governanceContract.TryParseLog(*eventLog)
+			eventName, eventRaw, _, err := cr.governanceContract.TryParseLog(*eventLog)
 			if err != nil {
-				return nil, fmt.Errorf("can't parse Governance event: %w", err)
-			}
-			if !ok {
-				continue
+				logger.Error(fmt.Errorf("can't parse Governance event: %w", err))
+			} else {
+				operations = append(operations, &Operation{
+					Name:    eventName,
+					Details: eventRaw,
+				})
 			}
 
-			operations = append(operations, &Operation{
-				Name:    eventName,
-				Details: eventRaw,
-			})
 		}
 
 	}
@@ -439,13 +442,18 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 }
 
 func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*ValidatorGroup, error) {
-	height := big.NewInt(h)
+	var height *big.Int
+	if h == 0 {
+		height = nil
+	} else {
+		height = big.NewInt(h)
+	}
 
 	cr, err := NewContractsRegistry(l.cc, l.requestCounter, height)
 	if err != nil {
 		return nil, err
 	}
-	err = cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID, registry.AccountsContractID)
+	err = cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID,)
 	if err != nil {
 		return nil, err
 	}
@@ -476,13 +484,6 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 			l.requestCounter.IncrementCounter()
 
 			opts = &bind.CallOpts{Context: ctx}
-			activeVoteUnits, err := cr.electionContract.GetActiveVoteUnitsForGroup(opts, rawValidatorGroup)
-			if err != nil {
-				return nil, err
-			}
-			l.requestCounter.IncrementCounter()
-
-			opts = &bind.CallOpts{Context: ctx}
 			pendingVotes, err := cr.electionContract.GetPendingVotesForGroup(opts, rawValidatorGroup)
 			if err != nil {
 				return nil, err
@@ -496,24 +497,15 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 			}
 			l.requestCounter.IncrementCounter()
 
-			identity, err := l.getIdentity(ctx, cr, rawValidatorGroup.String())
-			if err != nil {
-				return nil, err
-			}
-			l.requestCounter.IncrementCounter()
-
 			validatorGroup := &ValidatorGroup{
 				Index:               uint64(i),
 				Address:             rawValidatorGroup.String(),
-				Name:                identity.Name,
-				MetadataUrl:         identity.MetadataUrl,
 				Commission:          commission,
 				NextCommission:      nextCommission,
 				NextCommissionBlock: nextCommissionBlock.Int64(),
 				SlashMultiplier:     slashMultiplier,
 				LastSlashed:         lastSlashed,
 				ActiveVotes:         activeVotes,
-				ActiveVotesUnits:    activeVoteUnits,
 				PendingVotes:        pendingVotes,
 				VotingCap:           votingCap,
 			}
@@ -531,13 +523,18 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 }
 
 func (l *client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validator, error) {
-	height := big.NewInt(h)
+	var height *big.Int
+	if h == 0 {
+		height = nil
+	} else {
+		height = big.NewInt(h)
+	}
 
 	cr, err := NewContractsRegistry(l.cc, l.requestCounter, height)
 	if err != nil {
 		return nil, err
 	}
-	err = cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID, registry.AccountsContractID)
+	err = cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID)
 	if err != nil {
 		return nil, err
 	}
@@ -564,15 +561,8 @@ func (l *client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validat
 		}
 		l.requestCounter.IncrementCounter()
 
-		identity, err := l.getIdentity(ctx, cr, rawValidator.String())
-		if err != nil {
-			return nil, err
-		}
-
 		validator := &Validator{
 			Address:        rawValidator.String(),
-			Name:           identity.Name,
-			MetadataUrl:    identity.MetadataUrl,
 			BlsPublicKey:   validatorDetails.BlsPublicKey,
 			EcdsaPublicKey: validatorDetails.EcdsaPublicKey,
 			Signer:         validatorDetails.Signer.String(),
@@ -580,7 +570,7 @@ func (l *client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validat
 			Score:          validatorDetails.Score,
 		}
 
-		signed, ok := validationMap[rawValidator.String()]
+		signed, ok := validationMap[validatorDetails.Signer.String()]
 		if ok {
 			validator.Signed = &signed
 		}
@@ -631,7 +621,12 @@ func (l *client) getValidationMap(ctx context.Context, cr *contractsRegistry, he
 }
 
 func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress string, h int64) (*AccountInfo, error) {
-	height := big.NewInt(h)
+	var height *big.Int
+	if h == 0 {
+		height = nil
+	} else {
+		height = big.NewInt(h)
+	}
 
 	cr, err := NewContractsRegistry(l.cc, l.requestCounter, height)
 	if err != nil {
@@ -690,7 +685,12 @@ func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress st
 }
 
 func (l *client) GetIdentityByHeight(ctx context.Context, rawAddress string, h int64) (*Identity, error) {
-	height := big.NewInt(h)
+	var height *big.Int
+	if h == 0 {
+		height = nil
+	} else {
+		height = big.NewInt(h)
+	}
 
 	cr, err := NewContractsRegistry(l.cc, l.requestCounter, height)
 	if err != nil {

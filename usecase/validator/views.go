@@ -28,7 +28,7 @@ type AggDetailsView struct {
 }
 
 func ToAggDetailsView(m *model.ValidatorAgg, validatorSequences []model.ValidatorSeq) *AggDetailsView {
-	return &AggDetailsView{
+	agg := &AggDetailsView{
 		ModelWithTimestamps: m.ModelWithTimestamps,
 		Aggregate:           m.Aggregate,
 
@@ -36,10 +36,15 @@ func ToAggDetailsView(m *model.ValidatorAgg, validatorSequences []model.Validato
 		RecentAsValidatorHeight: m.RecentAsValidatorHeight,
 		RecentName:              m.RecentName,
 		RecentMetadataUrl:       m.RecentMetadataUrl,
-		Uptime:                  float64(m.AccumulatedUptime) / float64(m.AccumulatedUptimeCount),
 
 		LastSequences: validatorSequences,
 	}
+
+	if m.AccumulatedUptimeCount > 0 {
+		agg.Uptime = float64(m.AccumulatedUptime) / float64(m.AccumulatedUptimeCount)
+	}
+
+	return agg
 }
 
 type SeqListItem struct {

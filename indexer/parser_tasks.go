@@ -31,6 +31,7 @@ type governanceLogsParserTask struct {
 
 type ParsedGovernanceLogs struct {
 	ProposalId      uint64
+	Account         string
 	TransactionHash string
 	Kind            string
 	Details         interface{}
@@ -76,16 +77,18 @@ func getGovernanceLogData(rawOperation *figmentclient.Operation) *ParsedGovernan
 		event := rawOperation.Details.(*contracts.GovernanceProposalVoted)
 		return &ParsedGovernanceLogs{
 			ProposalId: event.ProposalId.Uint64(),
+			Account:    event.Account.String(),
 			Kind:       rawOperation.Name,
-			Details:    rawOperation.Details,
+			Details:    event,
 		}
 
 	case figmentclient.OperationTypeProposalUpvoted:
 		event := rawOperation.Details.(*contracts.GovernanceProposalUpvoted)
 		return &ParsedGovernanceLogs{
 			ProposalId: event.ProposalId.Uint64(),
+			Account:    event.Account.String(),
 			Kind:       rawOperation.Name,
-			Details:    rawOperation.Details,
+			Details:    event,
 		}
 
 	case figmentclient.OperationTypeProposalApproved:
@@ -93,7 +96,7 @@ func getGovernanceLogData(rawOperation *figmentclient.Operation) *ParsedGovernan
 		return &ParsedGovernanceLogs{
 			ProposalId: event.ProposalId.Uint64(),
 			Kind:       rawOperation.Name,
-			Details:    rawOperation.Details,
+			Details:    event,
 		}
 
 	case figmentclient.OperationTypeProposalExecuted:
@@ -101,7 +104,7 @@ func getGovernanceLogData(rawOperation *figmentclient.Operation) *ParsedGovernan
 		return &ParsedGovernanceLogs{
 			ProposalId: event.ProposalId.Uint64(),
 			Kind:       rawOperation.Name,
-			Details:    rawOperation.Details,
+			Details:    event,
 		}
 
 	case figmentclient.OperationTypeProposalDequeued:
@@ -109,15 +112,16 @@ func getGovernanceLogData(rawOperation *figmentclient.Operation) *ParsedGovernan
 		return &ParsedGovernanceLogs{
 			ProposalId: event.ProposalId.Uint64(),
 			Kind:       rawOperation.Name,
-			Details:    rawOperation.Details,
+			Details:    event,
 		}
 
 	case figmentclient.OperationTypeProposalQueued:
 		event := rawOperation.Details.(*contracts.GovernanceProposalQueued)
 		return &ParsedGovernanceLogs{
 			ProposalId: event.ProposalId.Uint64(),
+			Account:    event.Proposer.String(),
 			Kind:       rawOperation.Name,
-			Details:    rawOperation.Details,
+			Details:    event,
 		}
 
 	case figmentclient.OperationTypeProposalExpired:
@@ -125,7 +129,7 @@ func getGovernanceLogData(rawOperation *figmentclient.Operation) *ParsedGovernan
 		return &ParsedGovernanceLogs{
 			ProposalId: event.ProposalId.Uint64(),
 			Kind:       rawOperation.Name,
-			Details:    rawOperation.Details,
+			Details:    event,
 		}
 	}
 

@@ -6,8 +6,6 @@ CREATE TABLE IF NOT EXISTS validator_sequences
     time         TIMESTAMP WITH TIME ZONE NOT NULL,
 
     address      TEXT                     NOT NULL,
-    name         TEXT,
-    metadata_url TEXT,
     affiliation  TEXT                     NOT NULL,
     signed       BOOLEAN,
     score        DECIMAL(65, 0)           NOT NULL,

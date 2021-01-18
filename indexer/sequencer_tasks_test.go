@@ -122,24 +122,20 @@ func TestValidatorGroupSeqCreator_Run(t *testing.T) {
 			raw: []*figmentclient.ValidatorGroup{
 				{
 					Address:          "validator1",
-					Name:             "test1",
 					Commission:       big.NewInt(100),
 					VotingCap:        big.NewInt(101),
 					PendingVotes:     big.NewInt(102),
 					ActiveVotes:      big.NewInt(103),
-					ActiveVotesUnits: big.NewInt(104),
 				},
 			},
 			expect: []model.ValidatorGroupSeq{
 				{
 					Sequence: seq,
 					Address:  "validator1",
-					Name:     "test1",
 					Commission: types.NewQuantityFromInt64(100),
 					VotingCap: types.NewQuantityFromInt64(101),
 					PendingVotes: types.NewQuantityFromInt64(102),
 					ActiveVotes: types.NewQuantityFromInt64(103),
-					ActiveVoteUnits: types.NewQuantityFromInt64(104),
 				},
 			},
 

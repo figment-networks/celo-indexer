@@ -18,8 +18,8 @@ type ValidatorAgg interface {
 
 type ValidatorSeq interface {
 	BulkUpsert(records []model.ValidatorSeq) error
-	FindByHeightAndAddress(height int64, address string) (*model.ValidatorSeq, error)
 	FindByHeight(h int64) ([]model.ValidatorSeq, error)
+	FindByHeightAndAddress(height int64, address string) (*model.ValidatorSeq, error)
 	FindMostRecent() (*model.ValidatorSeq, error)
 	FindLastByAddress(address string, limit int64) ([]model.ValidatorSeq, error)
 	DeleteOlderThan(purgeThreshold time.Time) (*int64, error)

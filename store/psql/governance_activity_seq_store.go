@@ -35,8 +35,9 @@ func (s GovernanceActivitySeq) BulkUpsert(records []model.GovernanceActivitySeq)
 			return bulk.Row{
 				r.Height,
 				r.Time,
-				r.TransactionHash,
 				r.ProposalId,
+				r.Account,
+				r.TransactionHash,
 				r.Kind,
 				r.Data,
 			}

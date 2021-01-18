@@ -21,7 +21,7 @@ func (uc *getByAddressUseCase) Execute(address string, sequencesLimit int64) (*A
 		return nil, err
 	}
 
-	sequences, err := uc.getSessionSequences(address, sequencesLimit)
+	sequences, err := uc.getSequences(address, sequencesLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (uc *getByAddressUseCase) Execute(address string, sequencesLimit int64) (*A
 	return ToAggDetailsView(validatorAggs, sequences), nil
 }
 
-func (uc *getByAddressUseCase) getSessionSequences(address string, sequencesLimit int64) ([]model.ValidatorSeq, error) {
+func (uc *getByAddressUseCase) getSequences(address string, sequencesLimit int64) ([]model.ValidatorSeq, error) {
 	var sequences []model.ValidatorSeq
 	var err error
 	if sequencesLimit > 0 {

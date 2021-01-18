@@ -16,6 +16,7 @@ type BlockSummary interface {
 }
 
 type ValidatorSummary interface {
+	BulkUpsert(records []model.ValidatorSummary) error
 	Find(query *model.ValidatorSummary) (*model.ValidatorSummary, error)
 	FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error)
 	FindSummary(interval types.SummaryInterval, period string) ([]ValidatorSummaryRow, error)
@@ -26,6 +27,7 @@ type ValidatorSummary interface {
 }
 
 type ValidatorGroupSummary interface {
+	BulkUpsert(records []model.ValidatorGroupSummary) error
 	Find(query *model.ValidatorGroupSummary) (*model.ValidatorGroupSummary, error)
 	FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error)
 	FindSummary(interval types.SummaryInterval, period string) ([]ValidatorGroupSummaryRow, error)
@@ -59,9 +61,6 @@ type ValidatorGroupSummaryRow struct {
 	ActiveVotesAvg     string `json:"active_votes_avg"`
 	ActiveVotesMin     string `json:"active_votes_min"`
 	ActiveVotesMax     string `json:"active_votes_max"`
-	ActiveVoteUnitsAvg string `json:"active_vote_units_avg"`
-	ActiveVoteUnitsMin string `json:"active_vote_units_min"`
-	ActiveVoteUnitsMax string `json:"active_vote_units_max"`
 	PendingVotesAvg    string `json:"pending_votes_avg"`
 	PendingVotesMin    string `json:"pending_votes_min"`
 	PendingVotesMax    string `json:"pending_votes_max"`

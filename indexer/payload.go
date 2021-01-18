@@ -37,7 +37,7 @@ type payload struct {
 	Syncable *model.Syncable
 
 	// Parser stage
-	ParsedGovernanceLogs []*ParsedGovernanceLogs
+	ParsedGovernanceLogs     []*ParsedGovernanceLogs
 
 	// Aggregator stage
 	NewValidatorAggregates          []model.ValidatorAgg

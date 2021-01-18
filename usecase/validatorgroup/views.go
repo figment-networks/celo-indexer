@@ -42,7 +42,6 @@ type SeqListItem struct {
 	MetadataUrl      string  `json:"metadata_url"`
 	Commission       string  `json:"commission"`
 	ActiveVotes      string  `json:"active_votes"`
-	ActiveVoteUnits  string  `json:"active_vote_units"`
 	PendingVotes     string  `json:"pending_votes"`
 	MembersCount     int     `json:"members_count"`
 	MembersAvgUptime float64 `json:"members_avg_uptime"`
@@ -59,11 +58,8 @@ func ToSeqListView(validatorGroupSeqs []model.ValidatorGroupSeq) SeqListView {
 			Sequence: m.Sequence,
 
 			Address:          m.Address,
-			Name:             m.Name,
-			MetadataUrl:      m.MetadataUrl,
 			Commission:       m.Commission.String(),
 			ActiveVotes:      m.ActiveVotes.String(),
-			ActiveVoteUnits:  m.ActiveVoteUnits.String(),
 			PendingVotes:     m.PendingVotes.String(),
 			MembersCount:     m.MembersCount,
 			MembersAvgUptime: m.MembersAvgSigned,

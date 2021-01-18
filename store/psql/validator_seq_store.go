@@ -37,8 +37,6 @@ func (s ValidatorSeq) BulkUpsert(records []model.ValidatorSeq) error {
 				r.Height,
 				r.Time,
 				r.Address,
-				r.Name,
-				r.MetadataUrl,
 				r.Affiliation,
 				r.Signed,
 				r.Score.String(),
@@ -53,53 +51,62 @@ func (s ValidatorSeq) BulkUpsert(records []model.ValidatorSeq) error {
 
 // FindByHeightAndAddress finds validator by height and address
 func (s ValidatorSeq) FindByHeightAndAddress(height int64, address string) (*model.ValidatorSeq, error) {
-	q := model.ValidatorSeq{
-		Address: address,
-	}
-	var result model.ValidatorSeq
+	result := model.ValidatorSeq{}
 
 	err := s.db.
-		Where(&q).
-		Where("height = ?", height).
-		First(&result).
-		Error
+		Model(&model.ValidatorSeq{}).
+		Select(joinedAggregateSelect).
+		Joins("LEFT JOIN validator_aggregates on validator_sequences.address = validator_aggregates.address").
+		Where("validator_sequences.address = ?", address).
+		Where("validator_sequences.height = ?", height).
+		Limit(1).
+		Scan(&result).Error
 
 	return &result, checkErr(err)
 }
 
 // FindByHeight finds validator sequences by height
-func (s ValidatorSeq) FindByHeight(h int64) ([]model.ValidatorSeq, error) {
+func (s ValidatorSeq) FindByHeight(height int64) ([]model.ValidatorSeq, error) {
 	var result []model.ValidatorSeq
 
 	err := s.db.
-		Where("height = ?", h).
-		Find(&result).
-		Error
+		Model(&model.ValidatorSeq{}).
+		Select(joinedAggregateSelect).
+		Joins("LEFT JOIN validator_aggregates on validator_sequences.address = validator_aggregates.address").
+		Where("validator_sequences.height = ?", height).
+		Scan(&result).Error
 
 	return result, checkErr(err)
 }
 
 // FindMostRecent finds most recent validator era sequence
 func (s *ValidatorSeq) FindMostRecent() (*model.ValidatorSeq, error) {
-	validatorSeq := &model.ValidatorSeq{}
-	if err := findMostRecent(s.db, "time", validatorSeq); err != nil {
-		return nil, err
-	}
-	return validatorSeq, nil
+	result := model.ValidatorSeq{}
+
+	err := s.db.
+		Model(&model.ValidatorSeq{}).
+		Select(joinedAggregateSelect).
+		Joins("LEFT JOIN validator_aggregates on validator_sequences.address = validator_aggregates.address").
+		Order("time DESC").
+		Limit(1).
+		Scan(&result).
+		Error
+
+	return &result, checkErr(err)
 }
 
 // FindLastByAddress finds last validator sequences for given address
 func (s ValidatorSeq) FindLastByAddress(address string, limit int64) ([]model.ValidatorSeq, error) {
-	q := model.ValidatorSeq{
-		Address: address,
-	}
 	var result []model.ValidatorSeq
 
 	err := s.db.
-		Where(&q).
+		Model(&model.ValidatorSeq{}).
+		Select(joinedAggregateSelect).
+		Joins("LEFT JOIN validator_aggregates on validator_sequences.address = validator_aggregates.address").
+		Where("validator_sequences.address = ?", address).
 		Order("height DESC").
 		Limit(limit).
-		Find(&result).
+		Scan(&result).
 		Error
 
 	return result, checkErr(err)
@@ -125,7 +132,7 @@ func (s *ValidatorSeq) Summarize(interval types.SummaryInterval, activityPeriods
 
 	tx := s.db.
 		Table(model.ValidatorSeq{}.TableName()).
-		Select(summarizeValidatorsForEraQuerySelect, interval).
+		Select(summarizeValidatorsQuerySelect, interval).
 		Order("time_bucket").
 		Group("address, time_bucket")
 

@@ -2,17 +2,29 @@ package model
 
 import "github.com/figment-networks/celo-indexer/types"
 
+const (
+	VoteAbstain = 1
+	VoteNo      = 2
+	VoteYes     = 3
+
+	ProposalStageProposed = "proposed"
+	ProposalStageApproved = "approved"
+	ProposalStageExecuted = "executed"
+	ProposalStageDequeued = "dequeued"
+	ProposalStageExpired  = "expired"
+)
+
 type ProposalAgg struct {
 	*ModelWithTimestamps
 	*Aggregate
 
-	ProposalId       uint64         `json:"proposal_id"`
-	ProposerAddress  string         `json:"proposer_address"`
-	DescriptionUrl   string         `json:"description_url"`
-	Deposit          types.Quantity `json:"deposit"`
-	TransactionCount int64          `json:"transaction_count"`
-	ProposedAtHeight int64          `json:"proposed_at_height"`
-	ProposedAt       types.Time     `json:"proposed_at"`
+	ProposalId       uint64     `json:"proposal_id"`
+	ProposerAddress  string     `json:"proposer_address"`
+	DescriptionUrl   string     `json:"description_url"`
+	Deposit          string     `json:"deposit"`
+	TransactionCount int64      `json:"transaction_count"`
+	ProposedAtHeight int64      `json:"proposed_at_height"`
+	ProposedAt       types.Time `json:"proposed_at"`
 
 	RecentStage string `json:"recent_stage"`
 
@@ -31,16 +43,15 @@ type ProposalAgg struct {
 	ExpiredAtHeight int64      `json:"expired_at_height"`
 	ExpiredAt       types.Time `json:"expired_at"`
 
-	UpvotesTotal types.Quantity `json:"upvotes_total"`
-
-	YesVotesTotal           uint64         `json:"yes_votes_total"`
-	YesVotesWeightTotal     types.Quantity `json:"yes_votes_weight_total"`
-	NoVotesTotal            uint64         `json:"no_votes_total"`
-	NoVotesWeightTotal      types.Quantity `json:"no_votes_weight_total"`
-	AbstainVotesTotal       uint64         `json:"abstain_votes_total"`
-	AbstainVotesWeightTotal types.Quantity `json:"abstain_votes_weight_total"`
-	VotesTotal              uint64         `json:"votes_total"`
-	VotesWeightTotal        types.Quantity `json:"votes_total"`
+	UpvotesTotal            string `json:"upvotes_total"`
+	YesVotesTotal           uint64 `json:"yes_votes_total"`
+	YesVotesWeightTotal     string `json:"yes_votes_weight_total"`
+	NoVotesTotal            uint64 `json:"no_votes_total"`
+	NoVotesWeightTotal      string `json:"no_votes_weight_total"`
+	AbstainVotesTotal       uint64 `json:"abstain_votes_total"`
+	AbstainVotesWeightTotal string `json:"abstain_votes_weight_total"`
+	VotesTotal              uint64 `json:"votes_total"`
+	VotesWeightTotal        string `json:"votes_weight_total"`
 }
 
 func (ProposalAgg) TableName() string {

@@ -1,8 +1,6 @@
 CREATE TABLE IF NOT EXISTS system_events
 (
     id         BIGSERIAL                NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
 
     height     DECIMAL(65, 0)           NOT NULL,
     time       TIMESTAMP WITH TIME ZONE NOT NULL,

@@ -10,15 +10,16 @@ type ValidatorGroupSeq struct {
 	*Sequence
 
 	Address          string         `json:"address"`
-	Name             string         `json:"name"`
-	MetadataUrl      string         `json:"metadata_url"`
 	Commission       types.Quantity `json:"commission"`
 	ActiveVotes      types.Quantity `json:"active_votes"`
-	ActiveVoteUnits  types.Quantity `json:"active_vote_units"`
 	PendingVotes     types.Quantity `json:"pending_votes"`
-	VotingCap     types.Quantity `json:"voting_cap"`
+	VotingCap        types.Quantity `json:"voting_cap"`
 	MembersCount     int            `json:"members_count"`
 	MembersAvgSigned float64        `json:"members_avg_signed"`
+
+	// Join fields
+	Name        string `json:"name"`
+	MetadataUrl string `json:"metadata_url"`
 }
 
 func (ValidatorGroupSeq) TableName() string {
@@ -35,12 +36,9 @@ func (s *ValidatorGroupSeq) Equal(m ValidatorGroupSeq) bool {
 }
 
 func (b *ValidatorGroupSeq) Update(m ValidatorGroupSeq) {
-	b.Name = m.Name
-	b.MetadataUrl = m.MetadataUrl
 	b.Commission = m.Commission
 	b.ActiveVotes = m.ActiveVotes
 	b.ActiveVotes = m.ActiveVotes
-	b.ActiveVoteUnits = m.ActiveVoteUnits
 	b.PendingVotes = m.PendingVotes
 	b.MembersCount = m.MembersCount
 	b.MembersAvgSigned = m.MembersAvgSigned

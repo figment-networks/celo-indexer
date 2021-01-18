@@ -7,6 +7,7 @@ type GovernanceActivitySeq struct {
 	*Sequence
 
 	ProposalId      uint64      `json:"proposal_id"`
+	Account         string      `json:"account"`
 	TransactionHash string      `json:"transaction_hash"`
 	Kind            string      `json:"kind"`
 	Data            types.Jsonb `json:"data"`

@@ -24,6 +24,10 @@ func NewQuantityFromBytes(bytes []byte) Quantity {
 	return Quantity{Int: *b.SetBytes(bytes)}
 }
 
+func NewQuantityFromString(text string) Quantity {
+	return NewQuantityFromBytes([]byte(text))
+}
+
 func (b *Quantity) Valid() bool {
 	return b.Int.Sign() >= 0
 }

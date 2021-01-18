@@ -6,16 +6,11 @@ const (
 		  height,
 		  time,
 		  proposal_id,
+		  account,
 		  transaction_hash,
 		  kind,
 		  data
 		)
-		VALUES @values
-		
-		ON CONFLICT (height, proposal_id) DO UPDATE
-		SET
-		  transaction_hash = excluded.transaction_hash,
-		  kind = excluded.kind,
-		  data = excluded.data;
+		VALUES @values;
 	`
 )

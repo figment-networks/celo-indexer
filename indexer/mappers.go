@@ -59,8 +59,6 @@ func ToValidatorSequence(syncable *model.Syncable, rawValidators []*figmentclien
 			},
 
 			Address:     rawValidator.Address,
-			Name:        rawValidator.Name,
-			MetadataUrl: rawValidator.MetadataUrl,
 			Affiliation: rawValidator.Affiliation,
 			Signed:      rawValidator.Signed,
 			Score:       types.NewQuantity(rawValidator.Score),
@@ -87,11 +85,8 @@ func ToValidatorGroupSequence(syncable *model.Syncable, rawValidatorGroups []*fi
 			},
 
 			Address:         rawValidatorGroup.Address,
-			Name:            rawValidatorGroup.Name,
-			MetadataUrl:     rawValidatorGroup.MetadataUrl,
 			Commission:      types.NewQuantity(rawValidatorGroup.Commission),
 			ActiveVotes:     types.NewQuantity(rawValidatorGroup.ActiveVotes),
-			ActiveVoteUnits: types.NewQuantity(rawValidatorGroup.ActiveVotesUnits),
 			PendingVotes:    types.NewQuantity(rawValidatorGroup.PendingVotes),
 			VotingCap:       types.NewQuantity(rawValidatorGroup.VotingCap),
 			MembersCount:    len(rawValidatorGroup.Members),
@@ -373,6 +368,7 @@ func ToGovernanceActivitySequence(syncable *model.Syncable, parsedGovernanceLogs
 
 			TransactionHash: log.TransactionHash,
 			ProposalId:      log.ProposalId,
+			Account: log.Account,
 			Kind:            log.Kind,
 			Data:            types.Jsonb{RawMessage: marshaledData},
 		})

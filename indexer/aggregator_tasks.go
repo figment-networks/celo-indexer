@@ -27,13 +27,15 @@ var (
 	_ pipeline.Task = (*validatorGroupAggCreatorTask)(nil)
 )
 
-func NewValidatorAggCreatorTask(validatorAggDb store.ValidatorAgg) *validatorAggCreatorTask {
+func NewValidatorAggCreatorTask(c figmentclient.Client, validatorAggDb store.ValidatorAgg) *validatorAggCreatorTask {
 	return &validatorAggCreatorTask{
+		client:         c,
 		validatorAggDb: validatorAggDb,
 	}
 }
 
 type validatorAggCreatorTask struct {
+	client         figmentclient.Client
 	validatorAggDb store.ValidatorAgg
 }
 
@@ -49,6 +51,16 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	rawValidators := payload.RawValidators
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageAggregator, t.GetName(), payload.CurrentHeight))
+
+	shouldFetchIdentities := false
+	report, ok := ctx.Value(CtxReport).(*model.Report)
+	if ok {
+		// No need to get metadata for all heights
+		// Get metadata only for beginning of sync cycle and end
+		if payload.CurrentHeight == report.StartHeight || payload.CurrentHeight == report.EndHeight {
+			shouldFetchIdentities = true
+		}
+	}
 
 	var newValidatorAggs []model.ValidatorAgg
 	var updatedValidatorAggs []model.ValidatorAgg
@@ -67,8 +79,6 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					},
 
 					Address:                 rawValidator.Address,
-					RecentName:              rawValidator.Name,
-					RecentMetadataUrl:       rawValidator.MetadataUrl,
 					RecentAsValidatorHeight: payload.Syncable.Height,
 				}
 
@@ -83,6 +93,14 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					}
 					validator.AccumulatedUptimeCount = 1
 				}
+
+				// Always get identity for new records
+				identity, err := t.client.GetIdentityByHeight(ctx, validator.Address, payload.CurrentHeight)
+				if err != nil {
+					return err
+				}
+				validator.RecentName = identity.Name
+				validator.RecentMetadataUrl = identity.MetadataUrl
 
 				newValidatorAggs = append(newValidatorAggs, validator)
 			} else {
@@ -111,12 +129,14 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 				validator.AccumulatedUptimeCount = existing.AccumulatedUptimeCount + 1
 			}
 
-			if rawValidator.Name != "" {
-				validator.RecentName = rawValidator.Name
-			}
+			if shouldFetchIdentities {
+				identity, err := t.client.GetIdentityByHeight(ctx, validator.Address, payload.CurrentHeight)
+				if err != nil {
+					return err
+				}
 
-			if rawValidator.MetadataUrl != "" {
-				validator.RecentMetadataUrl = rawValidator.MetadataUrl
+				validator.RecentName = identity.Name
+				validator.RecentMetadataUrl = identity.MetadataUrl
 			}
 
 			existing.Update(validator)
@@ -130,13 +150,15 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	return nil
 }
 
-func NewValidatorGroupAggCreatorTask(validatorGroupAggDb store.ValidatorGroupAgg) *validatorGroupAggCreatorTask {
+func NewValidatorGroupAggCreatorTask(c figmentclient.Client, validatorGroupAggDb store.ValidatorGroupAgg) *validatorGroupAggCreatorTask {
 	return &validatorGroupAggCreatorTask{
+		client:              c,
 		validatorGroupAggDb: validatorGroupAggDb,
 	}
 }
 
 type validatorGroupAggCreatorTask struct {
+	client              figmentclient.Client
 	validatorGroupAggDb store.ValidatorGroupAgg
 }
 
@@ -153,6 +175,16 @@ func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageAggregator, t.GetName(), payload.CurrentHeight))
 
+	shouldFetchIdentities := false
+	report, ok := ctx.Value(CtxReport).(*model.Report)
+	if ok {
+		// No need to get metadata for all heights
+		// Get metadata only for beginning of sync cycle and end
+		if payload.CurrentHeight == report.StartHeight || payload.CurrentHeight == report.EndHeight {
+			shouldFetchIdentities = true
+		}
+	}
+
 	var newValidatorGroupAggs []model.ValidatorGroupAgg
 	var updatedValidatorGroupAggs []model.ValidatorGroupAgg
 	for _, rawGroup := range rawValidatorGroups {
@@ -160,7 +192,6 @@ func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 		if err != nil {
 			if err == psql.ErrNotFound {
 				// Create new
-
 				group := model.ValidatorGroupAgg{
 					Aggregate: &model.Aggregate{
 						StartedAtHeight: payload.Syncable.Height,
@@ -169,10 +200,16 @@ func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 						RecentAt:        *payload.Syncable.Time,
 					},
 
-					Address:           rawGroup.Address,
-					RecentName:        rawGroup.Name,
-					RecentMetadataUrl: rawGroup.MetadataUrl,
+					Address: rawGroup.Address,
 				}
+
+				// Always get identity for new records
+				identity, err := t.client.GetIdentityByHeight(ctx, group.Address, payload.CurrentHeight)
+				if err != nil {
+					return err
+				}
+				group.RecentName = identity.Name
+				group.RecentMetadataUrl = identity.MetadataUrl
 
 				newValidatorGroupAggs = append(newValidatorGroupAggs, group)
 			} else {
@@ -187,12 +224,13 @@ func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 				},
 			}
 
-			if rawGroup.Name != "" {
-				group.RecentName = rawGroup.Name
-			}
-
-			if rawGroup.MetadataUrl != "" {
-				group.RecentMetadataUrl = rawGroup.MetadataUrl
+			if shouldFetchIdentities {
+				identity, err := t.client.GetIdentityByHeight(ctx, group.Address, payload.CurrentHeight)
+				if err != nil {
+					return err
+				}
+				group.RecentName = identity.Name
+				group.RecentMetadataUrl = identity.MetadataUrl
 			}
 
 			existing.Update(group)
@@ -254,10 +292,9 @@ func (t *proposalAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 					proposal.ProposedAtHeight = payload.Syncable.Height
 					proposal.ProposedAt = *payload.Syncable.Time
 					proposal.ProposerAddress = event.Proposer.String()
-					proposal.Deposit = types.NewQuantity(event.Deposit)
+					proposal.Deposit = event.Deposit.String()
 					proposal.TransactionCount = event.TransactionCount.Int64()
-				} else {
-
+					proposal.RecentStage = model.ProposalStageProposed
 				}
 
 				newProposalAggs = append(newProposalAggs, proposal)
@@ -281,50 +318,64 @@ func (t *proposalAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 				vote := event.Value.Uint64()
 
 				//According to: https://github.com/celo-org/celo-monorepo/blob/master/packages/protocol/contracts/governance/Governance.sol#L41
-				if vote == 1 {
+				if vote == model.VoteAbstain {
 					toUpdate.AbstainVotesTotal += 1
-					if err := toUpdate.AbstainVotesWeightTotal.Add(types.NewQuantity(event.Weight)); err != nil {
+					existingValue := types.NewQuantityFromString(toUpdate.AbstainVotesWeightTotal)
+					if err := existingValue.Add(types.NewQuantity(event.Weight)); err != nil {
 						return err
 					}
-				} else if vote == 2 {
+					toUpdate.AbstainVotesWeightTotal = existingValue.String()
+				} else if vote == model.VoteNo {
 					toUpdate.NoVotesTotal += 1
-					if err := toUpdate.NoVotesWeightTotal.Add(types.NewQuantity(event.Weight)); err != nil {
+					existingValue := types.NewQuantityFromString(toUpdate.NoVotesWeightTotal)
+					if err := existingValue.Add(types.NewQuantity(event.Weight)); err != nil {
 						return err
 					}
-				} else if vote == 3 {
+					toUpdate.NoVotesWeightTotal = existingValue.String()
+				} else if vote == model.VoteYes {
 					toUpdate.YesVotesTotal += 1
-					if err := toUpdate.YesVotesWeightTotal.Add(types.NewQuantity(event.Weight)); err != nil {
+					existingValue := types.NewQuantityFromString(toUpdate.YesVotesWeightTotal)
+					if err := existingValue.Add(types.NewQuantity(event.Weight)); err != nil {
 						return err
 					}
+					toUpdate.YesVotesWeightTotal = existingValue.String()
 				}
 
 				toUpdate.VotesTotal += 1
-				if err := toUpdate.VotesWeightTotal.Add(types.NewQuantity(event.Weight)); err != nil {
+				existingValue := types.NewQuantityFromString(toUpdate.VotesWeightTotal)
+				if err := existingValue.Add(types.NewQuantity(event.Weight)); err != nil {
 					return err
 				}
+				toUpdate.VotesWeightTotal = existingValue.String()
 
 			case figmentclient.OperationTypeProposalUpvoted:
 				event := log.Details.(*contracts.GovernanceProposalUpvoted)
 
-				if err := toUpdate.UpvotesTotal.Add(types.NewQuantity(event.Upvotes)); err != nil {
+				existingValue := types.NewQuantityFromString(toUpdate.VotesWeightTotal)
+				if err := existingValue.Add(types.NewQuantity(event.Upvotes)); err != nil {
 					return err
 				}
+				toUpdate.VotesWeightTotal = existingValue.String()
 
 			case figmentclient.OperationTypeProposalApproved:
 				toUpdate.ApprovedAtHeight = payload.Syncable.Height
 				toUpdate.ApprovedAt = *payload.Syncable.Time
+				toUpdate.RecentStage = model.ProposalStageApproved
 
 			case figmentclient.OperationTypeProposalExecuted:
 				toUpdate.ExecutedAtHeight = payload.Syncable.Height
 				toUpdate.ExecutedAt = *payload.Syncable.Time
+				toUpdate.RecentStage = model.ProposalStageExecuted
 
 			case figmentclient.OperationTypeProposalDequeued:
 				toUpdate.DequeuedAtHeight = payload.Syncable.Height
 				toUpdate.DequeuedAt = *payload.Syncable.Time
+				toUpdate.RecentStage = model.ProposalStageDequeued
 
 			case figmentclient.OperationTypeProposalExpired:
 				toUpdate.ExpiredAtHeight = payload.Syncable.Height
 				toUpdate.ExpiredAt = *payload.Syncable.Time
+				toUpdate.RecentStage = model.ProposalStageExpired
 			}
 
 			existing.Update(toUpdate)

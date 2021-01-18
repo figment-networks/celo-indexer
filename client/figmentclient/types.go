@@ -118,15 +118,12 @@ type Transfer struct {
 type ValidatorGroup struct {
 	Index               uint64   `json:"index"`
 	Address             string   `json:"address"`
-	Name                string   `json:"name"`
-	MetadataUrl         string   `json:"metadata_url"`
 	Commission          *big.Int `json:"commission"`
 	NextCommission      *big.Int `json:"next_commission"`
 	NextCommissionBlock int64    `json:"next_commission_block"`
 	SlashMultiplier     *big.Int `json:"slash_multiplier "`
 	LastSlashed         *big.Int `json:"last_slashed"`
 	ActiveVotes         *big.Int `json:"active_votes"`
-	ActiveVotesUnits    *big.Int `json:"active_votes_units"`
 	PendingVotes        *big.Int `json:"pending_votes"`
 	VotingCap           *big.Int `json:"voting_cap"`
 	Members             []string `json:"members"`
@@ -134,8 +131,6 @@ type ValidatorGroup struct {
 
 type Validator struct {
 	Address        string   `json:"address"`
-	Name           string   `json:"name"`
-	MetadataUrl    string   `json:"metadata_url"`
 	BlsPublicKey   []byte   `json:"bls_public_key"`
 	EcdsaPublicKey []byte   `json:"ecdsa_public_key"`
 	Signer         string   `json:"signer"`
