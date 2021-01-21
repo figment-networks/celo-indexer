@@ -1,8 +1,6 @@
 CREATE TABLE IF NOT EXISTS block_summary
 (
     id                            BIGSERIAL                NOT NULL,
-    created_at                    TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at                    TIMESTAMP WITH TIME ZONE NOT NULL,
 
     time_interval                 VARCHAR                  NOT NULL,
     time_bucket                   TIMESTAMP WITH TIME ZONE NOT NULL,

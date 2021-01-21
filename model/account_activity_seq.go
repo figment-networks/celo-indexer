@@ -3,6 +3,7 @@ package model
 import "github.com/figment-networks/celo-indexer/types"
 
 type AccountActivitySeq struct {
+	*Model
 	*Sequence
 
 	TransactionHash string         `json:"transaction_hash"`

@@ -1,7 +1,7 @@
 package model
 
 type BlockSummary struct {
-	*ModelWithTimestamps
+	*Model
 	*Summary
 
 	Count                      int64   `json:"count"`

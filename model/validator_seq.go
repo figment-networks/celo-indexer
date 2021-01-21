@@ -6,8 +6,7 @@ import (
 )
 
 type ValidatorSeq struct {
-	ID types.ID `json:"id"`
-
+	*Model
 	*Sequence
 
 	Address     string         `json:"address"`

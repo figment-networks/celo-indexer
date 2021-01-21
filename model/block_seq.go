@@ -1,10 +1,7 @@
 package model
 
-import "github.com/figment-networks/celo-indexer/types"
-
 type BlockSeq struct {
-	ID types.ID `json:"id"`
-
+	*Model
 	*Sequence
 
 	// Indexed data
