@@ -16,12 +16,12 @@ var (
 
 type getStatusHttpHandler struct {
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *getStatusUseCase
 }
 
-func NewGetStatusHttpHandler(db *psql.Store, client figmentclient.Client) *getStatusHttpHandler {
+func NewGetStatusHttpHandler(db *psql.Store, client figmentclient.ClientIface) *getStatusHttpHandler {
 	return &getStatusHttpHandler{
 		db:     db,
 		client: client,

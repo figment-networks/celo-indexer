@@ -2,6 +2,10 @@ package indexer
 
 import (
 	"context"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	clientMock "github.com/figment-networks/celo-indexer/mock/client"
 	mock "github.com/figment-networks/celo-indexer/mock/store"
@@ -10,9 +14,6 @@ import (
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestValidatorAggCreatorTask_Run(t *testing.T) {

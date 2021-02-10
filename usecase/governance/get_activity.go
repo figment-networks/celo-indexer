@@ -2,16 +2,17 @@ package governance
 
 import (
 	"context"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/store/psql"
 )
 
 type getActivityUseCase struct {
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 }
 
-func NewGetActivityUseCase(c figmentclient.Client, db *psql.Store) *getActivityUseCase {
+func NewGetActivityUseCase(c figmentclient.ClientIface, db *psql.Store) *getActivityUseCase {
 	return &getActivityUseCase{
 		client: c,
 		db:     db,

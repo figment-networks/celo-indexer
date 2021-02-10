@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/celo-indexer/store/psql"
 
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
@@ -11,12 +12,12 @@ import (
 
 type GetStatusCmdHandler struct {
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *getStatusUseCase
 }
 
-func NewGetStatusCmdHandler(db *psql.Store, c figmentclient.Client) *GetStatusCmdHandler {
+func NewGetStatusCmdHandler(db *psql.Store, c figmentclient.ClientIface) *GetStatusCmdHandler {
 	return &GetStatusCmdHandler{
 		db:     db,
 		client: c,

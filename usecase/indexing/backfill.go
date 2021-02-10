@@ -2,6 +2,7 @@ package indexing
 
 import (
 	"context"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/store/psql"
 
@@ -18,10 +19,10 @@ var (
 type backfillUseCase struct {
 	cfg    *config.Config
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 }
 
-func NewBackfillUseCase(cfg *config.Config, db *psql.Store, c figmentclient.Client) *backfillUseCase {
+func NewBackfillUseCase(cfg *config.Config, db *psql.Store, c figmentclient.ClientIface) *backfillUseCase {
 	return &backfillUseCase{
 		cfg:    cfg,
 		db:     db,

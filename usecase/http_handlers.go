@@ -16,7 +16,7 @@ import (
 	"github.com/figment-networks/celo-indexer/usecase/validatorgroup"
 )
 
-func NewHttpHandlers(cfg *config.Config, db *psql.Store, c figmentclient.Client) *HttpHandlers {
+func NewHttpHandlers(cfg *config.Config, db *psql.Store, c figmentclient.ClientIface) *HttpHandlers {
 	return &HttpHandlers{
 		Health:                     health.NewHealthHttpHandler(),
 		GetStatus:                  chain.NewGetStatusHttpHandler(db, c),

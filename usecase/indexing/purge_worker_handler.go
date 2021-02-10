@@ -2,6 +2,7 @@ package indexing
 
 import (
 	"context"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/store/psql"
@@ -16,12 +17,12 @@ var (
 type purgeWorkerHandler struct {
 	cfg    *config.Config
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *purgeUseCase
 }
 
-func NewPurgeWorkerHandler(cfg *config.Config, db *psql.Store, c figmentclient.Client) *purgeWorkerHandler {
+func NewPurgeWorkerHandler(cfg *config.Config, db *psql.Store, c figmentclient.ClientIface) *purgeWorkerHandler {
 	return &purgeWorkerHandler{
 		cfg:    cfg,
 		db:     db,
@@ -47,6 +48,3 @@ func (h *purgeWorkerHandler) getUseCase() *purgeUseCase {
 	}
 	return h.useCase
 }
-
-
-

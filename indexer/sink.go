@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/store"
@@ -15,7 +16,7 @@ var (
 	_ pipeline.Sink = (*sink)(nil)
 )
 
-func NewSink(syncableDb store.Syncables, databaseDb store.Database, c figmentclient.Client, versionNumber int64) *sink {
+func NewSink(syncableDb store.Syncables, databaseDb store.Database, c figmentclient.ClientIface, versionNumber int64) *sink {
 	return &sink{
 		syncableDb:    syncableDb,
 		databaseDb:    databaseDb,
@@ -27,7 +28,7 @@ func NewSink(syncableDb store.Syncables, databaseDb store.Database, c figmentcli
 type sink struct {
 	syncableDb    store.Syncables
 	databaseDb    store.Database
-	client        figmentclient.Client
+	client        figmentclient.ClientIface
 	versionNumber int64
 
 	successCount int64

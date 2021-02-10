@@ -16,12 +16,12 @@ var (
 
 type getBlockTimesHttpHandler struct {
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *getBlockTimesUseCase
 }
 
-func NewGetBlockTimesHttpHandler(db *psql.Store, client figmentclient.Client) *getBlockTimesHttpHandler {
+func NewGetBlockTimesHttpHandler(db *psql.Store, client figmentclient.ClientIface) *getBlockTimesHttpHandler {
 	return &getBlockTimesHttpHandler{
 		db:     db,
 		client: client,

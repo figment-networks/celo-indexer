@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/pkg/errors"
@@ -9,10 +10,10 @@ import (
 
 type getByHeightUseCase struct {
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 }
 
-func NewGetByHeightUseCase(db *psql.Store, c figmentclient.Client) *getByHeightUseCase {
+func NewGetByHeightUseCase(db *psql.Store, c figmentclient.ClientIface) *getByHeightUseCase {
 	return &getByHeightUseCase{
 		db:     db,
 		client: c,

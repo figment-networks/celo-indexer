@@ -3,6 +3,9 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/client/theceloclient"
 	"github.com/figment-networks/celo-indexer/config"
@@ -10,13 +13,11 @@ import (
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/celo-indexer/utils/reporting"
 	"github.com/pkg/errors"
-	"strconv"
-	"strings"
 )
 
 type Flags struct {
-	configPath string
-	runCommand string
+	configPath  string
+	runCommand  string
 	showVersion bool
 
 	batchSize int64
@@ -133,7 +134,7 @@ func initLogger(cfg *config.Config) error {
 	return logger.Init(cfg)
 }
 
-func initClient(cfg *config.Config) (figmentclient.Client, error) {
+func initClient(cfg *config.Config) (figmentclient.ClientIface, error) {
 	return figmentclient.New(cfg.NodeUrl)
 }
 

@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/store"
@@ -17,11 +18,11 @@ var (
 )
 
 type IndexSourceConfig struct {
-	BatchSize      int64
-	StartHeight    int64
+	BatchSize   int64
+	StartHeight int64
 }
 
-func NewIndexSource(cfg *config.Config, client figmentclient.Client, syncableDb store.Syncables, sourceCfg *IndexSourceConfig) (*indexSource, error) {
+func NewIndexSource(cfg *config.Config, client figmentclient.ClientIface, syncableDb store.Syncables, sourceCfg *IndexSourceConfig) (*indexSource, error) {
 	src := &indexSource{
 		cfg:    cfg,
 		client: client,
@@ -37,8 +38,8 @@ func NewIndexSource(cfg *config.Config, client figmentclient.Client, syncableDb 
 }
 
 type indexSource struct {
-	cfg           *config.Config
-	client        figmentclient.Client
+	cfg    *config.Config
+	client figmentclient.ClientIface
 
 	syncableDb store.Syncables
 

@@ -2,6 +2,7 @@ package indexing
 
 import (
 	"context"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/store/psql"
 
@@ -18,10 +19,10 @@ var (
 type startUseCase struct {
 	cfg    *config.Config
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 }
 
-func NewStartUseCase(cfg *config.Config, db *psql.Store, c figmentclient.Client) *startUseCase {
+func NewStartUseCase(cfg *config.Config, db *psql.Store, c figmentclient.ClientIface) *startUseCase {
 	return &startUseCase{
 		cfg:    cfg,
 		db:     db,

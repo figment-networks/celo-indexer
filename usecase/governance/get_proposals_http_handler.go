@@ -17,12 +17,12 @@ var (
 
 type getProposalsHttpHandler struct {
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *getProposalsUseCase
 }
 
-func NewGetProposalsHttpHandler(db *psql.Store, c figmentclient.Client) *getProposalsHttpHandler {
+func NewGetProposalsHttpHandler(db *psql.Store, c figmentclient.ClientIface) *getProposalsHttpHandler {
 	return &getProposalsHttpHandler{
 		db:     db,
 		client: c,

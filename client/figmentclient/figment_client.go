@@ -3,6 +3,8 @@ package figmentclient
 import (
 	"context"
 	"fmt"
+	"math/big"
+
 	kliento "github.com/celo-org/kliento/client"
 	"github.com/celo-org/kliento/client/debug"
 	"github.com/celo-org/kliento/registry"
@@ -13,7 +15,6 @@ import (
 	base "github.com/figment-networks/celo-indexer/client"
 	"github.com/figment-networks/celo-indexer/utils"
 	"github.com/figment-networks/celo-indexer/utils/logger"
-	"math/big"
 )
 
 const (
@@ -21,11 +22,11 @@ const (
 )
 
 var (
-	_ Client              = (*client)(nil)
+	_ ClientIface         = (*Client)(nil)
 	_ base.RequestCounter = (*requestCounter)(nil)
 )
 
-type Client interface {
+type ClientIface interface {
 	base.Client
 
 	GetRequestCounter() base.RequestCounter
@@ -58,36 +59,36 @@ func (rc *requestCounter) GetCounter() uint64 {
 	return rc.counter
 }
 
-type client struct {
+type Client struct {
 	cc             *kliento.CeloClient
 	requestCounter *requestCounter
 }
 
-func New(url string) (*client, error) {
+func New(url string) (*Client, error) {
 	cc, err := kliento.Dial(url)
 	if err != nil {
 		return nil, err
 	}
 
-	return &client{
+	return &Client{
 		cc:             cc,
 		requestCounter: &requestCounter{},
 	}, nil
 }
 
-func (l *client) GetName() string {
+func (l *Client) GetName() string {
 	return CeloClientFigment
 }
 
-func (l *client) Close() {
+func (l *Client) Close() {
 	l.cc.Close()
 }
 
-func (l *client) GetRequestCounter() base.RequestCounter {
+func (l *Client) GetRequestCounter() base.RequestCounter {
 	return l.requestCounter
 }
 
-func (l *client) GetChainStatus(ctx context.Context) (*ChainStatus, error) {
+func (l *Client) GetChainStatus(ctx context.Context) (*ChainStatus, error) {
 	chainId, err := l.cc.Net.ChainId(ctx)
 	if err != nil {
 		return nil, err
@@ -109,7 +110,7 @@ func (l *client) GetChainStatus(ctx context.Context) (*ChainStatus, error) {
 	return chain, nil
 }
 
-func (l *client) GetChainParams(ctx context.Context) (*ChainParams, error) {
+func (l *Client) GetChainParams(ctx context.Context) (*ChainParams, error) {
 	chainParams := &ChainParams{}
 
 	chainId, err := l.cc.Net.ChainId(ctx)
@@ -140,7 +141,7 @@ func (l *client) GetChainParams(ctx context.Context) (*ChainParams, error) {
 	return chainParams, setupErr
 }
 
-func (l *client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, error) {
+func (l *Client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, error) {
 	var height *big.Int
 	if h == 0 {
 		height = nil
@@ -191,7 +192,7 @@ func (l *client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, err
 	return heightMeta, setupErr
 }
 
-func (l *client) GetBlockByHeight(ctx context.Context, h int64) (*Block, error) {
+func (l *Client) GetBlockByHeight(ctx context.Context, h int64) (*Block, error) {
 	var height *big.Int
 	if h == 0 {
 		height = nil
@@ -252,7 +253,7 @@ func (l *client) GetBlockByHeight(ctx context.Context, h int64) (*Block, error) 
 	return block, nil
 }
 
-func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Transaction, error) {
+func (l *Client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Transaction, error) {
 	var height *big.Int
 	if h == 0 {
 		height = nil
@@ -332,7 +333,7 @@ func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Trans
 	return transactions, setupErr
 }
 
-func (l *client) parseFromInternalTransfers(internalTransfers []debug.Transfer) []*Operation {
+func (l *Client) parseFromInternalTransfers(internalTransfers []debug.Transfer) []*Operation {
 	var operations []*Operation
 	for i, t := range internalTransfers {
 		transfer := &Transfer{
@@ -352,7 +353,7 @@ func (l *client) parseFromInternalTransfers(internalTransfers []debug.Transfer) 
 	return operations
 }
 
-func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]*Operation, error) {
+func (l *Client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]*Operation, error) {
 	var operations []*Operation
 	for _, eventLog := range logs {
 		if eventLog.Address == cr.addresses[registry.ElectionContractID] && cr.contractDeployed(registry.ElectionContractID) {
@@ -366,7 +367,6 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 				})
 			}
 
-
 		} else if eventLog.Address == cr.addresses[registry.AccountsContractID] && cr.contractDeployed(registry.AccountsContractID) {
 			eventName, eventRaw, _, err := cr.accountsContract.TryParseLog(*eventLog)
 			if err != nil {
@@ -378,7 +378,6 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 				})
 			}
 
-
 		} else if eventLog.Address == cr.addresses[registry.LockedGoldContractID] && cr.contractDeployed(registry.LockedGoldContractID) {
 			eventName, eventRaw, _, err := cr.lockedGoldContract.TryParseLog(*eventLog)
 			if err != nil {
@@ -389,7 +388,6 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 					Details: eventRaw,
 				})
 			}
-
 
 		} else if eventLog.Address == cr.addresses[registry.StableTokenContractID] && cr.contractDeployed(registry.StableTokenContractID) {
 			eventName, eventRaw, _, err := cr.stableTokenContract.TryParseLog(*eventLog)
@@ -441,7 +439,7 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 	return operations, nil
 }
 
-func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*ValidatorGroup, error) {
+func (l *Client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*ValidatorGroup, error) {
 	var height *big.Int
 	if h == 0 {
 		height = nil
@@ -453,7 +451,7 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 	if err != nil {
 		return nil, err
 	}
-	err = cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID,)
+	err = cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID)
 	if err != nil {
 		return nil, err
 	}
@@ -522,7 +520,7 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 	return validatorGroups, nil
 }
 
-func (l *client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validator, error) {
+func (l *Client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validator, error) {
 	var height *big.Int
 	if h == 0 {
 		height = nil
@@ -581,7 +579,7 @@ func (l *client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validat
 	return validators, nil
 }
 
-func (l *client) getValidationMap(ctx context.Context, cr *contractsRegistry, height *big.Int) (map[string]bool, error) {
+func (l *Client) getValidationMap(ctx context.Context, cr *contractsRegistry, height *big.Int) (map[string]bool, error) {
 	validationMap := map[string]bool{}
 
 	if cr.electionContract != nil {
@@ -620,7 +618,7 @@ func (l *client) getValidationMap(ctx context.Context, cr *contractsRegistry, he
 	return validationMap, nil
 }
 
-func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress string, h int64) (*AccountInfo, error) {
+func (l *Client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress string, h int64) (*AccountInfo, error) {
 	var height *big.Int
 	if h == 0 {
 		height = nil
@@ -684,7 +682,7 @@ func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress st
 	return accountInfo, setupErr
 }
 
-func (l *client) GetIdentityByHeight(ctx context.Context, rawAddress string, h int64) (*Identity, error) {
+func (l *Client) GetIdentityByHeight(ctx context.Context, rawAddress string, h int64) (*Identity, error) {
 	var height *big.Int
 	if h == 0 {
 		height = nil
@@ -704,7 +702,7 @@ func (l *client) GetIdentityByHeight(ctx context.Context, rawAddress string, h i
 	return l.getIdentity(ctx, cr, rawAddress)
 }
 
-func (l *client) getIdentity(ctx context.Context, cr *contractsRegistry, rawAddress string) (*Identity, error) {
+func (l *Client) getIdentity(ctx context.Context, cr *contractsRegistry, rawAddress string) (*Identity, error) {
 	address := common.HexToAddress(rawAddress)
 
 	identity := &Identity{}

@@ -3,12 +3,13 @@ package figmentclient
 import (
 	"context"
 	"errors"
+	"math/big"
+
 	kliento "github.com/celo-org/kliento/client"
 	"github.com/celo-org/kliento/contracts"
 	"github.com/celo-org/kliento/registry"
 	"github.com/ethereum/go-ethereum/common"
 	base "github.com/figment-networks/celo-indexer/client"
-	"math/big"
 )
 
 var (

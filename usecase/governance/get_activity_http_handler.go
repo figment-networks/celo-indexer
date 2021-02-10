@@ -17,12 +17,12 @@ var (
 
 type getActivityHttpHandler struct {
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *getActivityUseCase
 }
 
-func NewGetActivityHttpHandler(db *psql.Store, c figmentclient.Client) *getActivityHttpHandler {
+func NewGetActivityHttpHandler(db *psql.Store, c figmentclient.ClientIface) *getActivityHttpHandler {
 	return &getActivityHttpHandler{
 		db:     db,
 		client: c,

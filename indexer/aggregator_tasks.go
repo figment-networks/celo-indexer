@@ -3,12 +3,13 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/celo-org/kliento/contracts"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
-	"time"
 
 	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/model"
@@ -27,7 +28,7 @@ var (
 	_ pipeline.Task = (*validatorGroupAggCreatorTask)(nil)
 )
 
-func NewValidatorAggCreatorTask(c figmentclient.Client, validatorAggDb store.ValidatorAgg) *validatorAggCreatorTask {
+func NewValidatorAggCreatorTask(c figmentclient.ClientIface, validatorAggDb store.ValidatorAgg) *validatorAggCreatorTask {
 	return &validatorAggCreatorTask{
 		client:         c,
 		validatorAggDb: validatorAggDb,
@@ -35,7 +36,7 @@ func NewValidatorAggCreatorTask(c figmentclient.Client, validatorAggDb store.Val
 }
 
 type validatorAggCreatorTask struct {
-	client         figmentclient.Client
+	client         figmentclient.ClientIface
 	validatorAggDb store.ValidatorAgg
 }
 
@@ -150,7 +151,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	return nil
 }
 
-func NewValidatorGroupAggCreatorTask(c figmentclient.Client, validatorGroupAggDb store.ValidatorGroupAgg) *validatorGroupAggCreatorTask {
+func NewValidatorGroupAggCreatorTask(c figmentclient.ClientIface, validatorGroupAggDb store.ValidatorGroupAgg) *validatorGroupAggCreatorTask {
 	return &validatorGroupAggCreatorTask{
 		client:              c,
 		validatorGroupAggDb: validatorGroupAggDb,
@@ -158,7 +159,7 @@ func NewValidatorGroupAggCreatorTask(c figmentclient.Client, validatorGroupAggDb
 }
 
 type validatorGroupAggCreatorTask struct {
-	client              figmentclient.Client
+	client              figmentclient.ClientIface
 	validatorGroupAggDb store.ValidatorGroupAgg
 }
 

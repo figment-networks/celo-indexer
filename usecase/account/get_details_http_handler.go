@@ -17,14 +17,14 @@ var (
 
 type getDetailsHttpHandler struct {
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *getDetailsUseCase
 }
 
-func NewGetDetailsHttpHandler(db *psql.Store, c figmentclient.Client) *getDetailsHttpHandler {
+func NewGetDetailsHttpHandler(db *psql.Store, c figmentclient.ClientIface) *getDetailsHttpHandler {
 	return &getDetailsHttpHandler{
-		db: db,
+		db:     db,
 		client: c,
 	}
 }

@@ -16,12 +16,12 @@ var (
 
 type getByAddressHttpHandler struct {
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *getByAddressUseCase
 }
 
-func NewGetByAddressHttpHandler(db *psql.Store, c figmentclient.Client) *getByAddressHttpHandler {
+func NewGetByAddressHttpHandler(db *psql.Store, c figmentclient.ClientIface) *getByAddressHttpHandler {
 	return &getByAddressHttpHandler{
 		db:     db,
 		client: c,

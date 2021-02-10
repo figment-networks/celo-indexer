@@ -2,16 +2,17 @@ package chain
 
 import (
 	"context"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/store/psql"
 )
 
 type getStatusUseCase struct {
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 }
 
-func NewGetStatusUseCase(db *psql.Store, c figmentclient.Client) *getStatusUseCase {
+func NewGetStatusUseCase(db *psql.Store, c figmentclient.ClientIface) *getStatusUseCase {
 	return &getStatusUseCase{
 		db:     db,
 		client: c,

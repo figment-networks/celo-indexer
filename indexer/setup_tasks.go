@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 
 	"github.com/figment-networks/celo-indexer/types"
@@ -19,7 +20,7 @@ var (
 	_ pipeline.Task = (*heightMetaRetrieverTask)(nil)
 )
 
-func NewHeightMetaRetrieverTask(c figmentclient.Client) *heightMetaRetrieverTask {
+func NewHeightMetaRetrieverTask(c figmentclient.ClientIface) *heightMetaRetrieverTask {
 	return &heightMetaRetrieverTask{
 		client:         c,
 		metricObserver: indexerTaskDuration.WithLabels(TaskNameHeightMetaRetriever),
@@ -27,7 +28,7 @@ func NewHeightMetaRetrieverTask(c figmentclient.Client) *heightMetaRetrieverTask
 }
 
 type heightMetaRetrieverTask struct {
-	client         figmentclient.Client
+	client         figmentclient.ClientIface
 	metricObserver metrics.Observer
 }
 

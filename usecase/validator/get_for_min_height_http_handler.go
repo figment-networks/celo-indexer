@@ -16,12 +16,12 @@ var (
 
 type getForMinHeightHttpHandler struct {
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *getForMinHeightUseCase
 }
 
-func NewGetForMinHeightHttpHandler(db *psql.Store, c figmentclient.Client) *getForMinHeightHttpHandler {
+func NewGetForMinHeightHttpHandler(db *psql.Store, c figmentclient.ClientIface) *getForMinHeightHttpHandler {
 	return &getForMinHeightHttpHandler{
 		db:     db,
 		client: c,

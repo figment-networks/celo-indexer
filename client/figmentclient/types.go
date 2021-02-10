@@ -1,8 +1,9 @@
 package figmentclient
 
 import (
-	blscrypto "github.com/ethereum/go-ethereum/crypto/bls"
 	"math/big"
+
+	blscrypto "github.com/ethereum/go-ethereum/crypto/bls"
 )
 
 const (

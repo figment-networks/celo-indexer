@@ -18,12 +18,12 @@ var (
 
 type getBlockSummaryHttpHandler struct {
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *getBlockSummaryUseCase
 }
 
-func NewGetBlockSummaryHttpHandler(db *psql.Store, client figmentclient.Client) *getBlockSummaryHttpHandler {
+func NewGetBlockSummaryHttpHandler(db *psql.Store, client figmentclient.ClientIface) *getBlockSummaryHttpHandler {
 	return &getBlockSummaryHttpHandler{
 		db:     db,
 		client: client,

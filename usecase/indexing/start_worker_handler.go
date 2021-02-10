@@ -3,6 +3,7 @@ package indexing
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/store/psql"
@@ -17,12 +18,12 @@ var (
 type runWorkerHandler struct {
 	cfg    *config.Config
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *startUseCase
 }
 
-func NewRunWorkerHandler(cfg *config.Config, db *psql.Store, c figmentclient.Client) *runWorkerHandler {
+func NewRunWorkerHandler(cfg *config.Config, db *psql.Store, c figmentclient.ClientIface) *runWorkerHandler {
 	return &runWorkerHandler{
 		cfg:    cfg,
 		db:     db,
@@ -49,5 +50,3 @@ func (h *runWorkerHandler) getUseCase() *startUseCase {
 	}
 	return h.useCase
 }
-
-

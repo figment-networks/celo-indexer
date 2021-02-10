@@ -3,6 +3,7 @@ package indexing
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/store/psql"
@@ -12,12 +13,12 @@ import (
 type SummarizeCmdHandler struct {
 	cfg    *config.Config
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *summarizeUseCase
 }
 
-func NewSummarizeCmdHandler(cfg *config.Config, db *psql.Store, c figmentclient.Client) *SummarizeCmdHandler {
+func NewSummarizeCmdHandler(cfg *config.Config, db *psql.Store, c figmentclient.ClientIface) *SummarizeCmdHandler {
 	return &SummarizeCmdHandler{
 		cfg:    cfg,
 		db:     db,
@@ -41,4 +42,3 @@ func (h *SummarizeCmdHandler) getUseCase() *summarizeUseCase {
 	}
 	return h.useCase
 }
-

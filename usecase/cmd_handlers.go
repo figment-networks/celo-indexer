@@ -10,14 +10,14 @@ import (
 	"github.com/figment-networks/celo-indexer/usecase/indexing"
 )
 
-func NewCmdHandlers(cfg *config.Config, db *psql.Store, nodeClient figmentclient.Client, theCeloClient theceloclient.Client) *CmdHandlers {
+func NewCmdHandlers(cfg *config.Config, db *psql.Store, nodeClient figmentclient.ClientIface, theCeloClient theceloclient.Client) *CmdHandlers {
 	return &CmdHandlers{
 		GetStatus:        chain.NewGetStatusCmdHandler(db, nodeClient),
 		StartIndexer:     indexing.NewStartCmdHandler(cfg, db, nodeClient),
 		BackfillIndexer:  indexing.NewBackfillCmdHandler(cfg, db, nodeClient),
 		PurgeIndexer:     indexing.NewPurgeCmdHandler(cfg, db, nodeClient),
 		SummarizeIndexer: indexing.NewSummarizeCmdHandler(cfg, db, nodeClient),
-		UpdateProposals: governance.NewUpdateProposalsCmdHandler(db, theCeloClient),
+		UpdateProposals:  governance.NewUpdateProposalsCmdHandler(db, theCeloClient),
 	}
 }
 

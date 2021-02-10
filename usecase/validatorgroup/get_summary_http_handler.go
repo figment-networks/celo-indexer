@@ -18,12 +18,12 @@ var (
 
 type getSummaryHttpHandler struct {
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *getSummaryUseCase
 }
 
-func NewGetSummaryHttpHandler(db *psql.Store, c figmentclient.Client) *getSummaryHttpHandler {
+func NewGetSummaryHttpHandler(db *psql.Store, c figmentclient.ClientIface) *getSummaryHttpHandler {
 	return &getSummaryHttpHandler{
 		db:     db,
 		client: c,

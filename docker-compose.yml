@@ -1,8 +1,8 @@
 version: "3.7"
 
 networks:
-  internal:
-    name: internal
+  internal2:
+    name: internal2
     driver: bridge
 
 volumes:
@@ -12,7 +12,7 @@ services:
   database:
     image: postgres:10.14
     networks: 
-      - internal
+      - internal2
     ports:
       - "5432:5432"
     environment:
@@ -26,7 +26,7 @@ services:
     build: .
     command: -cmd=server
     networks:
-      - internal
+      - internal2
     ports:
       - "8081:8081"
     environment:
@@ -39,7 +39,7 @@ services:
     build: .
     command: -cmd=worker
     networks:    
-      - internal
+      - internal2
     environment:
       NODE_URL: localhost:50051
       DATABASE_DSN: postgres://celo:celo@database/celo?sslmode=disable
@@ -50,7 +50,7 @@ services:
     build: .
     command: -cmd=migrate
     networks:
-      - internal
+      - internal2
     environment:
       NODE_URL: localhost:50051
       DATABASE_DSN: postgres://celo:celo@database/celo?sslmode=disable
@@ -63,7 +63,7 @@ services:
       - ./migrations:/migrations
     command: version
     networks:
-      - internal
+      - internal2
     entrypoint:
       - migrate
       - -path

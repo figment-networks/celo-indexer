@@ -2,19 +2,20 @@ package governance
 
 import (
 	"context"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/store/psql"
 )
 
 type getProposalsUseCase struct {
-	db *psql.Store
-	client figmentclient.Client
+	db     *psql.Store
+	client figmentclient.ClientIface
 }
 
-func NewGetProposalsUseCase(c figmentclient.Client, db *psql.Store) *getProposalsUseCase {
+func NewGetProposalsUseCase(c figmentclient.ClientIface, db *psql.Store) *getProposalsUseCase {
 	return &getProposalsUseCase{
 		client: c,
-		db: db,
+		db:     db,
 	}
 }
 

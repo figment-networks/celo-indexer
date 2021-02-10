@@ -17,7 +17,7 @@ const (
 	TaskNameTransactionsFetcher    = "TransactionsFetcher"
 )
 
-func NewBlockFetcherTask(client figmentclient.Client) pipeline.Task {
+func NewBlockFetcherTask(client figmentclient.ClientIface) pipeline.Task {
 	return &BlockFetcherTask{
 		client:         client,
 		metricObserver: indexerTaskDuration.WithLabels(TaskNameBlockFetcher),
@@ -25,7 +25,7 @@ func NewBlockFetcherTask(client figmentclient.Client) pipeline.Task {
 }
 
 type BlockFetcherTask struct {
-	client         figmentclient.Client
+	client         figmentclient.ClientIface
 	metricObserver metrics.Observer
 }
 
@@ -61,7 +61,7 @@ func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	return nil
 }
 
-func NewValidatorFetcherTask(client figmentclient.Client) pipeline.Task {
+func NewValidatorFetcherTask(client figmentclient.ClientIface) pipeline.Task {
 	return &ValidatorsFetcherTask{
 		client:         client,
 		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorsFetcher),
@@ -69,7 +69,7 @@ func NewValidatorFetcherTask(client figmentclient.Client) pipeline.Task {
 }
 
 type ValidatorsFetcherTask struct {
-	client         figmentclient.Client
+	client         figmentclient.ClientIface
 	metricObserver metrics.Observer
 }
 
@@ -105,7 +105,7 @@ func (t *ValidatorsFetcherTask) Run(ctx context.Context, p pipeline.Payload) err
 	return nil
 }
 
-func NewValidatorGroupFetcherTask(client figmentclient.Client) pipeline.Task {
+func NewValidatorGroupFetcherTask(client figmentclient.ClientIface) pipeline.Task {
 	return &ValidatorGroupsFetcherTask{
 		client:         client,
 		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorGroupsFetcher),
@@ -113,7 +113,7 @@ func NewValidatorGroupFetcherTask(client figmentclient.Client) pipeline.Task {
 }
 
 type ValidatorGroupsFetcherTask struct {
-	client         figmentclient.Client
+	client         figmentclient.ClientIface
 	metricObserver metrics.Observer
 }
 
@@ -149,7 +149,7 @@ func (t *ValidatorGroupsFetcherTask) Run(ctx context.Context, p pipeline.Payload
 	return nil
 }
 
-func NewTransactionFetcherTask(client figmentclient.Client) pipeline.Task {
+func NewTransactionFetcherTask(client figmentclient.ClientIface) pipeline.Task {
 	return &TransactionsFetcherTask{
 		client:         client,
 		metricObserver: indexerTaskDuration.WithLabels(TaskNameTransactionsFetcher),
@@ -157,7 +157,7 @@ func NewTransactionFetcherTask(client figmentclient.Client) pipeline.Task {
 }
 
 type TransactionsFetcherTask struct {
-	client         figmentclient.Client
+	client         figmentclient.ClientIface
 	metricObserver metrics.Observer
 }
 

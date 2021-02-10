@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/metric"
@@ -28,7 +29,7 @@ var (
 
 type indexingPipeline struct {
 	cfg    *config.Config
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	syncableDb              store.Syncables
 	databaseDb              store.Database
@@ -50,7 +51,7 @@ type indexingPipeline struct {
 
 func NewPipeline(
 	cfg *config.Config,
-	client figmentclient.Client,
+	client figmentclient.ClientIface,
 
 	syncableDb store.Syncables,
 	databaseDb store.Database,
@@ -171,7 +172,6 @@ func NewPipeline(
 		proposalAggDb:           proposalAggDb,
 		systemEventDb:           systemEventDb,
 		governanceActivitySeqDb: governanceActivitySeqDb,
-
 
 		pipeline:     p,
 		status:       pipelineStatus,

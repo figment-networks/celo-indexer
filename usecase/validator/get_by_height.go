@@ -12,10 +12,10 @@ import (
 type getByHeightUseCase struct {
 	cfg    *config.Config
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 }
 
-func NewGetByHeightUseCase(cfg *config.Config, db *psql.Store, client figmentclient.Client) *getByHeightUseCase {
+func NewGetByHeightUseCase(cfg *config.Config, db *psql.Store, client figmentclient.ClientIface) *getByHeightUseCase {
 	return &getByHeightUseCase{
 		cfg:    cfg,
 		db:     db,

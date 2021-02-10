@@ -10,7 +10,7 @@ import (
 	"github.com/figment-networks/celo-indexer/usecase/indexing"
 )
 
-func NewWorkerHandlers(cfg *config.Config, db *psql.Store, client figmentclient.Client, theCeloClient theceloclient.Client) *WorkerHandlers {
+func NewWorkerHandlers(cfg *config.Config, db *psql.Store, client figmentclient.ClientIface, theCeloClient theceloclient.Client) *WorkerHandlers {
 	return &WorkerHandlers{
 		RunIndexer:       indexing.NewRunWorkerHandler(cfg, db, client),
 		SummarizeIndexer: indexing.NewSummarizeWorkerHandler(cfg, db, client),

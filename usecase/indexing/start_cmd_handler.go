@@ -3,6 +3,7 @@ package indexing
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/store/psql"
@@ -12,12 +13,12 @@ import (
 type StartCmdHandler struct {
 	cfg    *config.Config
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *startUseCase
 }
 
-func NewStartCmdHandler(cfg *config.Config, db *psql.Store, c figmentclient.Client) *StartCmdHandler {
+func NewStartCmdHandler(cfg *config.Config, db *psql.Store, c figmentclient.ClientIface) *StartCmdHandler {
 	return &StartCmdHandler{
 		cfg:    cfg,
 		db:     db,

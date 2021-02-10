@@ -18,12 +18,12 @@ var (
 type getByHeightHttpHandler struct {
 	cfg    *config.Config
 	db     *psql.Store
-	client figmentclient.Client
+	client figmentclient.ClientIface
 
 	useCase *getByHeightUseCase
 }
 
-func NewGetByHeightHttpHandler(cfg *config.Config, db *psql.Store, c figmentclient.Client) *getByHeightHttpHandler {
+func NewGetByHeightHttpHandler(cfg *config.Config, db *psql.Store, c figmentclient.ClientIface) *getByHeightHttpHandler {
 	return &getByHeightHttpHandler{
 		cfg:    cfg,
 		db:     db,
