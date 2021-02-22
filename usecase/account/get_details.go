@@ -2,21 +2,21 @@ package account
 
 import (
 	"context"
-	"fmt"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/indexer"
 	"github.com/figment-networks/celo-indexer/store/psql"
 )
 
 type getDetailsUseCase struct {
-	db *psql.Store
+	db     *psql.Store
 	client figmentclient.Client
 }
 
 func NewGetDetailsUseCase(c figmentclient.Client, db *psql.Store) *getDetailsUseCase {
 	return &getDetailsUseCase{
 		client: c,
-		db: db,
+		db:     db,
 	}
 }
 
@@ -26,7 +26,6 @@ func (uc *getDetailsUseCase) Execute(ctx context.Context, address string, limit 
 		return nil, err
 	}
 
-	fmt.Println("HERE", lastHeightAccountInfo)
 	internalTransfersSent, err := uc.db.GetAccounts().AccountActivitySeq.FindLastByAddressAndKind(address, indexer.OperationTypeInternalTransferSent, limit)
 	if err != nil {
 		return nil, err

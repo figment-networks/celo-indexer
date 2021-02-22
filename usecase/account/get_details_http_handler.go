@@ -24,31 +24,35 @@ type getDetailsHttpHandler struct {
 
 func NewGetDetailsHttpHandler(db *psql.Store, c figmentclient.Client) *getDetailsHttpHandler {
 	return &getDetailsHttpHandler{
-		db: db,
+		db:     db,
 		client: c,
 	}
 }
 
-type GetDetailsRequest struct {
+type uriParams struct {
 	Address string `uri:"address" binding:"required"`
-	Limit   int64  `form:"limit" binding:"-"`
+}
+
+type queryParams struct {
+	Limit int64 `form:"limit" binding:"required"`
 }
 
 func (h *getDetailsHttpHandler) Handle(c *gin.Context) {
-	var req GetDetailsRequest
-	if err := c.ShouldBindUri(&req); err != nil {
+	var uri uriParams
+	if err := c.ShouldBindUri(&uri); err != nil {
 		logger.Error(err)
 		http.BadRequest(c, errors.New("invalid address"))
 		return
 	}
 
-	if err := c.ShouldBind(&req); err != nil {
+	var params queryParams
+	if err := c.ShouldBind(&params); err != nil {
 		logger.Error(err)
 		http.BadRequest(c, errors.New("invalid limit parameter"))
 		return
 	}
 
-	ds, err := h.getUseCase().Execute(c, req.Address, req.Limit)
+	ds, err := h.getUseCase().Execute(c, uri.Address, params.Limit)
 	if err != nil {
 		logger.Error(err)
 		http.ServerError(c, err)
