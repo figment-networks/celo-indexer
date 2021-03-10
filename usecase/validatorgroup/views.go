@@ -58,6 +58,8 @@ func ToSeqListView(validatorGroupSeqs []model.ValidatorGroupSeq) SeqListView {
 			Sequence: m.Sequence,
 
 			Address:          m.Address,
+			Name:             m.Name,
+			MetadataUrl:      m.MetadataUrl,
 			Commission:       m.Commission.String(),
 			ActiveVotes:      m.ActiveVotes.String(),
 			PendingVotes:     m.PendingVotes.String(),

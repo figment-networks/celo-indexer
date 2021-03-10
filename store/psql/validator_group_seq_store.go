@@ -70,14 +70,23 @@ func (s ValidatorGroupSeq) FindByHeightAndAddress(height int64, address string) 
 
 // FindByHeight finds validator group sequences by height
 func (s ValidatorGroupSeq) FindByHeight(h int64) ([]model.ValidatorGroupSeq, error) {
-	var result []model.ValidatorGroupSeq
 
-	err := s.db.
-		Where("height = ?", h).
-		Find(&result).
-		Error
+	rows, err := s.db.Raw(validatorGroupByHeight, h).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-	return result, checkErr(err)
+	var res []model.ValidatorGroupSeq
+	for rows.Next() {
+		var row model.ValidatorGroupSeq
+		if err := s.db.ScanRows(rows, &row); err != nil {
+			return nil, err
+		}
+		res = append(res, row)
+	}
+	return res, nil
+
 }
 
 // FindLastByAddress finds last validator group sequences for given address

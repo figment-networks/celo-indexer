@@ -17,8 +17,8 @@ type ValidatorGroupSeq struct {
 	MembersAvgSigned float64        `json:"members_avg_signed"`
 
 	// Join fields
-	Name        string `json:"name"`
-	MetadataUrl string `json:"metadata_url"`
+	Name        string `json:"recent_name"`
+	MetadataUrl string `json:"recent_metadata_url"`
 }
 
 func (ValidatorGroupSeq) TableName() string {

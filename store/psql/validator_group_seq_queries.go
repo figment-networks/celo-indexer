@@ -37,5 +37,29 @@ const (
 	AVG(pending_votes) AS pending_votes_avg,
    	MAX(pending_votes) AS pending_votes_max,
    	MIN(pending_votes) AS pending_votes_min
-`
+    `
+
+	validatorGroupByHeight = `
+	    SELECT
+          vgs.id, 
+          vgs.height,
+		  vgs.time, 
+          vgs.address,
+		  vgs.commission,
+		  vgs.active_votes,
+          vgs.pending_votes,
+          vgs.voting_cap,
+          vgs.members_count,
+          vgs.members_avg_signed,
+          vga.recent_name,
+          vga.recent_metadata_url
+        FROM 
+          validator_group_sequences vgs
+        INNER JOIN
+          validator_group_aggregates vga
+        ON 
+          vgs.address = vga.address
+        WHERE 
+          vgs.height = ?
+    `
 )
