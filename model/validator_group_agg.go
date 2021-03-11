@@ -4,9 +4,11 @@ type ValidatorGroupAgg struct {
 	*ModelWithTimestamps
 	*Aggregate
 
-	Address           string `json:"address"`
-	RecentName        string `json:"recent_name"`
-	RecentMetadataUrl string `json:"recent_metadata_url"`
+	Address                string `json:"address"`
+	RecentName             string `json:"recent_name"`
+	RecentMetadataUrl      string `json:"recent_metadata_url"`
+	AccumulatedUptime      int64  `json:"accumulated_uptime"`
+	AccumulatedUptimeCount int64  `json:"accumulated_uptime_count"`
 }
 
 func (ValidatorGroupAgg) TableName() string {
