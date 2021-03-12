@@ -1,9 +1,11 @@
 package psql
 
 import (
+	"time"
+
+	"github.com/figment-networks/celo-indexer/metrics"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/indexing-engine/store/bulk"
-	"time"
 
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/types"
@@ -128,7 +130,7 @@ func (s *ValidatorSeq) DeleteOlderThan(purgeThreshold time.Time) (*int64, error)
 
 // Summarize gets the summarized version of validator sequences
 func (s *ValidatorSeq) Summarize(interval types.SummaryInterval, activityPeriods []store.ActivityPeriodRow) ([]store.ValidatorSeqSummary, error) {
-	defer LogQueryDuration(time.Now(), "ValidatorSeqStore_Summarize")
+	defer metrics.LogQueryDuration(time.Now(), "ValidatorSeqStore_Summarize")
 
 	tx := s.db.
 		Table(model.ValidatorSeq{}.TableName()).

@@ -3,26 +3,29 @@ package server
 import (
 	"time"
 
-	"github.com/figment-networks/celo-indexer/metric"
-	"github.com/figment-networks/celo-indexer/utils/reporting"
 	"github.com/gin-gonic/gin"
+
+	"github.com/figment-networks/celo-indexer/metrics"
+	"github.com/figment-networks/celo-indexer/utils/reporting"
 )
 
 // setupMiddleware sets up middleware for gin application
 func (s *Server) setupMiddleware() {
 	s.engine.Use(gin.Recovery())
-	s.engine.Use(MetricMiddleware())
+	s.engine.Use(MetricsMiddleware())
 	s.engine.Use(ErrorReportingMiddleware())
 }
 
-// MetricMiddleware is a middleware responsible for logging query execution time metric
-func MetricMiddleware() gin.HandlerFunc {
+// MetricsMiddleware is a middleware responsible for logging query execution time
+func MetricsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		t := time.Now()
 		c.Next()
 		elapsed := time.Since(t)
 
-		metric.ServerRequestDuration.WithLabelValues(c.Request.URL.Path).Set(elapsed.Seconds())
+		metrics.ServerRequestDuration.
+			WithLabels(c.Request.URL.Path).
+			Observe(elapsed.Seconds())
 	}
 }
 

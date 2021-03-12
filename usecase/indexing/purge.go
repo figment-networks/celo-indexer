@@ -3,12 +3,13 @@ package indexing
 import (
 	"context"
 	"fmt"
-	"github.com/figment-networks/celo-indexer/store/psql"
 	"time"
+
+	"github.com/figment-networks/celo-indexer/metrics"
+	"github.com/figment-networks/celo-indexer/store/psql"
 
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/indexer"
-	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/pkg/errors"
@@ -31,7 +32,7 @@ func NewPurgeUseCase(cfg *config.Config, db *psql.Store) *purgeUseCase {
 }
 
 func (uc *purgeUseCase) Execute(ctx context.Context) error {
-	defer metric.LogUseCaseDuration(time.Now(), "purge")
+	defer metrics.LogUsecaseDuration(time.Now(), "purge")
 
 	configParser, err := indexer.NewConfigParser(uc.cfg.IndexerConfigFile)
 	if err != nil {

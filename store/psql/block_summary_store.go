@@ -2,11 +2,13 @@ package psql
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/figment-networks/celo-indexer/metrics"
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/jinzhu/gorm"
-	"time"
 )
 
 var _ store.BlockSummary = (*BlockSummary)(nil)
@@ -57,7 +59,7 @@ func (s *BlockSummary) FindMostRecentByInterval(interval types.SummaryInterval) 
 
 // FindActivityPeriods Finds activity periods
 func (s *BlockSummary) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]store.ActivityPeriodRow, error) {
-	defer LogQueryDuration(time.Now(), "BlockSummaryStore_FindActivityPeriods")
+	defer metrics.LogQueryDuration(time.Now(), "BlockSummaryStore_FindActivityPeriods")
 
 	rows, err := s.db.
 		Raw(blockSummaryActivityPeriodsQuery, fmt.Sprintf("1%s", interval), interval, indexVersion).
@@ -81,7 +83,7 @@ func (s *BlockSummary) FindActivityPeriods(interval types.SummaryInterval, index
 
 // FindSummary Gets summary of block sequences
 func (s *BlockSummary) FindSummary(interval types.SummaryInterval, period string) ([]model.BlockSummary, error) {
-	defer LogQueryDuration(time.Now(), "BlockSummaryStore_FindSummary")
+	defer metrics.LogQueryDuration(time.Now(), "BlockSummaryStore_FindSummary")
 
 	rows, err := s.db.
 		Raw(allBlocksSummaryForIntervalQuery, interval, period, interval).

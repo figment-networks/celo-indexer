@@ -3,10 +3,8 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/indexing-engine/pipeline"
 )
@@ -31,8 +29,6 @@ func (t *BlockFetcherTask) GetName() string {
 }
 
 func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
@@ -70,8 +66,6 @@ func (t *ValidatorsFetcherTask) GetName() string {
 }
 
 func (t *ValidatorsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
@@ -109,8 +103,6 @@ func (t *ValidatorGroupsFetcherTask) GetName() string {
 }
 
 func (t *ValidatorGroupsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
@@ -148,8 +140,6 @@ func (t *TransactionsFetcherTask) GetName() string {
 }
 
 func (t *TransactionsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))

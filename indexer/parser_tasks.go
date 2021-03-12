@@ -3,11 +3,9 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/celo-org/kliento/contracts"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/indexing-engine/pipeline"
 )
@@ -40,8 +38,6 @@ func (t *governanceLogsParserTask) GetName() string {
 }
 
 func (t *governanceLogsParserTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageParser, t.GetName(), payload.CurrentHeight))

@@ -8,7 +8,7 @@ replace github.com/ethereum/go-ethereum => github.com/celo-org/celo-blockchain v
 require (
 	github.com/celo-org/kliento v0.1.2-0.20200608140637-c5afc8cf0f44
 	github.com/ethereum/go-ethereum v1.9.8
-	github.com/figment-networks/indexing-engine v0.1.14
+	github.com/figment-networks/indexing-engine v0.2.0
 	github.com/gin-gonic/gin v1.5.0
 	github.com/golang-migrate/migrate/v4 v4.11.0
 	github.com/golang/mock v1.4.3

@@ -2,9 +2,11 @@ package psql
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/figment-networks/celo-indexer/metrics"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/indexing-engine/store/bulk"
-	"time"
 
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/types"
@@ -57,7 +59,6 @@ func (s ValidatorGroupSummary) BulkUpsert(records []model.ValidatorGroupSummary)
 	return nil
 }
 
-
 // Find find validator group summary by query
 func (s ValidatorGroupSummary) Find(query *model.ValidatorGroupSummary) (*model.ValidatorGroupSummary, error) {
 	var result model.ValidatorGroupSummary
@@ -72,7 +73,7 @@ func (s ValidatorGroupSummary) Find(query *model.ValidatorGroupSummary) (*model.
 
 // FindActivityPeriods Finds activity periods
 func (s *ValidatorGroupSummary) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]store.ActivityPeriodRow, error) {
-	defer LogQueryDuration(time.Now(), "ValidatorGroupSummaryStore_FindActivityPeriods")
+	defer metrics.LogQueryDuration(time.Now(), "ValidatorGroupSummaryStore_FindActivityPeriods")
 
 	rows, err := s.db.
 		Raw(validatorGroupSummaryActivityPeriodsQuery, fmt.Sprintf("1%s", interval), interval, indexVersion).
@@ -96,7 +97,7 @@ func (s *ValidatorGroupSummary) FindActivityPeriods(interval types.SummaryInterv
 
 // FindSummary gets summary for validator group summary
 func (s *ValidatorGroupSummary) FindSummary(interval types.SummaryInterval, period string) ([]store.ValidatorGroupSummaryRow, error) {
-	defer LogQueryDuration(time.Now(), "ValidatorGroupSummaryStore_FindSummary")
+	defer metrics.LogQueryDuration(time.Now(), "ValidatorGroupSummaryStore_FindSummary")
 
 	rows, err := s.db.
 		Raw(allValidatorGroupsSummaryForIntervalQuery, interval, period, interval).
@@ -120,7 +121,7 @@ func (s *ValidatorGroupSummary) FindSummary(interval types.SummaryInterval, peri
 
 // FindSummaryByAddress gets summary for given validator group
 func (s *ValidatorGroupSummary) FindSummaryByAddress(address string, interval types.SummaryInterval, period string) ([]model.ValidatorGroupSummary, error) {
-	defer LogQueryDuration(time.Now(), "ValidatorGroupSummaryStore_FindSummaryByAddress")
+	defer metrics.LogQueryDuration(time.Now(), "ValidatorGroupSummaryStore_FindSummaryByAddress")
 
 	rows, err := s.db.Raw(validatorGroupSummaryForIntervalQuery, interval, period, address, interval).Rows()
 	if err != nil {

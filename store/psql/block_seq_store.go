@@ -1,11 +1,13 @@
 package psql
 
 import (
+	"time"
+
+	"github.com/figment-networks/celo-indexer/metrics"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/jinzhu/gorm"
-	"time"
 
 	"github.com/figment-networks/celo-indexer/model"
 )
@@ -59,7 +61,7 @@ func (s BlockSeq) FindByHeight(height int64) (*model.BlockSeq, error) {
 
 // GetAvgRecentTimes Gets average block times for recent blocks by limit
 func (s *BlockSeq) GetAvgRecentTimes(limit int64) store.GetAvgRecentTimesResult {
-	defer LogQueryDuration(time.Now(), "BlockSeqStore_GetAvgRecentTimes")
+	defer metrics.LogQueryDuration(time.Now(), "BlockSeqStore_GetAvgRecentTimes")
 
 	var res store.GetAvgRecentTimesResult
 	s.db.Raw(blockTimesForRecentBlocksQuery, limit).Scan(&res)
@@ -107,7 +109,7 @@ func (s *BlockSeq) DeleteOlderThan(purgeThreshold time.Time, activityPeriods []s
 
 // Summarize gets the summarized version of block sequences
 func (s *BlockSeq) Summarize(interval types.SummaryInterval, activityPeriods []store.ActivityPeriodRow) ([]store.BlockSeqSummary, error) {
-	defer LogQueryDuration(time.Now(), "BlockSummaryStore_Summarize")
+	defer metrics.LogQueryDuration(time.Now(), "BlockSummaryStore_Summarize")
 
 	tx := s.db.
 		Table(model.BlockSeq{}.TableName()).

@@ -3,10 +3,8 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/metric"
 
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
@@ -43,8 +41,6 @@ func (t *heightMetaRetrieverTask) GetName() string {
 }
 
 func (t *heightMetaRetrieverTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSetup, t.GetName(), payload.CurrentHeight))

@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"time"
 
-	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/store/psql"
 
@@ -54,8 +52,6 @@ func (t *systemEventCreatorTask) GetName() string {
 }
 
 func (t *systemEventCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", "Analyzer", t.GetName(), payload.CurrentHeight))
