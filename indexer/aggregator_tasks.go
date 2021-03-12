@@ -3,12 +3,13 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/celo-org/kliento/contracts"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
-	"time"
 
 	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/model"

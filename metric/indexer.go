@@ -2,41 +2,42 @@ package metric
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"net/http"
-	"time"
 )
 
 var (
 	IndexerHeightSuccess = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "figment",
 		Subsystem: "indexer",
-		Name: "height_success",
-		Help: "The total number of successfully indexed heights",
+		Name:      "height_success",
+		Help:      "The total number of successfully indexed heights",
 	})
 
 	IndexerTotalErrors = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "figment",
 		Subsystem: "indexer",
-		Name: "total_error",
-		Help: "The total number of failures during indexing",
+		Name:      "total_error",
+		Help:      "The total number of failures during indexing",
 	})
 
 	IndexerHeightDuration = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "figment",
 		Subsystem: "indexer",
-		Name: "height_duration",
-		Help: "The total time required to index one height",
+		Name:      "height_duration",
+		Help:      "The total time required to index one height",
 	})
 
 	IndexerTaskDuration = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: "figment",
 			Subsystem: "indexer",
-			Name: "height_task_duration",
-			Help: "The total time required to process indexing task",
+			Name:      "height_task_duration",
+			Help:      "The total time required to process indexing task",
 		},
 		[]string{"task"},
 	)
@@ -45,8 +46,8 @@ var (
 		prometheus.GaugeOpts{
 			Namespace: "figment",
 			Subsystem: "indexer",
-			Name: "use_case_duration",
-			Help: "The total time required to execute use case",
+			Name:      "use_case_duration",
+			Help:      "The total time required to execute use case",
 		},
 		[]string{"task"},
 	)
@@ -54,21 +55,20 @@ var (
 	IndexerDbSizeAfterHeight = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "figment",
 		Subsystem: "indexer",
-		Name: "db_size",
-		Help: "The size of the database after indexing of height",
+		Name:      "db_size",
+		Help:      "The size of the database after indexing of height",
 	})
 
 	IndexerRequestCountAfterHeight = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "figment",
 		Subsystem: "indexer",
-		Name: "requests_count",
-		Help: "The total number of requests made for one height",
+		Name:      "requests_count",
+		Help:      "The total number of requests made for one height",
 	})
-
 )
 
 // IndexerMetric handles HTTP requests
-type IndexerMetric struct {}
+type IndexerMetric struct{}
 
 // NewIndexerMetric returns a new server instance
 func NewIndexerMetric() *IndexerMetric {

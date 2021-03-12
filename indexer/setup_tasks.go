@@ -3,11 +3,13 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
+	"github.com/figment-networks/celo-indexer/metric"
 
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
-	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 )
 
@@ -20,15 +22,11 @@ var (
 )
 
 func NewHeightMetaRetrieverTask(c figmentclient.Client) *heightMetaRetrieverTask {
-	return &heightMetaRetrieverTask{
-		client:         c,
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameHeightMetaRetriever),
-	}
+	return &heightMetaRetrieverTask{client: c}
 }
 
 type heightMetaRetrieverTask struct {
-	client         figmentclient.Client
-	metricObserver metrics.Observer
+	client figmentclient.Client
 }
 
 type HeightMeta struct {
@@ -45,8 +43,7 @@ func (t *heightMetaRetrieverTask) GetName() string {
 }
 
 func (t *heightMetaRetrieverTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
 

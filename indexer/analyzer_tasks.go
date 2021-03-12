@@ -4,15 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"time"
+
+	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/store/psql"
-	"math"
 
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
-	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/pkg/errors"
 )
@@ -35,7 +37,6 @@ func NewSystemEventCreatorTask(cfg *config.Config, validatorSeqDb store.Validato
 		validatorSeqDb:       validatorSeqDb,
 		accountActivitySeqDb: accountActivitySeqDb,
 		cfg:                  cfg,
-		metricObserver:       indexerTaskDuration.WithLabels(TaskNameSystemEventCreator),
 	}
 }
 
@@ -44,8 +45,6 @@ type systemEventCreatorTask struct {
 	accountActivitySeqDb store.AccountActivitySeq
 
 	cfg *config.Config
-
-	metricObserver metrics.Observer
 }
 
 type systemEventRawData map[string]interface{}
@@ -55,8 +54,7 @@ func (t *systemEventCreatorTask) GetName() string {
 }
 
 func (t *systemEventCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
 
