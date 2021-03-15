@@ -50,12 +50,12 @@ func ToAggDetailsView(m *model.ValidatorAgg, validatorSequences []model.Validato
 type SeqListItem struct {
 	*model.Sequence
 
-	Address     string  `json:"address"`
-	Name        string  `json:"name"`
-	MetadataUrl string  `json:"metadata_url"`
-	Signed      *bool   `json:"signed"`
-	Score       float64 `json:"score"`
-	Affiliation string  `json:"affiliation"`
+	Address           string  `json:"address"`
+	RecentName        string  `json:"recent_name"`
+	RecentMetadataUrl string  `json:"recent_metadata_url"`
+	Signed            *bool   `json:"signed"`
+	Score             float64 `json:"score"`
+	Affiliation       string  `json:"affiliation"`
 }
 
 type SeqListView struct {
@@ -68,12 +68,12 @@ func ToSeqListView(validatorSeqs []model.ValidatorSeq) SeqListView {
 		item := SeqListItem{
 			Sequence: m.Sequence,
 
-			Address:     m.Address,
-			Name:        m.Name,
-			MetadataUrl: m.MetadataUrl,
-			Signed:      m.Signed,
-			Score:       m.ScoreAsPercentage(),
-			Affiliation: m.Affiliation,
+			Address:           m.Address,
+			RecentName:        m.RecentName,
+			RecentMetadataUrl: m.RecentMetadataUrl,
+			Signed:            m.Signed,
+			Score:             m.ScoreAsPercentage(),
+			Affiliation:       m.Affiliation,
 		}
 
 		items = append(items, item)

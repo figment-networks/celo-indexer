@@ -7,7 +7,7 @@ const (
 				accumulated_uptime_count = t.accumulated_uptime_count
 		FROM ( 
 			SELECT 
-				SUM(members_count) as members_count , 
+				SUM(members_count) as members_count, 
 				SUM(members_avg_signed) as accumulated_uptime_count
 			FROM validator_group_sequences
 				WHERE  address = ? 
