@@ -3,11 +3,11 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"github.com/figment-networks/celo-indexer/metric"
+	"time"
+
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
-	"time"
 
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/utils/logger"
@@ -33,8 +33,6 @@ func (t *mainSyncerTask) GetName() string {
 }
 
 func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSyncer, t.GetName(), payload.CurrentHeight))

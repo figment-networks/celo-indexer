@@ -2,7 +2,7 @@ package worker
 
 import (
 	"github.com/figment-networks/celo-indexer/config"
-	"github.com/figment-networks/celo-indexer/metric"
+	"github.com/figment-networks/celo-indexer/metrics"
 	"github.com/figment-networks/celo-indexer/usecase"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/celo-indexer/utils/reporting"
@@ -75,5 +75,5 @@ func (w *Worker) Start() error {
 }
 
 func (w *Worker) startMetricsServer() error {
-	return metric.NewIndexerMetric().StartServer(w.cfg.IndexerMetricAddr, w.cfg.MetricServerUrl)
+	return metrics.NewMetricsServer().StartServer(w.cfg.IndexerMetricAddr, w.cfg.MetricServerUrl)
 }

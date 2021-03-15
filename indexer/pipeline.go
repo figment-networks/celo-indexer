@@ -3,9 +3,9 @@ package indexer
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
-	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/utils/logger"
@@ -172,7 +172,6 @@ func NewPipeline(
 		systemEventDb:           systemEventDb,
 		governanceActivitySeqDb: governanceActivitySeqDb,
 
-
 		pipeline:     p,
 		status:       pipelineStatus,
 		configParser: configParser,
@@ -228,9 +227,6 @@ func (p *indexingPipeline) Start(ctx context.Context, indexCfg IndexConfig) erro
 
 	ctxWithReport := context.WithValue(ctx, CtxReport, reportCreator.report)
 	err = p.pipeline.Start(ctxWithReport, source, sink, pipelineOptions)
-	if err != nil {
-		metric.IndexerTotalErrors.Inc()
-	}
 
 	logger.Info(fmt.Sprintf("pipeline completed [Err: %+v]", err))
 
@@ -360,7 +356,6 @@ func (p *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload,
 
 	runPayload, err := p.pipeline.Run(ctx, runCfg.Height, pipelineOptions)
 	if err != nil {
-		metric.IndexerTotalErrors.Inc()
 		logger.Info(fmt.Sprintf("pipeline completed with error [Err: %+v]", err))
 		return nil, err
 	}

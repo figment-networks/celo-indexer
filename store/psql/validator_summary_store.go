@@ -2,9 +2,11 @@ package psql
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/figment-networks/celo-indexer/metrics"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/indexing-engine/store/bulk"
-	"time"
 
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/types"
@@ -68,7 +70,7 @@ func (s ValidatorSummary) Find(query *model.ValidatorSummary) (*model.ValidatorS
 
 // FindActivityPeriods Finds activity periods
 func (s *ValidatorSummary) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]store.ActivityPeriodRow, error) {
-	defer LogQueryDuration(time.Now(), "ValidatorSummaryStore_FindActivityPeriods")
+	defer metrics.LogQueryDuration(time.Now(), "ValidatorSummaryStore_FindActivityPeriods")
 
 	rows, err := s.db.
 		Raw(validatorSummaryActivityPeriodsQuery, fmt.Sprintf("1%s", interval), interval, indexVersion).
@@ -92,7 +94,7 @@ func (s *ValidatorSummary) FindActivityPeriods(interval types.SummaryInterval, i
 
 // FindSummary gets summary for validator summary
 func (s *ValidatorSummary) FindSummary(interval types.SummaryInterval, period string) ([]store.ValidatorSummaryRow, error) {
-	defer LogQueryDuration(time.Now(), "ValidatorSummaryStore_FindSummary")
+	defer metrics.LogQueryDuration(time.Now(), "ValidatorSummaryStore_FindSummary")
 
 	rows, err := s.db.
 		Raw(allValidatorsSummaryForIntervalQuery, interval, period, interval).
@@ -116,7 +118,7 @@ func (s *ValidatorSummary) FindSummary(interval types.SummaryInterval, period st
 
 // FindSummaryByAddress gets summary for given validator
 func (s *ValidatorSummary) FindSummaryByAddress(address string, interval types.SummaryInterval, period string) ([]model.ValidatorSummary, error) {
-	defer LogQueryDuration(time.Now(), "ValidatorSummaryStore_FindSummaryByAddress")
+	defer metrics.LogQueryDuration(time.Now(), "ValidatorSummaryStore_FindSummaryByAddress")
 
 	rows, err := s.db.Raw(validatorSummaryForIntervalQuery, interval, period, address, interval).Rows()
 	if err != nil {

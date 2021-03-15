@@ -3,14 +3,13 @@ package indexer
 import (
 	"context"
 	"fmt"
+
 	"github.com/celo-org/kliento/contracts"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
-	"time"
 
-	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/indexing-engine/pipeline"
@@ -44,8 +43,6 @@ func (t *validatorAggCreatorTask) GetName() string {
 }
 
 func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	rawValidators := payload.RawValidators
@@ -167,8 +164,6 @@ func (t *validatorGroupAggCreatorTask) GetName() string {
 }
 
 func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	rawValidatorGroups := payload.RawValidatorGroups
@@ -259,8 +254,6 @@ func (t *proposalAggCreatorTask) GetName() string {
 }
 
 func (t *proposalAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	parsedGovernanceLogs := payload.ParsedGovernanceLogs

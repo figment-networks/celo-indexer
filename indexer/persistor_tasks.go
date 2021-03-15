@@ -3,12 +3,10 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"github.com/figment-networks/celo-indexer/metric"
+
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/utils/logger"
-	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
-	"time"
 )
 
 const (
@@ -40,8 +38,6 @@ func (t *syncerPersistorTask) GetName() string {
 }
 
 func (t *syncerPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
@@ -65,8 +61,6 @@ func (t *blockSeqPersistorTask) GetName() string {
 }
 
 func (t *blockSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
@@ -98,8 +92,6 @@ func (t *validatorSeqPersistorTask) GetName() string {
 }
 
 func (t *validatorSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
@@ -127,8 +119,6 @@ func (t *accountActivitySeqPersistorTask) GetName() string {
 }
 
 func (t *accountActivitySeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
@@ -162,8 +152,6 @@ func (t *validatorGroupSeqPersistorTask) GetName() string {
 }
 
 func (t *validatorGroupSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
@@ -191,8 +179,6 @@ func (t *validatorAggPersistorTask) GetName() string {
 }
 
 func (t *validatorAggPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
@@ -228,8 +214,6 @@ func (t *validatorGroupAggPersistorTask) GetName() string {
 }
 
 func (t *validatorGroupAggPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
@@ -265,8 +249,6 @@ func (t *proposalAggPersistorTask) GetName() string {
 }
 
 func (t *proposalAggPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
@@ -289,14 +271,12 @@ func (t *proposalAggPersistorTask) Run(ctx context.Context, p pipeline.Payload) 
 //NewSystemEventPersistorTask psql system events to persistance layer
 func NewSystemEventPersistorTask(systemEventDb store.SystemEvents) pipeline.Task {
 	return &systemEventPersistorTask{
-		systemEventDb:  systemEventDb,
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameSystemEventPersistor),
+		systemEventDb: systemEventDb,
 	}
 }
 
 type systemEventPersistorTask struct {
-	systemEventDb  store.SystemEvents
-	metricObserver metrics.Observer
+	systemEventDb store.SystemEvents
 }
 
 func (t *systemEventPersistorTask) GetName() string {
@@ -304,9 +284,6 @@ func (t *systemEventPersistorTask) GetName() string {
 }
 
 func (t *systemEventPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
@@ -334,8 +311,6 @@ func (t *governanceActivitySeqPersistorTask) GetName() string {
 }
 
 func (t *governanceActivitySeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))

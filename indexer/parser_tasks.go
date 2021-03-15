@@ -3,10 +3,10 @@ package indexer
 import (
 	"context"
 	"fmt"
+
 	"github.com/celo-org/kliento/contracts"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/utils/logger"
-	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 )
 
@@ -20,14 +20,10 @@ var (
 
 //NewGovernanceLogsParserTask parses transaction logs to data about governance
 func NewGovernanceLogsParserTask() *governanceLogsParserTask {
-	return &governanceLogsParserTask{
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameGovernanceLogsParser),
-	}
+	return &governanceLogsParserTask{}
 }
 
-type governanceLogsParserTask struct {
-	metricObserver metrics.Observer
-}
+type governanceLogsParserTask struct{}
 
 type ParsedGovernanceLogs struct {
 	ProposalId      uint64
@@ -42,9 +38,6 @@ func (t *governanceLogsParserTask) GetName() string {
 }
 
 func (t *governanceLogsParserTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
-
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageParser, t.GetName(), payload.CurrentHeight))

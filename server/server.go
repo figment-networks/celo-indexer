@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/figment-networks/celo-indexer/config"
-	"github.com/figment-networks/celo-indexer/metric"
+	"github.com/figment-networks/celo-indexer/metrics"
 	"github.com/figment-networks/celo-indexer/usecase"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/gin-gonic/gin"
@@ -46,6 +46,5 @@ func (s *Server) init() *Server {
 }
 
 func (s *Server) startMetricsServer() error {
-	return metric.NewServerMetric().StartServer(s.cfg.ServerMetricAddr, s.cfg.MetricServerUrl)
+	return metrics.NewMetricsServer().StartServer(s.cfg.ServerMetricAddr, s.cfg.MetricServerUrl)
 }
-

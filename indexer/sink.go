@@ -3,12 +3,15 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/metric"
-	"github.com/figment-networks/celo-indexer/store"
-	"github.com/figment-networks/celo-indexer/utils/logger"
+
+	m "github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/pkg/errors"
+
+	"github.com/figment-networks/celo-indexer/client/figmentclient"
+	"github.com/figment-networks/celo-indexer/metrics"
+	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/utils/logger"
 )
 
 var (
@@ -21,6 +24,9 @@ func NewSink(syncableDb store.Syncables, databaseDb store.Database, c figmentcli
 		databaseDb:    databaseDb,
 		client:        c,
 		versionNumber: versionNumber,
+
+		databaseSizeMetric: metrics.PipelineDatabaseSizeAfterHeight.WithLabels(),
+		requestCountMetric: metrics.PipelineRequestCountAfterHeight.WithLabels(),
 	}
 }
 
@@ -29,6 +35,9 @@ type sink struct {
 	databaseDb    store.Database
 	client        figmentclient.Client
 	versionNumber int64
+
+	databaseSizeMetric *m.GroupGauge
+	requestCountMetric *m.GroupGauge
 
 	successCount int64
 }
@@ -51,7 +60,7 @@ func (s *sink) Consume(ctx context.Context, p pipeline.Payload) error {
 		return err
 	}
 
-	s.successCount += 1
+	s.successCount++
 
 	logger.Info(fmt.Sprintf("processing completed [status=success] [height=%d]", payload.CurrentHeight))
 
@@ -72,9 +81,8 @@ func (s *sink) addMetrics(payload *payload) error {
 		return err
 	}
 
-	metric.IndexerHeightSuccess.Inc()
-	metric.IndexerHeightDuration.Set(payload.Syncable.Duration.Seconds())
-	metric.IndexerDbSizeAfterHeight.Set(res.Size)
-	metric.IndexerRequestCountAfterHeight.Set(float64(s.client.GetRequestCounter().GetCounter()))
+	s.databaseSizeMetric.Set(res.Size)
+	s.requestCountMetric.Set(float64(s.client.GetRequestCounter().GetCounter()))
+
 	return nil
 }

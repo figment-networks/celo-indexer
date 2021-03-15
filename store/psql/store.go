@@ -1,12 +1,11 @@
 package psql
 
 import (
-	"github.com/figment-networks/celo-indexer/metric"
+	"reflect"
+
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
-	"reflect"
-	"time"
 )
 
 const batchSize = 500
@@ -173,9 +172,4 @@ func castQuantity(scope *gorm.Scope) {
 			f.Field = reflect.ValueOf(gorm.Expr("cast(? AS DECIMAL(65,0))", t.String()))
 		}
 	}
-}
-
-func LogQueryDuration(start time.Time, queryName string) {
-	elapsed := time.Since(start)
-	metric.DatabaseQueryDuration.WithLabelValues(queryName).Set(elapsed.Seconds())
 }

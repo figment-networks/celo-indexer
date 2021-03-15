@@ -3,12 +3,13 @@ package indexing
 import (
 	"context"
 	"fmt"
-	"github.com/figment-networks/celo-indexer/store/psql"
 	"time"
+
+	"github.com/figment-networks/celo-indexer/metrics"
+	"github.com/figment-networks/celo-indexer/store/psql"
 
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/indexer"
-	"github.com/figment-networks/celo-indexer/metric"
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
@@ -27,7 +28,7 @@ func NewSummarizeUseCase(cfg *config.Config, db *psql.Store) *summarizeUseCase {
 }
 
 func (uc *summarizeUseCase) Execute(ctx context.Context) error {
-	defer metric.LogUseCaseDuration(time.Now(), "summarize")
+	defer metrics.LogUsecaseDuration(time.Now(), "summarize")
 
 	configParser, err := indexer.NewConfigParser(uc.cfg.IndexerConfigFile)
 	if err != nil {
@@ -143,9 +144,9 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 
 			Address: rawSeqSummaryItem.Address,
 
-			ScoreAvg: rawSeqSummaryItem.ScoreAvg,
-			ScoreMin: rawSeqSummaryItem.ScoreMin,
-			ScoreMax: rawSeqSummaryItem.ScoreMax,
+			ScoreAvg:  rawSeqSummaryItem.ScoreAvg,
+			ScoreMin:  rawSeqSummaryItem.ScoreMin,
+			ScoreMax:  rawSeqSummaryItem.ScoreMax,
 			SignedAvg: rawSeqSummaryItem.SignedAvg,
 			SignedMin: rawSeqSummaryItem.SignedMin,
 			SignedMax: rawSeqSummaryItem.SignedMax,
@@ -187,12 +188,12 @@ func (uc *summarizeUseCase) summarizeValidatorGroupSeq(interval types.SummaryInt
 
 			Address: rawSeqSummaryItem.Address,
 
-			CommissionAvg: rawSeqSummaryItem.CommissionAvg,
-			CommissionMin: rawSeqSummaryItem.CommissionMin,
-			CommissionMax: rawSeqSummaryItem.CommissionMax,
-			ActiveVotesAvg: rawSeqSummaryItem.ActiveVotesAvg,
-			ActiveVotesMin: rawSeqSummaryItem.ActiveVotesMin,
-			ActiveVotesMax: rawSeqSummaryItem.ActiveVotesMax,
+			CommissionAvg:   rawSeqSummaryItem.CommissionAvg,
+			CommissionMin:   rawSeqSummaryItem.CommissionMin,
+			CommissionMax:   rawSeqSummaryItem.CommissionMax,
+			ActiveVotesAvg:  rawSeqSummaryItem.ActiveVotesAvg,
+			ActiveVotesMin:  rawSeqSummaryItem.ActiveVotesMin,
+			ActiveVotesMax:  rawSeqSummaryItem.ActiveVotesMax,
 			PendingVotesAvg: rawSeqSummaryItem.PendingVotesAvg,
 			PendingVotesMin: rawSeqSummaryItem.PendingVotesMin,
 			PendingVotesMax: rawSeqSummaryItem.PendingVotesMax,
