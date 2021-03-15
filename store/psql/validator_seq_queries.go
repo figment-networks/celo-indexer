@@ -38,7 +38,7 @@ const (
 		validator_sequences.affiliation,
 		validator_sequences.signed,
 		validator_sequences.score,
-		validator_aggregates.recent_name as name,
-		validator_aggregates.recent_metadata_url as metadata_url
+		validator_aggregates.recent_name as recent_name,
+		validator_aggregates.recent_metadata_url as recent_metadata_url
 	`
 )

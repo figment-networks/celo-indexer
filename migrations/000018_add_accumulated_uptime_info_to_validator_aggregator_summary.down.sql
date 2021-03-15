@@ -1,0 +1,2 @@
+ALTER TABLE validator_group_aggregates DROP COLUMN accumulated_uptime;
+ALTER TABLE validator_group_aggregates DROP COLUMN accumulated_uptime_count;

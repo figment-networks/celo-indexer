@@ -15,8 +15,8 @@ type ValidatorSeq struct {
 	Score       types.Quantity `json:"score"`
 
 	// Join fields
-	Name        string `json:"name"`
-	MetadataUrl string `json:"metadata_url"`
+	RecentName        string `json:"recent_name"`
+	RecentMetadataUrl string `json:"recent_metadata_url"`
 }
 
 func (ValidatorSeq) TableName() string {

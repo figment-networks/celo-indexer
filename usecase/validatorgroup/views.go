@@ -8,10 +8,10 @@ type AggDetailsView struct {
 	*model.ModelWithTimestamps
 	*model.Aggregate
 
-	Address           string `json:"address"`
-	RecentName        string `json:"recent_name"`
-	RecentMetadataUrl string `json:"recent_metadata_url"`
-
+	Address            string                     `json:"address"`
+	RecentName         string                     `json:"recent_name"`
+	RecentMetadataUrl  string                     `json:"recent_metadata_url"`
+	Uptime             float64                    `json:"uptime"`
 	LastSequences      []SeqListItem              `json:"last_sequences"`
 	DelegationActivity []model.AccountActivitySeq `json:"delegation_activity"`
 }
@@ -24,6 +24,10 @@ func ToAggDetailsView(m *model.ValidatorGroupAgg, validatorSequences []model.Val
 		Address:           m.Address,
 		RecentName:        m.RecentName,
 		RecentMetadataUrl: m.RecentMetadataUrl,
+	}
+
+	if m.AccumulatedUptimeCount > 0 {
+		view.Uptime = float64(m.AccumulatedUptime) / float64(m.AccumulatedUptimeCount)
 	}
 
 	sequenceListView := ToSeqListView(validatorSequences)
@@ -58,6 +62,8 @@ func ToSeqListView(validatorGroupSeqs []model.ValidatorGroupSeq) SeqListView {
 			Sequence: m.Sequence,
 
 			Address:          m.Address,
+			Name:             m.Name,
+			MetadataUrl:      m.MetadataUrl,
 			Commission:       m.Commission.String(),
 			ActiveVotes:      m.ActiveVotes.String(),
 			PendingVotes:     m.PendingVotes.String(),
