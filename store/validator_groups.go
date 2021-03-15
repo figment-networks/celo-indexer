@@ -14,7 +14,6 @@ type ValidatorGroupAgg interface {
 	FindByID(id int64) (*model.ValidatorGroupAgg, error)
 	FindByAddress(key string) (*model.ValidatorGroupAgg, error)
 	All() ([]model.ValidatorGroupAgg, error)
-	CalculateCumulativeUptime(key string) error
 }
 
 type ValidatorGroupSeq interface {

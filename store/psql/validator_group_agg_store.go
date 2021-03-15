@@ -67,12 +67,3 @@ func (s ValidatorGroupAgg) All() ([]model.ValidatorGroupAgg, error) {
 
 	return result, checkErr(err)
 }
-
-// CalculateCumulativeUptime calculate cumulative uptime avg by address
-func (s *ValidatorGroupAgg) CalculateCumulativeUptime(address string) error {
-	err := s.db.
-		Exec(UpdateCalculate, address, address).
-		Error
-
-	return checkErr(err)
-}

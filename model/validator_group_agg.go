@@ -29,4 +29,6 @@ func (s *ValidatorGroupAgg) Update(u *ValidatorGroupAgg) {
 	s.Aggregate.RecentAt = u.Aggregate.RecentAt
 	s.RecentName = u.RecentName
 	s.RecentMetadataUrl = u.RecentMetadataUrl
+	s.AccumulatedUptimeCount = s.AccumulatedUptimeCount + u.AccumulatedUptimeCount
+	s.AccumulatedUptime = s.AccumulatedUptime + u.AccumulatedUptime
 }

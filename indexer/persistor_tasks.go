@@ -244,9 +244,6 @@ func (t *validatorGroupAggPersistorTask) Run(ctx context.Context, p pipeline.Pay
 		if err := t.validatorGroupAggDb.Save(&aggregate); err != nil {
 			return err
 		}
-		if err := t.validatorGroupAggDb.CalculateCumulativeUptime(aggregate.Address); err != nil {
-			return err
-		}
 	}
 
 	return nil
