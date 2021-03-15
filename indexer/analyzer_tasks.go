@@ -30,10 +30,11 @@ var (
 )
 
 // NewSystemEventCreatorTask creates system events
-func NewSystemEventCreatorTask(cfg *config.Config, validatorSeqDb store.ValidatorSeq, accountActivitySeqDb store.AccountActivitySeq) *systemEventCreatorTask {
+func NewSystemEventCreatorTask(cfg *config.Config, validatorSeqDb store.ValidatorSeq, accountActivitySeqDb store.AccountActivitySeq, validatorGroupSeqDb store.ValidatorGroupSeq) *systemEventCreatorTask {
 	return &systemEventCreatorTask{
 		validatorSeqDb:       validatorSeqDb,
 		accountActivitySeqDb: accountActivitySeqDb,
+		validatorGroupSeqDb:  validatorGroupSeqDb,
 		cfg:                  cfg,
 		metricObserver:       indexerTaskDuration.WithLabels(TaskNameSystemEventCreator),
 	}
@@ -42,6 +43,7 @@ func NewSystemEventCreatorTask(cfg *config.Config, validatorSeqDb store.Validato
 type systemEventCreatorTask struct {
 	validatorSeqDb       store.ValidatorSeq
 	accountActivitySeqDb store.AccountActivitySeq
+	validatorGroupSeqDb  store.ValidatorGroupSeq
 
 	cfg *config.Config
 
@@ -69,6 +71,7 @@ func (t *systemEventCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 	}
 
 	currHeightValidatorSequences := payload.ValidatorSequences
+	currHeightValidatorGroupSequences := payload.ValidatorGroupSequences
 	prevHeightValidatorSequences, err := t.getPrevHeightValidatorSequences(payload)
 	if err != nil {
 		return err
@@ -86,7 +89,7 @@ func (t *systemEventCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 	}
 	payload.SystemEvents = append(payload.SystemEvents, activeSetPresenceChangeSystemEvents...)
 
-	missedBlocksSystemEvents, err := t.getMissedBlocksSystemEvents(currHeightValidatorSequences)
+	missedBlocksSystemEvents, err := t.getMissedBlocksSystemEvents(currHeightValidatorSequences, currHeightValidatorGroupSequences)
 	if err != nil {
 		return err
 	}
@@ -126,11 +129,29 @@ func (t *systemEventCreatorTask) getPrevHeightValidatorSequences(payload *payloa
 	return prevHeightValidatorSequences, nil
 }
 
-func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidatorSequences []model.ValidatorSeq) ([]model.SystemEvent, error) {
+func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidatorSequences []model.ValidatorSeq, currHeightValidatorGroupSequences []model.ValidatorGroupSeq) ([]model.SystemEvent, error) {
 	var systemEvents []model.SystemEvent
-	for _, validatorSequence := range currHeightValidatorSequences {
+	missedBlocksOfValidatorSequences, err := t.getMissedBlocksOfValidatorSequences(currHeightValidatorSequences)
+	if err != nil {
+		return nil, err
+	}
+	systemEvents = append(systemEvents, missedBlocksOfValidatorSequences...)
+
+	missedBlocksOfValidatorGroupSequences, err := t.getMissedBlocksOfValidatorGroupSequences(currHeightValidatorGroupSequences)
+	if err != nil {
+		return nil, err
+	}
+	systemEvents = append(systemEvents, missedBlocksOfValidatorGroupSequences...)
+
+	return systemEvents, nil
+}
+
+func (t systemEventCreatorTask) getMissedBlocksOfValidatorSequences(validatorSequences []model.ValidatorSeq) ([]model.SystemEvent, error) {
+	var systemEvents []model.SystemEvent
+
+	for _, validatorSequence := range validatorSequences {
 		// When current height validator has validated the block no need to check last records
-		if t.isValidated(validatorSequence) {
+		if validatorSequence.IsValidated() {
 			return systemEvents, nil
 		}
 
@@ -144,7 +165,7 @@ func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidator
 		} else {
 			var validatorSequencesToCheck []model.ValidatorSeq
 			validatorSequencesToCheck = append([]model.ValidatorSeq{validatorSequence}, lastValidatorSequencesForAddress...)
-			totalMissedCount := t.getTotalMissed(validatorSequencesToCheck)
+			totalMissedCount := t.getTotalMissedValidators(validatorSequencesToCheck)
 
 			logger.Debug(fmt.Sprintf("total missed blocks for last %d blocks for address %s: %d", MaxValidatorSequences, validatorSequence.Address, totalMissedCount))
 
@@ -160,7 +181,7 @@ func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidator
 				systemEvents = append(systemEvents, *newSystemEvent)
 			}
 
-			missedInRowCount := t.getMissedInRow(validatorSequencesToCheck, MissedInRowThreshold)
+			missedInRowCount := t.getMissedInRowOfValidatorSequences(validatorSequencesToCheck, MissedInRowThreshold)
 
 			logger.Debug(fmt.Sprintf("total missed blocks in a row for address %s: %d", validatorSequence.Address, missedInRowCount))
 
@@ -179,11 +200,64 @@ func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidator
 	return systemEvents, nil
 }
 
-// getTotalMissed get total missed count for given slice of validator sequences
-func (t systemEventCreatorTask) getTotalMissed(validatorSequences []model.ValidatorSeq) int64 {
+func (t systemEventCreatorTask) getMissedBlocksOfValidatorGroupSequences(validatorGroupSequences []model.ValidatorGroupSeq) ([]model.SystemEvent, error) {
+	var systemEvents []model.SystemEvent
+
+	for _, validatorGroupSequence := range validatorGroupSequences {
+		if validatorGroupSequence.IsValidated() {
+			return systemEvents, nil
+		}
+
+		lastValidatorGroupSequencesForAddress, err := t.validatorGroupSeqDb.FindLastByAddress(validatorGroupSequence.Address, MaxValidatorSequences)
+		if err != nil {
+			if err == psql.ErrNotFound {
+				return systemEvents, nil
+			} else {
+				return nil, err
+			}
+		} else {
+			var validatorGroupSequencesToCheck []model.ValidatorGroupSeq
+			validatorGroupSequencesToCheck = append([]model.ValidatorGroupSeq{validatorGroupSequence}, lastValidatorGroupSequencesForAddress...)
+			totalMissedCount := t.getTotalMissedValidatorGroups(validatorGroupSequencesToCheck)
+
+			logger.Debug(fmt.Sprintf("total missed blocks for last %d blocks for address %s: %d", MaxValidatorSequences, validatorGroupSequence.Address, totalMissedCount))
+
+			if totalMissedCount == MissedForMaxThreshold {
+				newSystemEvent, err := t.newSystemEvent(validatorGroupSequence.Sequence, validatorGroupSequence.Address, model.SystemEventMissedNofM, systemEventRawData{
+					"threshold":               MissedForMaxThreshold,
+					"max_validator_sequences": MaxValidatorSequences,
+				})
+				if err != nil {
+					return nil, err
+				}
+
+				systemEvents = append(systemEvents, *newSystemEvent)
+			}
+
+			missedInRowCount := t.getMissedInRowOfValidatorGroupSequences(validatorGroupSequencesToCheck, MissedInRowThreshold)
+
+			logger.Debug(fmt.Sprintf("total missed blocks in a row for address %s: %d", validatorGroupSequence.Address, missedInRowCount))
+
+			if missedInRowCount == MissedInRowThreshold {
+				newSystemEvent, err := t.newSystemEvent(validatorGroupSequence.Sequence, validatorGroupSequence.Address, model.SystemEventMissedNConsecutive, systemEventRawData{
+					"threshold": MissedInRowThreshold,
+				})
+				if err != nil {
+					return nil, err
+				}
+
+				systemEvents = append(systemEvents, *newSystemEvent)
+			}
+		}
+	}
+	return systemEvents, nil
+}
+
+// getTotalMissedValidators get total missed count for given slice of validator sequences
+func (t systemEventCreatorTask) getTotalMissedValidators(validatorSequences []model.ValidatorSeq) int64 {
 	var totalMissedCount int64 = 0
 	for _, validatorSequence := range validatorSequences {
-		if t.isNotValidated(validatorSequence) {
+		if !validatorSequence.IsValidated() {
 			totalMissedCount += 1
 		}
 	}
@@ -191,8 +265,20 @@ func (t systemEventCreatorTask) getTotalMissed(validatorSequences []model.Valida
 	return totalMissedCount
 }
 
-// getMissedInRow get number of validator sequences missed in the row
-func (t systemEventCreatorTask) getMissedInRow(validatorSequences []model.ValidatorSeq, limit int64) int64 {
+// getTotalMissedValidatorGroups get total missed count for given slice of validator group sequences
+func (t systemEventCreatorTask) getTotalMissedValidatorGroups(validatorGroupSequences []model.ValidatorGroupSeq) int64 {
+	var totalMissedCount int64 = 0
+	for _, validatorGroupSequence := range validatorGroupSequences {
+		if !validatorGroupSequence.IsValidated() {
+			totalMissedCount += 1
+		}
+	}
+
+	return totalMissedCount
+}
+
+// getMissedInRowOfValidatorSequences get number of validator sequences missed in the row
+func (t systemEventCreatorTask) getMissedInRowOfValidatorSequences(validatorSequences []model.ValidatorSeq, limit int64) int64 {
 	if int64(len(validatorSequences)) > MissedInRowThreshold {
 		validatorSequences = validatorSequences[:limit]
 	}
@@ -200,7 +286,7 @@ func (t systemEventCreatorTask) getMissedInRow(validatorSequences []model.Valida
 	var missedInRowCount int64 = 0
 	prevValidated := false
 	for _, validatorSequence := range validatorSequences {
-		if t.isNotValidated(validatorSequence) {
+		if !validatorSequence.IsValidated() {
 			if !prevValidated {
 				missedInRowCount += 1
 			}
@@ -213,13 +299,26 @@ func (t systemEventCreatorTask) getMissedInRow(validatorSequences []model.Valida
 	return missedInRowCount
 }
 
-// isNotValidated check if validator has validated the block at height
-func (t systemEventCreatorTask) isNotValidated(validatorSequence model.ValidatorSeq) bool {
-	return validatorSequence.Signed != nil && !*validatorSequence.Signed
-}
+// getMissedInRowOfValidatorGroupSequences get number of validator group sequences missed in the row
+func (t systemEventCreatorTask) getMissedInRowOfValidatorGroupSequences(validatorSequences []model.ValidatorGroupSeq, limit int64) int64 {
+	if int64(len(validatorSequences)) > MissedInRowThreshold {
+		validatorSequences = validatorSequences[:limit]
+	}
 
-func (t systemEventCreatorTask) isValidated(validatorSequence model.ValidatorSeq) bool {
-	return !t.isNotValidated(validatorSequence)
+	var missedInRowCount int64 = 0
+	prevValidated := false
+	for _, validatorSequence := range validatorSequences {
+		if !validatorSequence.IsValidated() {
+			if !prevValidated {
+				missedInRowCount += 1
+			}
+			prevValidated = false
+		} else {
+			prevValidated = true
+		}
+	}
+
+	return missedInRowCount
 }
 
 func (t *systemEventCreatorTask) getActiveSetPresenceChangeSystemEvents(currHeightValidatorSequences []model.ValidatorSeq, prevHeightValidatorSequences []model.ValidatorSeq) ([]model.SystemEvent, error) {

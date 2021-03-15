@@ -48,3 +48,7 @@ func (s *ValidatorSeq) ScoreAsPercentage() float64 {
 
 	return res
 }
+
+func (s *ValidatorSeq) IsValidated() bool {
+	return s.Signed != nil && *s.Signed
+}

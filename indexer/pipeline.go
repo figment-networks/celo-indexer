@@ -122,7 +122,7 @@ func NewPipeline(
 	p.AddStage(
 		pipeline.NewStageWithTasks(
 			StageAnalyzer,
-			pipeline.RetryingTask(NewSystemEventCreatorTask(cfg, validatorSeqDb, accountActivitySeqDb), isTransient, maxRetries),
+			pipeline.RetryingTask(NewSystemEventCreatorTask(cfg, validatorSeqDb, accountActivitySeqDb, validatorGroupSeqDb), isTransient, maxRetries),
 		),
 	)
 

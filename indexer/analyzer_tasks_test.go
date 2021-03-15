@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	ErrCouldNotFindByAddress    = errors.New("could not find test")
+	ErrCouldNotFindByAddress = errors.New("could not find test")
 
 	testCfg = &config.Config{
 		FirstBlockHeight: 1,
@@ -102,7 +102,7 @@ func TestSystemEventCreatorTask_GroupRewardDistributedChangeSystemEvents(t *test
 				Height: currSyncable.Height,
 				Time:   currSyncable.Time,
 			}
-			task := NewSystemEventCreatorTask(testCfg, nil, nil)
+			task := NewSystemEventCreatorTask(testCfg, nil, nil, nil)
 			createdSystemEvents, _ := task.getValueChangeForAccountActivityByKind(heightMeta, currHeightAccountActivitySequences, prevHeightAccountActivitySequences, OperationTypeValidatorEpochPaymentDistributedForGroup)
 
 			if len(createdSystemEvents) != tt.expectedCount {
@@ -253,7 +253,7 @@ func TestSystemEventCreatorTask_getActiveSetPresenceChangeSystemEvents(t *testin
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			task := NewSystemEventCreatorTask(testCfg, nil, nil)
+			task := NewSystemEventCreatorTask(testCfg, nil, nil, nil)
 			createdSystemEvents, _ := task.getActiveSetPresenceChangeSystemEvents(tt.currSeqs, tt.prevSeqs)
 
 			if len(createdSystemEvents) != tt.expectedCount {
@@ -576,8 +576,8 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			}
 			gomock.InOrder(mockCalls...)
 
-			task := NewSystemEventCreatorTask(testCfg, validatorSeqStoreMock, accountActivitySeqStoreMock)
-			createdSystemEvents, err := task.getMissedBlocksSystemEvents(tt.currHeightList)
+			task := NewSystemEventCreatorTask(testCfg, validatorSeqStoreMock, accountActivitySeqStoreMock, nil)
+			createdSystemEvents, err := task.getMissedBlocksSystemEvents(tt.currHeightList, nil)
 			if err == nil && tt.expectedErr != nil {
 				t.Errorf("should return error")
 				return
