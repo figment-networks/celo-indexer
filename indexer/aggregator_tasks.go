@@ -7,7 +7,6 @@ import (
 	"github.com/celo-org/kliento/contracts"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/store"
-	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 
 	"github.com/figment-networks/celo-indexer/model"
@@ -59,50 +58,55 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 		}
 	}
 
+	existingValidatorAggs, err := t.validatorAggDb.All()
+	if err != nil {
+		return err
+	}
+
+	existingValidatorAggsMap := make(map[string]*model.ValidatorAgg)
+	for _, va := range existingValidatorAggs {
+		existingValidatorAggsMap[va.Address] = &va
+	}
+
 	var newValidatorAggs []model.ValidatorAgg
 	var updatedValidatorAggs []model.ValidatorAgg
 	for _, rawValidator := range rawValidators {
-		existing, err := t.validatorAggDb.FindByAddress(rawValidator.Address)
-		if err != nil {
-			if err == psql.ErrNotFound {
-				// Create new
+		existing, ok := existingValidatorAggsMap[rawValidator.Address]
+		if !ok {
+			// Create new
+			validator := model.ValidatorAgg{
+				Aggregate: &model.Aggregate{
+					StartedAtHeight: payload.Syncable.Height,
+					StartedAt:       *payload.Syncable.Time,
+					RecentAtHeight:  payload.Syncable.Height,
+					RecentAt:        *payload.Syncable.Time,
+				},
 
-				validator := model.ValidatorAgg{
-					Aggregate: &model.Aggregate{
-						StartedAtHeight: payload.Syncable.Height,
-						StartedAt:       *payload.Syncable.Time,
-						RecentAtHeight:  payload.Syncable.Height,
-						RecentAt:        *payload.Syncable.Time,
-					},
+				Address:                 rawValidator.Address,
+				RecentAsValidatorHeight: payload.Syncable.Height,
+			}
 
-					Address:                 rawValidator.Address,
-					RecentAsValidatorHeight: payload.Syncable.Height,
-				}
-
-				if rawValidator.Signed == nil {
-					validator.AccumulatedUptime = 0
-					validator.AccumulatedUptimeCount = 0
-				} else {
-					if *rawValidator.Signed {
-						validator.AccumulatedUptime = 1
-					} else {
-						validator.AccumulatedUptime = 0
-					}
-					validator.AccumulatedUptimeCount = 1
-				}
-
-				// Always get identity for new records
-				identity, err := t.client.GetIdentityByHeight(ctx, validator.Address, payload.CurrentHeight)
-				if err != nil {
-					return err
-				}
-				validator.RecentName = identity.Name
-				validator.RecentMetadataUrl = identity.MetadataUrl
-
-				newValidatorAggs = append(newValidatorAggs, validator)
+			if rawValidator.Signed == nil {
+				validator.AccumulatedUptime = 0
+				validator.AccumulatedUptimeCount = 0
 			} else {
+				if *rawValidator.Signed {
+					validator.AccumulatedUptime = 1
+				} else {
+					validator.AccumulatedUptime = 0
+				}
+				validator.AccumulatedUptimeCount = 1
+			}
+
+			// Always get identity for new records
+			identity, err := t.client.GetIdentityByHeight(ctx, validator.Address, payload.CurrentHeight)
+			if err != nil {
 				return err
 			}
+			validator.RecentName = identity.Name
+			validator.RecentMetadataUrl = identity.MetadataUrl
+
+			newValidatorAggs = append(newValidatorAggs, validator)
 		} else {
 			// Update
 			validator := &model.ValidatorAgg{
@@ -180,36 +184,42 @@ func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 		}
 	}
 
+	existingValidatorGroupAggs, err := t.validatorGroupAggDb.All()
+	if err != nil {
+		return err
+	}
+
+	existingValidatorGroupAggsMap := make(map[string]*model.ValidatorGroupAgg)
+	for _, vga := range existingValidatorGroupAggs {
+		existingValidatorGroupAggsMap[vga.Address] = &vga
+	}
+
 	var newValidatorGroupAggs []model.ValidatorGroupAgg
 	var updatedValidatorGroupAggs []model.ValidatorGroupAgg
 	for _, rawGroup := range rawValidatorGroups {
-		existing, err := t.validatorGroupAggDb.FindByAddress(rawGroup.Address)
-		if err != nil {
-			if err == psql.ErrNotFound {
-				// Create new
-				group := model.ValidatorGroupAgg{
-					Aggregate: &model.Aggregate{
-						StartedAtHeight: payload.Syncable.Height,
-						StartedAt:       *payload.Syncable.Time,
-						RecentAtHeight:  payload.Syncable.Height,
-						RecentAt:        *payload.Syncable.Time,
-					},
+		existing, ok := existingValidatorGroupAggsMap[rawGroup.Address]
+		if !ok {
+			// Create new
+			group := model.ValidatorGroupAgg{
+				Aggregate: &model.Aggregate{
+					StartedAtHeight: payload.Syncable.Height,
+					StartedAt:       *payload.Syncable.Time,
+					RecentAtHeight:  payload.Syncable.Height,
+					RecentAt:        *payload.Syncable.Time,
+				},
 
-					Address: rawGroup.Address,
-				}
+				Address: rawGroup.Address,
+			}
 
-				// Always get identity for new records
-				identity, err := t.client.GetIdentityByHeight(ctx, group.Address, payload.CurrentHeight)
-				if err != nil {
-					return err
-				}
-				group.RecentName = identity.Name
-				group.RecentMetadataUrl = identity.MetadataUrl
-
-				newValidatorGroupAggs = append(newValidatorGroupAggs, group)
-			} else {
+			// Always get identity for new records
+			identity, err := t.client.GetIdentityByHeight(ctx, group.Address, payload.CurrentHeight)
+			if err != nil {
 				return err
 			}
+			group.RecentName = identity.Name
+			group.RecentMetadataUrl = identity.MetadataUrl
+
+			newValidatorGroupAggs = append(newValidatorGroupAggs, group)
 		} else {
 			// Update
 			group := &model.ValidatorGroupAgg{
@@ -260,40 +270,45 @@ func (t *proposalAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageAggregator, t.GetName(), payload.CurrentHeight))
 
+	existingProposalAggs, _, err := t.proposalAggDb.All(0, nil)
+	if err != nil {
+		return err
+	}
+
+	existingProposalAggsMap := make(map[uint64]*model.ProposalAgg)
+	for _, pa := range existingProposalAggs {
+		existingProposalAggsMap[pa.ProposalId] = &pa
+	}
+
 	var newProposalAggs []model.ProposalAgg
 	var updatedProposalAggs []model.ProposalAgg
 	for _, log := range parsedGovernanceLogs {
-		existing, err := t.proposalAggDb.FindByProposalId(log.ProposalId)
-		if err != nil {
-			if err == psql.ErrNotFound {
-				// Create new
+		existing, ok := existingProposalAggsMap[log.ProposalId]
+		if !ok {
+			// Create new
+			proposal := model.ProposalAgg{
+				Aggregate: &model.Aggregate{
+					StartedAtHeight: payload.Syncable.Height,
+					StartedAt:       *payload.Syncable.Time,
+					RecentAtHeight:  payload.Syncable.Height,
+					RecentAt:        *payload.Syncable.Time,
+				},
 
-				proposal := model.ProposalAgg{
-					Aggregate: &model.Aggregate{
-						StartedAtHeight: payload.Syncable.Height,
-						StartedAt:       *payload.Syncable.Time,
-						RecentAtHeight:  payload.Syncable.Height,
-						RecentAt:        *payload.Syncable.Time,
-					},
-
-					ProposalId: log.ProposalId,
-				}
-
-				if log.Kind == figmentclient.OperationTypeProposalQueued {
-					event := log.Details.(*contracts.GovernanceProposalQueued)
-
-					proposal.ProposedAtHeight = payload.Syncable.Height
-					proposal.ProposedAt = *payload.Syncable.Time
-					proposal.ProposerAddress = event.Proposer.String()
-					proposal.Deposit = event.Deposit.String()
-					proposal.TransactionCount = event.TransactionCount.Int64()
-					proposal.RecentStage = model.ProposalStageProposed
-				}
-
-				newProposalAggs = append(newProposalAggs, proposal)
-			} else {
-				return err
+				ProposalId: log.ProposalId,
 			}
+
+			if log.Kind == figmentclient.OperationTypeProposalQueued {
+				event := log.Details.(*contracts.GovernanceProposalQueued)
+
+				proposal.ProposedAtHeight = payload.Syncable.Height
+				proposal.ProposedAt = *payload.Syncable.Time
+				proposal.ProposerAddress = event.Proposer.String()
+				proposal.Deposit = event.Deposit.String()
+				proposal.TransactionCount = event.TransactionCount.Int64()
+				proposal.RecentStage = model.ProposalStageProposed
+			}
+
+			newProposalAggs = append(newProposalAggs, proposal)
 		} else {
 			// Update
 			toUpdate := &model.ProposalAgg{
