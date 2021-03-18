@@ -31,6 +31,8 @@ var (
 type Client interface {
 	base.Client
 
+	WithAssignedNode(uint8) Client
+
 	GetRequestCounter() base.RequestCounter
 
 	GetChainStatus(context.Context) (*ChainStatus, error)
@@ -68,7 +70,8 @@ func (rc *requestCounter) GetCounter() uint64 {
 }
 
 type client struct {
-	ccs            []*kliento.CeloClient
+	ccs []*kliento.CeloClient
+
 	requestCounter *requestCounter
 }
 
@@ -89,20 +92,32 @@ func New(urls string) (*client, error) {
 	return client, nil
 }
 
-func (l *client) GetName() string {
-	return CeloClientFigment
+func (l *client) WithAssignedNode(nodeIndex uint8) Client {
+	return &client{
+		ccs: []*kliento.CeloClient{
+			l.ccs[int(nodeIndex)%len(l.ccs)],
+		},
+		requestCounter: l.requestCounter,
+	}
 }
 
 func (l *client) cc() *kliento.CeloClient {
-	rc := l.requestCounter.GetCounter()
-
-	return l.ccs[rc%uint64(len(l.ccs))]
+	if len(l.ccs) == 1 {
+		return l.ccs[0]
+	} else {
+		rc := l.requestCounter.GetCounter()
+		return l.ccs[rc%uint64(len(l.ccs))]
+	}
 }
 
 func (l *client) Close() {
 	for _, cc := range l.ccs {
 		cc.Close()
 	}
+}
+
+func (l *client) GetName() string {
+	return CeloClientFigment
 }
 
 func (l *client) GetRequestCounter() base.RequestCounter {

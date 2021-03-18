@@ -72,16 +72,16 @@ func NewPipeline(
 
 	// Setup stage
 	p.AddStage(
-		pipeline.NewStageWithTasks(pipeline.StageSetup, pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, maxRetries)),
+		pipeline.NewStageWithTasks(pipeline.StageSetup, pipeline.RetryingTask(NewHeightMetaRetrieverTask(client.WithAssignedNode(0)), isTransient, maxRetries)),
 	)
 
 	// Fetcher stage
 	p.AddStage(
 		pipeline.NewAsyncStageWithTasks(pipeline.StageFetcher,
-			pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, maxRetries),
-			pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, maxRetries),
-			pipeline.RetryingTask(NewValidatorGroupFetcherTask(client), isTransient, maxRetries),
-			pipeline.RetryingTask(NewTransactionFetcherTask(client), isTransient, maxRetries),
+			pipeline.RetryingTask(NewBlockFetcherTask(client.WithAssignedNode(0)), isTransient, maxRetries),
+			pipeline.RetryingTask(NewValidatorFetcherTask(client.WithAssignedNode(1)), isTransient, maxRetries),
+			pipeline.RetryingTask(NewValidatorGroupFetcherTask(client.WithAssignedNode(2)), isTransient, maxRetries),
+			pipeline.RetryingTask(NewTransactionFetcherTask(client.WithAssignedNode(3)), isTransient, maxRetries),
 		),
 	)
 
@@ -112,8 +112,8 @@ func NewPipeline(
 	p.AddStage(
 		pipeline.NewAsyncStageWithTasks(
 			pipeline.StageAggregator,
-			pipeline.RetryingTask(NewValidatorAggCreatorTask(client, validatorAggDb), isTransient, maxRetries),
-			pipeline.RetryingTask(NewValidatorGroupAggCreatorTask(client, validatorGroupAggDb), isTransient, maxRetries),
+			pipeline.RetryingTask(NewValidatorAggCreatorTask(client.WithAssignedNode(0), validatorAggDb), isTransient, maxRetries),
+			pipeline.RetryingTask(NewValidatorGroupAggCreatorTask(client.WithAssignedNode(1), validatorGroupAggDb), isTransient, maxRetries),
 			pipeline.RetryingTask(NewProposalAggCreatorTask(proposalAggDb), isTransient, maxRetries),
 		),
 	)
