@@ -34,11 +34,15 @@ func (s *ValidatorGroupSeq) Equal(m ValidatorGroupSeq) bool {
 	return s.Address == m.Address
 }
 
-func (b *ValidatorGroupSeq) Update(m ValidatorGroupSeq) {
-	b.Commission = m.Commission
-	b.ActiveVotes = m.ActiveVotes
-	b.ActiveVotes = m.ActiveVotes
-	b.PendingVotes = m.PendingVotes
-	b.MembersCount = m.MembersCount
-	b.MembersAvgSigned = m.MembersAvgSigned
+func (s *ValidatorGroupSeq) Update(m ValidatorGroupSeq) {
+	s.Commission = m.Commission
+	s.ActiveVotes = m.ActiveVotes
+	s.ActiveVotes = m.ActiveVotes
+	s.PendingVotes = m.PendingVotes
+	s.MembersCount = m.MembersCount
+	s.MembersAvgSigned = m.MembersAvgSigned
+}
+
+func (s *ValidatorGroupSeq) IsValidated() bool {
+	return s.MembersAvgSigned > 0
 }
