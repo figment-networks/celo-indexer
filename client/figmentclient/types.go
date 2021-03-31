@@ -152,4 +152,5 @@ type Identity struct {
 	Name        string `json:"name"`
 	MetadataUrl string `json:"metadata_url"`
 	Type        string `json:"type"`
+	Affiliation string `json:"affiliation"`
 }

@@ -450,7 +450,7 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 	if err != nil {
 		return nil, err
 	}
-	err = cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID,)
+	err = cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID)
 	if err != nil {
 		return nil, err
 	}
@@ -630,7 +630,6 @@ func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress st
 		return nil, err
 	}
 	setupErr := cr.setupContracts(ctx, registry.AccountsContractID, registry.LockedGoldContractID, registry.StableTokenContractID, registry.ValidatorsContractID)
-
 	address := common.HexToAddress(rawAddress)
 
 	accountInfo := &AccountInfo{}
@@ -734,6 +733,13 @@ func (l *client) getIdentity(ctx context.Context, cr *contractsRegistry, rawAddr
 		if isValidator {
 			identity.Type = "validator_group"
 		}
+
+		validatorDetails, err := cr.validatorsContract.GetValidator(opts, address)
+		if err != nil {
+			return nil, err
+		}
+		identity.Type = validatorDetails.Affiliation.String()
+
 	}
 
 	return identity, nil
