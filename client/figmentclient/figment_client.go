@@ -366,7 +366,6 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 				})
 			}
 
-
 		} else if eventLog.Address == cr.addresses[registry.AccountsContractID] && cr.contractDeployed(registry.AccountsContractID) {
 			eventName, eventRaw, _, err := cr.accountsContract.TryParseLog(*eventLog)
 			if err != nil {
@@ -378,7 +377,6 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 				})
 			}
 
-
 		} else if eventLog.Address == cr.addresses[registry.LockedGoldContractID] && cr.contractDeployed(registry.LockedGoldContractID) {
 			eventName, eventRaw, _, err := cr.lockedGoldContract.TryParseLog(*eventLog)
 			if err != nil {
@@ -389,7 +387,6 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 					Details: eventRaw,
 				})
 			}
-
 
 		} else if eventLog.Address == cr.addresses[registry.StableTokenContractID] && cr.contractDeployed(registry.StableTokenContractID) {
 			eventName, eventRaw, _, err := cr.stableTokenContract.TryParseLog(*eventLog)
@@ -632,7 +629,7 @@ func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress st
 	if err != nil {
 		return nil, err
 	}
-	setupErr := cr.setupContracts(ctx, registry.AccountsContractID, registry.LockedGoldContractID, registry.StableTokenContractID)
+	setupErr := cr.setupContracts(ctx, registry.AccountsContractID, registry.LockedGoldContractID, registry.StableTokenContractID, registry.ValidatorsContractID)
 
 	address := common.HexToAddress(rawAddress)
 
@@ -696,7 +693,7 @@ func (l *client) GetIdentityByHeight(ctx context.Context, rawAddress string, h i
 	if err != nil {
 		return nil, err
 	}
-	err = cr.setupContracts(ctx, registry.AccountsContractID)
+	err = cr.setupContracts(ctx, registry.AccountsContractID, registry.ValidatorsContractID)
 	if err != nil {
 		return nil, err
 	}
@@ -724,6 +721,19 @@ func (l *client) getIdentity(ctx context.Context, cr *contractsRegistry, rawAddr
 		l.requestCounter.IncrementCounter()
 		identity.MetadataUrl = metadataUrl
 
+	}
+
+	if cr.validatorsContract != nil {
+		opts := &bind.CallOpts{Context: ctx}
+		isValidator, err := cr.validatorsContract.IsValidator(opts, address)
+		if err != nil {
+			return nil, err
+		}
+		l.requestCounter.IncrementCounter()
+		identity.Type = "validator"
+		if isValidator {
+			identity.Type = "validator_group"
+		}
 	}
 
 	return identity, nil
