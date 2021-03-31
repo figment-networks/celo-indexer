@@ -26,9 +26,6 @@ func ToHeightDetailsView(rawAccountInfo *figmentclient.AccountInfo, accountActiv
 type DetailsView struct {
 	Address string `json:"address"`
 
-	Type        string `json:"type"`
-	Affiliation string `json:"affiliation"`
-
 	*IdentityDetails
 	*BalanceDetails
 

@@ -730,16 +730,14 @@ func (l *client) getIdentity(ctx context.Context, cr *contractsRegistry, rawAddr
 		}
 		l.requestCounter.IncrementCounter()
 		identity.Type = "validator"
-		if isValidator {
+		if !isValidator {
 			identity.Type = "validator_group"
 		}
 
 		validatorDetails, err := cr.validatorsContract.GetValidator(opts, address)
-		if err != nil {
-			return nil, err
+		if err == nil {
+			identity.Affiliation = validatorDetails.Affiliation.String()
 		}
-		identity.Type = validatorDetails.Affiliation.String()
-
 	}
 
 	return identity, nil
