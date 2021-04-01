@@ -61,6 +61,8 @@ func ToDetailsView(address string, rawAccountInfo *figmentclient.AccountInfo, in
 type IdentityDetails struct {
 	Name        string `json:"name"`
 	MetadataUrl string `json:"metadata_url"`
+	Type        string `json:"type"`
+	Affiliation string `json:"affiliation"`
 }
 
 type BalanceDetails struct {
@@ -75,6 +77,8 @@ func ToIdentityDetails(rawAccountInfo *figmentclient.AccountInfo) *IdentityDetai
 	return &IdentityDetails{
 		Name:        rawAccountInfo.Name,
 		MetadataUrl: rawAccountInfo.MetadataUrl,
+		Type:        rawAccountInfo.Type,
+		Affiliation: rawAccountInfo.Affiliation,
 	}
 }
 
