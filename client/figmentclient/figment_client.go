@@ -3,6 +3,10 @@ package figmentclient
 import (
 	"context"
 	"fmt"
+	"math/big"
+	"strings"
+	"sync"
+
 	kliento "github.com/celo-org/kliento/client"
 	"github.com/celo-org/kliento/client/debug"
 	"github.com/celo-org/kliento/registry"
@@ -13,7 +17,6 @@ import (
 	base "github.com/figment-networks/celo-indexer/client"
 	"github.com/figment-networks/celo-indexer/utils"
 	"github.com/figment-networks/celo-indexer/utils/logger"
-	"math/big"
 )
 
 const (
@@ -27,6 +30,8 @@ var (
 
 type Client interface {
 	base.Client
+
+	WithAssignedNode(uint8) Client
 
 	GetRequestCounter() base.RequestCounter
 
@@ -43,44 +48,76 @@ type Client interface {
 
 type requestCounter struct {
 	counter uint64
+	mux     sync.RWMutex
 }
 
 func (rc *requestCounter) InitCounter() {
 	rc.counter = uint64(0)
 }
 
-func (rc *requestCounter) IncrementCounter() uint64 {
+func (rc *requestCounter) IncrementCounter() {
+	rc.mux.Lock()
 	rc.counter += 1
-	return rc.GetCounter()
+	rc.mux.Unlock()
 }
 
 func (rc *requestCounter) GetCounter() uint64 {
-	return rc.counter
+	rc.mux.RLock()
+	count := rc.counter
+	rc.mux.RUnlock()
+
+	return count
 }
 
 type client struct {
-	cc             *kliento.CeloClient
+	ccs []*kliento.CeloClient
+
 	requestCounter *requestCounter
 }
 
-func New(url string) (*client, error) {
-	cc, err := kliento.Dial(url)
-	if err != nil {
-		return nil, err
+func New(urls string) (*client, error) {
+	client := &client{
+		requestCounter: &requestCounter{},
 	}
 
+	for _, url := range strings.Fields(urls) {
+		cc, err := kliento.Dial(url)
+		if err != nil {
+			return nil, err
+		}
+
+		client.ccs = append(client.ccs, cc)
+	}
+
+	return client, nil
+}
+
+func (l *client) WithAssignedNode(nodeIndex uint8) Client {
 	return &client{
-		cc:             cc,
-		requestCounter: &requestCounter{},
-	}, nil
+		ccs: []*kliento.CeloClient{
+			l.ccs[int(nodeIndex)%len(l.ccs)],
+		},
+		requestCounter: l.requestCounter,
+	}
+}
+
+func (l *client) cc() *kliento.CeloClient {
+	if len(l.ccs) == 1 {
+		return l.ccs[0]
+	} else {
+		rc := l.requestCounter.GetCounter()
+		return l.ccs[rc%uint64(len(l.ccs))]
+	}
+}
+
+func (l *client) Close() {
+	for _, cc := range l.ccs {
+		cc.Close()
+	}
 }
 
 func (l *client) GetName() string {
 	return CeloClientFigment
-}
-
-func (l *client) Close() {
-	l.cc.Close()
 }
 
 func (l *client) GetRequestCounter() base.RequestCounter {
@@ -88,13 +125,13 @@ func (l *client) GetRequestCounter() base.RequestCounter {
 }
 
 func (l *client) GetChainStatus(ctx context.Context) (*ChainStatus, error) {
-	chainId, err := l.cc.Net.ChainId(ctx)
+	chainId, err := l.cc().Net.ChainId(ctx)
 	if err != nil {
 		return nil, err
 	}
 	l.requestCounter.IncrementCounter()
 
-	last, err := l.cc.Eth.HeaderByNumber(ctx, nil)
+	last, err := l.cc().Eth.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -112,14 +149,14 @@ func (l *client) GetChainStatus(ctx context.Context) (*ChainStatus, error) {
 func (l *client) GetChainParams(ctx context.Context) (*ChainParams, error) {
 	chainParams := &ChainParams{}
 
-	chainId, err := l.cc.Net.ChainId(ctx)
+	chainId, err := l.cc().Net.ChainId(ctx)
 	if err != nil {
 		return nil, err
 	}
 	l.requestCounter.IncrementCounter()
 	chainParams.ChainId = chainId.Uint64()
 
-	cr, err := NewContractsRegistry(l.cc, l.requestCounter, nil)
+	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -152,14 +189,14 @@ func (l *client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, err
 		Height: h,
 	}
 
-	rawBlock, err := l.cc.Eth.BlockByNumber(ctx, height)
+	rawBlock, err := l.cc().Eth.BlockByNumber(ctx, height)
 	if err != nil {
 		return nil, err
 	}
 	l.requestCounter.IncrementCounter()
 	heightMeta.Time = rawBlock.Time()
 
-	cr, err := NewContractsRegistry(l.cc, l.requestCounter, height)
+	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, height)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +236,7 @@ func (l *client) GetBlockByHeight(ctx context.Context, h int64) (*Block, error) 
 		height = big.NewInt(h)
 	}
 
-	rawBlock, err := l.cc.Eth.BlockByNumber(ctx, height)
+	rawBlock, err := l.cc().Eth.BlockByNumber(ctx, height)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +244,7 @@ func (l *client) GetBlockByHeight(ctx context.Context, h int64) (*Block, error) 
 
 	nextHeight := big.NewInt(0)
 	nextHeight.Add(height, big.NewInt(1))
-	nextBlockHeader, err := l.cc.Eth.HeaderByNumber(ctx, nextHeight)
+	nextBlockHeader, err := l.cc().Eth.HeaderByNumber(ctx, nextHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -260,13 +297,13 @@ func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Trans
 		height = big.NewInt(h)
 	}
 
-	cr, err := NewContractsRegistry(l.cc, l.requestCounter, height)
+	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, height)
 	if err != nil {
 		return nil, err
 	}
 	setupErr := cr.setupContracts(ctx)
 
-	block, err := l.cc.Eth.BlockByNumber(ctx, height)
+	block, err := l.cc().Eth.BlockByNumber(ctx, height)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +315,7 @@ func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Trans
 	for _, tx := range rawTransactions {
 		txHash := tx.Hash()
 
-		receipt, err := l.cc.Eth.TransactionReceipt(ctx, txHash)
+		receipt, err := l.cc().Eth.TransactionReceipt(ctx, txHash)
 		if err != nil {
 			return nil, err
 		}
@@ -287,7 +324,7 @@ func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Trans
 		var operations []*Operation
 
 		// Internal transfers
-		internalTransfers, err := l.cc.Debug.TransactionTransfers(ctx, txHash)
+		internalTransfers, err := l.cc().Debug.TransactionTransfers(ctx, txHash)
 		if err != nil {
 			return nil, fmt.Errorf("can't run celo-rpc tx-tracer: %w", err)
 		}
@@ -446,7 +483,7 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 		height = big.NewInt(h)
 	}
 
-	cr, err := NewContractsRegistry(l.cc, l.requestCounter, height)
+	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, height)
 	if err != nil {
 		return nil, err
 	}
@@ -527,7 +564,7 @@ func (l *client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validat
 		height = big.NewInt(h)
 	}
 
-	cr, err := NewContractsRegistry(l.cc, l.requestCounter, height)
+	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, height)
 	if err != nil {
 		return nil, err
 	}
@@ -591,7 +628,7 @@ func (l *client) getValidationMap(ctx context.Context, cr *contractsRegistry, he
 
 		nextHeight := big.NewInt(0)
 		nextHeight.Add(height, big.NewInt(1))
-		nextBlockHeader, err := l.cc.Eth.HeaderByNumber(ctx, nextHeight)
+		nextBlockHeader, err := l.cc().Eth.HeaderByNumber(ctx, nextHeight)
 		if err != nil {
 			return nil, err
 		}
@@ -625,7 +662,7 @@ func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress st
 		height = big.NewInt(h)
 	}
 
-	cr, err := NewContractsRegistry(l.cc, l.requestCounter, height)
+	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, height)
 	if err != nil {
 		return nil, err
 	}
@@ -634,7 +671,7 @@ func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress st
 
 	accountInfo := &AccountInfo{}
 
-	goldAmount, err := l.cc.Eth.BalanceAt(ctx, address, height)
+	goldAmount, err := l.cc().Eth.BalanceAt(ctx, address, height)
 	if err != nil {
 		return nil, err
 	}
@@ -688,7 +725,7 @@ func (l *client) GetIdentityByHeight(ctx context.Context, rawAddress string, h i
 		height = big.NewInt(h)
 	}
 
-	cr, err := NewContractsRegistry(l.cc, l.requestCounter, height)
+	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, height)
 	if err != nil {
 		return nil, err
 	}

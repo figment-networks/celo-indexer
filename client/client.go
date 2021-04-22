@@ -7,6 +7,6 @@ type Client interface {
 
 type RequestCounter interface {
 	InitCounter()
-	IncrementCounter() uint64
+	IncrementCounter()
 	GetCounter() uint64
 }
