@@ -96,11 +96,9 @@ func (mr *MockRequestCounterMockRecorder) GetCounter() *gomock.Call {
 }
 
 // IncrementCounter mocks base method
-func (m *MockRequestCounter) IncrementCounter() uint64 {
+func (m *MockRequestCounter) IncrementCounter() {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IncrementCounter")
-	ret0, _ := ret[0].(uint64)
-	return ret0
+	m.ctrl.Call(m, "IncrementCounter")
 }
 
 // IncrementCounter indicates an expected call of IncrementCounter

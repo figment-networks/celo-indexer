@@ -2,17 +2,17 @@ package indexer
 
 import (
 	"context"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	clientMock "github.com/figment-networks/celo-indexer/mock/client"
 	mock "github.com/figment-networks/celo-indexer/mock/store"
 	"github.com/figment-networks/celo-indexer/model"
-	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestValidatorAggCreatorTask_Run(t *testing.T) {
@@ -114,17 +114,16 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 				Syncable:      &tt.syncable,
 			}
 
-			for _, rawValidator := range tt.rawValidators {
-				if tt.expectErr == dbErr {
-					dbMock.EXPECT().FindByAddress(rawValidator.Address).Return(nil, dbErr).Times(1)
-					break
-				}
-				dbMock.EXPECT().FindByAddress(rawValidator.Address).Return(nil, psql.ErrNotFound).Times(1)
-				cMock.EXPECT().GetIdentityByHeight(ctx, gomock.Any(), gomock.Any()).Return(&figmentclient.Identity{
-					Name:        "test",
-					MetadataUrl: "http://test.com",
-				}, nil)
+			if tt.expectErr != nil {
+				dbMock.EXPECT().All().Return(nil, tt.expectErr).Times(1)
+			} else {
+				dbMock.EXPECT().All().Return([]model.ValidatorAgg{}, nil).Times(1)
 			}
+
+			cMock.EXPECT().GetIdentityByHeight(ctx, gomock.Any(), gomock.Any()).Return(&figmentclient.Identity{
+				Name:        "test",
+				MetadataUrl: "http://test.com",
+			}, nil).Times(len(tt.rawValidators))
 
 			task := NewValidatorAggCreatorTask(cMock, dbMock)
 			if err := task.Run(ctx, pld); err != tt.expectErr {
@@ -273,14 +272,12 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 				Syncable:      &tt.syncable,
 			}
 
-			for _, validator := range tt.returnValidators {
-				expect := validator
-				dbMock.EXPECT().FindByAddress(validator.Address).Return(&expect, nil).Times(1)
-				cMock.EXPECT().GetIdentityByHeight(ctx, gomock.Any(), gomock.Any()).Return(&figmentclient.Identity{
-					Name:        "test",
-					MetadataUrl: "http://test.com",
-				}, nil)
-			}
+			dbMock.EXPECT().All().Return(tt.returnValidators, nil).Times(1)
+
+			cMock.EXPECT().GetIdentityByHeight(ctx, gomock.Any(), gomock.Any()).Return(&figmentclient.Identity{
+				Name:        "test",
+				MetadataUrl: "http://test.com",
+			}, nil).Times(len(tt.rawValidators))
 
 			task := NewValidatorAggCreatorTask(cMock, dbMock)
 			if err := task.Run(ctx, pld); err != nil {

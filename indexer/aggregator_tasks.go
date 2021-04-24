@@ -64,7 +64,8 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	}
 
 	existingValidatorAggsMap := make(map[string]*model.ValidatorAgg)
-	for _, va := range existingValidatorAggs {
+	for _, validatorAgg := range existingValidatorAggs {
+		va := validatorAgg
 		existingValidatorAggsMap[va.Address] = &va
 	}
 
@@ -190,7 +191,8 @@ func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 	}
 
 	existingValidatorGroupAggsMap := make(map[string]*model.ValidatorGroupAgg)
-	for _, vga := range existingValidatorGroupAggs {
+	for _, validatorGroupAgg := range existingValidatorGroupAggs {
+		vga := validatorGroupAgg
 		existingValidatorGroupAggsMap[vga.Address] = &vga
 	}
 
@@ -276,7 +278,8 @@ func (t *proposalAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 	}
 
 	existingProposalAggsMap := make(map[uint64]*model.ProposalAgg)
-	for _, pa := range existingProposalAggs {
+	for _, proposalAgg := range existingProposalAggs {
+		pa := proposalAgg
 		existingProposalAggsMap[pa.ProposalId] = &pa
 	}
 

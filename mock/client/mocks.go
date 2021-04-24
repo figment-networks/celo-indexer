@@ -209,3 +209,17 @@ func (mr *MockClientMockRecorder) GetValidatorsByHeight(arg0, arg1 interface{}) 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatorsByHeight", reflect.TypeOf((*MockClient)(nil).GetValidatorsByHeight), arg0, arg1)
 }
+
+// WithAssignedNode mocks base method
+func (m *MockClient) WithAssignedNode(arg0 byte) figmentclient.Client {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WithAssignedNode", arg0)
+	ret0, _ := ret[0].(figmentclient.Client)
+	return ret0
+}
+
+// WithAssignedNode indicates an expected call of WithAssignedNode
+func (mr *MockClientMockRecorder) WithAssignedNode(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithAssignedNode", reflect.TypeOf((*MockClient)(nil).WithAssignedNode), arg0)
+}
