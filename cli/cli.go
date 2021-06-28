@@ -3,20 +3,23 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/client/theceloclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/celo-indexer/utils/reporting"
+	"github.com/figment-networks/indexing-engine/datalake"
+	"github.com/figment-networks/indexing-engine/worker"
 	"github.com/pkg/errors"
-	"strconv"
-	"strings"
 )
 
 type Flags struct {
-	configPath string
-	runCommand string
+	configPath  string
+	runCommand  string
 	showVersion bool
 
 	batchSize int64
@@ -98,6 +101,10 @@ func startCommand(cfg *config.Config, flags Flags) error {
 		return startServer(cfg)
 	case "worker":
 		return startWorker(cfg)
+	case "fetch_worker":
+		return startFetchWorker(cfg)
+	case "fetch_manager":
+		return startFetchManager(cfg)
 	default:
 		return runCmd(cfg, flags)
 	}
@@ -150,6 +157,42 @@ func initStore(cfg *config.Config) (*psql.Store, error) {
 	db.SetDebugMode(cfg.Debug)
 
 	return db, nil
+}
+
+func initDataLake(cfg *config.Config) (*datalake.DataLake, error) {
+	storage := datalake.NewRedisStorage("", 0)
+
+	dl := datalake.NewDataLake("celo", "mainnet", storage)
+
+	return dl, nil
+}
+
+func initWorkerPool(cfg *config.Config) (*worker.Pool, func(), error) {
+	var clients []worker.Client
+	var pool worker.Pool
+
+	endpoints := cfg.FetchWorkerEndpoints()
+	if len(endpoints) == 0 {
+		return nil, nil, errors.New("no fetch worker endpoints provided")
+	}
+
+	for _, endpoint := range endpoints {
+		client, err := worker.NewWebsocketClient(endpoint)
+		if err != nil {
+			return nil, nil, err
+		}
+		clients = append(clients, client)
+
+		pool.AddWorker(worker.NewPoolWorker(client))
+	}
+
+	close := func() {
+		for _, client := range clients {
+			client.Close()
+		}
+	}
+
+	return &pool, close, nil
 }
 
 func initErrorReporting(cfg *config.Config) {

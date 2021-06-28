@@ -1,9 +1,10 @@
 package store
 
 import (
+	"time"
+
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/types"
-	"time"
 )
 
 type Database interface {
@@ -49,4 +50,12 @@ type SystemEvents interface {
 type FindSystemEventByActorQuery struct {
 	Kind      *model.SystemEventKind
 	MinHeight *int64
+}
+
+type Jobs interface {
+	Create(jobs []model.Job) error
+	Update(job *model.Job, fields ...string) error
+	FindByHeight(height int64) (*model.Job, error)
+	FindAllUnfinished() ([]model.Job, error)
+	LastFinishedHeight() (int64, error)
 }

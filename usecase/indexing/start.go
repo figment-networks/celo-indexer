@@ -2,12 +2,13 @@ package indexing
 
 import (
 	"context"
-	"github.com/figment-networks/celo-indexer/client/figmentclient"
-	"github.com/figment-networks/celo-indexer/store/psql"
 
+	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/indexer"
 	"github.com/figment-networks/celo-indexer/model"
+	"github.com/figment-networks/celo-indexer/store/psql"
+	"github.com/figment-networks/indexing-engine/datalake"
 	"github.com/pkg/errors"
 )
 
@@ -19,13 +20,15 @@ type startUseCase struct {
 	cfg    *config.Config
 	db     *psql.Store
 	client figmentclient.Client
+	dl     *datalake.DataLake
 }
 
-func NewStartUseCase(cfg *config.Config, db *psql.Store, c figmentclient.Client) *startUseCase {
+func NewStartUseCase(cfg *config.Config, db *psql.Store, c figmentclient.Client, dl *datalake.DataLake) *startUseCase {
 	return &startUseCase{
 		cfg:    cfg,
 		db:     db,
 		client: c,
+		dl:     dl,
 	}
 }
 
@@ -37,6 +40,7 @@ func (uc *startUseCase) Execute(ctx context.Context, batchSize int64) error {
 	indexingPipeline, err := indexer.NewPipeline(
 		uc.cfg,
 		uc.client,
+		uc.dl,
 		uc.db.GetCore().Syncables,
 		uc.db.GetCore().Database,
 		uc.db.GetCore().Reports,

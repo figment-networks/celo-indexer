@@ -9,6 +9,7 @@ import (
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/store"
 	"github.com/figment-networks/celo-indexer/utils/logger"
+	"github.com/figment-networks/indexing-engine/datalake"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/pkg/errors"
 )
@@ -51,6 +52,7 @@ type indexingPipeline struct {
 func NewPipeline(
 	cfg *config.Config,
 	client figmentclient.Client,
+	dl *datalake.DataLake,
 
 	syncableDb store.Syncables,
 	databaseDb store.Database,
@@ -65,26 +67,38 @@ func NewPipeline(
 	systemEventDb store.SystemEvents,
 	governanceActivitySeqDb store.GovernanceActivitySeq,
 ) (*indexingPipeline, error) {
-	p := pipeline.NewCustom(NewPayloadFactory())
+	p := pipeline.NewCustom(NewPayloadFactory(dl))
 
 	// Setup logger
 	p.SetLogger(NewLogger())
 
 	// Setup stage
 	p.AddStage(
-		pipeline.NewStageWithTasks(pipeline.StageSetup, pipeline.RetryingTask(NewHeightMetaRetrieverTask(client.WithAssignedNode(0)), isTransient, maxRetries)),
+		pipeline.NewStageWithTasks(pipeline.StageSetup, pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, maxRetries)),
 	)
 
 	// Fetcher stage
-	p.AddStage(
-		pipeline.NewAsyncStageWithTasks(pipeline.StageFetcher,
-			pipeline.RetryingTask(NewBlockFetcherTask(client.WithAssignedNode(0)), isTransient, maxRetries),
-			pipeline.RetryingTask(NewValidatorFetcherTask(client.WithAssignedNode(1)), isTransient, maxRetries),
-			pipeline.RetryingTask(NewValidatorGroupFetcherTask(client.WithAssignedNode(2)), isTransient, maxRetries),
-			pipeline.RetryingTask(NewTransactionFetcherTask(client.WithAssignedNode(3)), isTransient, maxRetries),
-		),
-	)
+	if dl != nil {
+		p.AddStage(
+			pipeline.NewAsyncStageWithTasks(pipeline.StageFetcher,
+				pipeline.RetryingTask(NewBlockDownloaderTask(), isTransient, maxRetries),
+				pipeline.RetryingTask(NewValidatorDownloaderTask(), isTransient, maxRetries),
+				pipeline.RetryingTask(NewValidatorGroupDownloaderTask(), isTransient, maxRetries),
+				pipeline.RetryingTask(NewTransactionDownloaderTask(), isTransient, maxRetries),
+			),
+		)
+	} else {
+		p.AddStage(
+			pipeline.NewAsyncStageWithTasks(pipeline.StageFetcher,
+				pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, maxRetries),
+				pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, maxRetries),
+				pipeline.RetryingTask(NewValidatorGroupFetcherTask(client), isTransient, maxRetries),
+				pipeline.RetryingTask(NewTransactionFetcherTask(client), isTransient, maxRetries),
+			),
+		)
+	}
 
+	// Parser stage
 	p.AddStage(
 		pipeline.NewAsyncStageWithTasks(pipeline.StageParser,
 			pipeline.RetryingTask(NewGovernanceLogsParserTask(), isTransient, maxRetries),
@@ -96,7 +110,7 @@ func NewPipeline(
 		pipeline.NewStageWithTasks(pipeline.StageSyncer, pipeline.RetryingTask(NewMainSyncerTask(syncableDb), isTransient, maxRetries)),
 	)
 
-	// Set sequencer stage
+	// Sequencer stage
 	p.AddStage(
 		pipeline.NewAsyncStageWithTasks(
 			pipeline.StageSequencer,
@@ -108,17 +122,17 @@ func NewPipeline(
 		),
 	)
 
-	// Set aggregator stage
+	// Aggregator stage
 	p.AddStage(
 		pipeline.NewAsyncStageWithTasks(
 			pipeline.StageAggregator,
-			pipeline.RetryingTask(NewValidatorAggCreatorTask(client.WithAssignedNode(0), validatorAggDb), isTransient, maxRetries),
-			pipeline.RetryingTask(NewValidatorGroupAggCreatorTask(client.WithAssignedNode(1), validatorGroupAggDb), isTransient, maxRetries),
+			pipeline.RetryingTask(NewValidatorAggCreatorTask(client, validatorAggDb), isTransient, maxRetries),
+			pipeline.RetryingTask(NewValidatorGroupAggCreatorTask(client, validatorGroupAggDb), isTransient, maxRetries),
 			pipeline.RetryingTask(NewProposalAggCreatorTask(proposalAggDb), isTransient, maxRetries),
 		),
 	)
 
-	// Set analyzer stage
+	// Analyzer stage
 	p.AddStage(
 		pipeline.NewStageWithTasks(
 			StageAnalyzer,
@@ -126,7 +140,7 @@ func NewPipeline(
 		),
 	)
 
-	// Set persistor stage
+	// Persistor stage
 	p.AddStage(
 		pipeline.NewAsyncStageWithTasks(
 			pipeline.StagePersistor,
@@ -368,4 +382,42 @@ func (p *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload,
 
 func isTransient(error) bool {
 	return true
+}
+
+func RunFetcherPipeline(height int64, client figmentclient.Client, dl *datalake.DataLake) error {
+	p := pipeline.NewCustom(NewPayloadFactory(dl))
+
+	// Setup stage
+	p.AddStage(
+		pipeline.NewStageWithTasks(pipeline.StageSetup,
+			pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, maxRetries),
+		),
+	)
+
+	// Fetcher stage
+	p.AddStage(
+		pipeline.NewAsyncStageWithTasks(pipeline.StageFetcher,
+			pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, maxRetries),
+			pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, maxRetries),
+			pipeline.RetryingTask(NewValidatorGroupFetcherTask(client), isTransient, maxRetries),
+			pipeline.RetryingTask(NewTransactionFetcherTask(client), isTransient, maxRetries),
+		),
+	)
+
+	// Persistor stage
+	p.AddStage(
+		pipeline.NewAsyncStageWithTasks(pipeline.StagePersistor,
+			pipeline.RetryingTask(NewBlockUploaderTask(), isTransient, maxRetries),
+			pipeline.RetryingTask(NewValidatorUploaderTask(), isTransient, maxRetries),
+			pipeline.RetryingTask(NewValidatorGroupUploaderTask(), isTransient, maxRetries),
+			pipeline.RetryingTask(NewTransactionUploaderTask(), isTransient, maxRetries),
+		),
+	)
+
+	_, err := p.Run(context.Background(), height, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

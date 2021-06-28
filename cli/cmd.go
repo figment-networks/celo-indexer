@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/usecase"
 	"github.com/figment-networks/celo-indexer/utils/logger"
@@ -24,8 +25,12 @@ func runCmd(cfg *config.Config, flags Flags) error {
 	if err != nil {
 		return err
 	}
+	dl, err := initDataLake(cfg)
+	if err != nil {
+		return err
+	}
 
-	cmdHandlers := usecase.NewCmdHandlers(cfg, db, client, theCeloClient)
+	cmdHandlers := usecase.NewCmdHandlers(cfg, db, client, theCeloClient, dl)
 
 	logger.Info(fmt.Sprintf("executing cmd %s ...", flags.runCommand), logger.Field("app", "cli"))
 
@@ -48,4 +53,3 @@ func runCmd(cfg *config.Config, flags Flags) error {
 	}
 	return nil
 }
-

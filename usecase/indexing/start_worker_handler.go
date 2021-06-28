@@ -3,11 +3,13 @@ package indexing
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
+	"github.com/figment-networks/indexing-engine/datalake"
 )
 
 var (
@@ -18,15 +20,17 @@ type runWorkerHandler struct {
 	cfg    *config.Config
 	db     *psql.Store
 	client figmentclient.Client
+	dl     *datalake.DataLake
 
 	useCase *startUseCase
 }
 
-func NewRunWorkerHandler(cfg *config.Config, db *psql.Store, c figmentclient.Client) *runWorkerHandler {
+func NewRunWorkerHandler(cfg *config.Config, db *psql.Store, c figmentclient.Client, dl *datalake.DataLake) *runWorkerHandler {
 	return &runWorkerHandler{
 		cfg:    cfg,
 		db:     db,
 		client: c,
+		dl:     dl,
 	}
 }
 
@@ -45,9 +49,7 @@ func (h *runWorkerHandler) Handle() {
 
 func (h *runWorkerHandler) getUseCase() *startUseCase {
 	if h.useCase == nil {
-		return NewStartUseCase(h.cfg, h.db, h.client)
+		return NewStartUseCase(h.cfg, h.db, h.client, h.dl)
 	}
 	return h.useCase
 }
-
-

@@ -23,6 +23,7 @@
         "desc": "Creates and persists block sequences",
         "tasks": [
           "BlockFetcher",
+          "BlockDownloader",
           "BlockSeqCreator",
           "BlockSeqPersistor"
         ]
@@ -33,6 +34,7 @@
         "desc": "Creates and persists validator group sequences",
         "tasks": [
           "ValidatorGroupsFetcher",
+          "ValidatorGroupsDownloader",
           "ValidatorGroupSeqCreator",
           "ValidatorGroupSeqPersistor"
         ]
@@ -43,6 +45,7 @@
         "desc": "Creates and persists validator sequences",
         "tasks": [
           "ValidatorsFetcher",
+          "ValidatorsDownloader",
           "ValidatorSeqCreator",
           "ValidatorSeqPersistor"
         ]
@@ -53,6 +56,7 @@
         "desc": "Creates and persists validator aggregates",
         "tasks": [
           "ValidatorGroupsFetcher",
+          "ValidatorGroupsDownloader",
           "ValidatorGroupAggCreator",
           "ValidatorGroupAggPersistor"
         ]
@@ -63,6 +67,7 @@
         "desc": "Creates and persists validator aggregates",
         "tasks": [
           "ValidatorsFetcher",
+          "ValidatorsDownloader",
           "ValidatorAggCreator",
           "ValidatorAggPersistor"
         ]
@@ -73,6 +78,7 @@
         "desc": "Creates and persists account activity sequences",
         "tasks": [
           "TransactionsFetcher",
+          "TransactionsDownloader",
           "AccountActivitySeqCreator",
           "AccountActivitySeqPersistor"
         ]
@@ -83,6 +89,7 @@
         "desc": "Creates and persists system events",
         "tasks": [
           "TransactionsFetcher",
+          "TransactionsDownloader",
           "AccountActivitySeqCreator",
           "SystemEventCreator",
           "SystemEventPersistor"
@@ -94,6 +101,7 @@
         "desc": "Creates and persists governance activity sequences",
         "tasks": [
           "TransactionsFetcher",
+          "TransactionsDownloader",
           "GovernanceLogsParser",
           "GovernanceActivitySeqCreator",
           "GovernanceActivitySeqPersistor"
@@ -105,6 +113,7 @@
         "desc": "Creates and persists proposal aggregates",
         "tasks": [
           "TransactionsFetcher",
+          "TransactionsDownloader",
           "GovernanceLogsParser",
           "ProposalAggCreator",
           "ProposalAggPersistor"
