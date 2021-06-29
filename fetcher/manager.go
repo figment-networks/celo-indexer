@@ -20,17 +20,24 @@ type Manager struct {
 	store  store.Jobs
 	client figmentclient.Client
 
+	interval time.Duration
 	backoffs map[model.JobID]*worker.Backoff
 }
 
 // NewManager creates a fetcher manager
 func NewManager(cfg *config.Config, pool *worker.Pool, store store.Jobs, client figmentclient.Client) (*Manager, error) {
+	interval, err := time.ParseDuration(cfg.FetchInterval)
+	if err != nil {
+		return nil, err
+	}
+
 	manager := Manager{
 		cfg:    cfg,
 		pool:   pool,
 		store:  store,
 		client: client,
 
+		interval: interval,
 		backoffs: make(map[model.JobID]*worker.Backoff),
 	}
 
@@ -56,6 +63,8 @@ func (m *Manager) Run() error {
 		}
 
 		m.pool.Wait()
+
+		time.Sleep(m.interval)
 	}
 }
 
