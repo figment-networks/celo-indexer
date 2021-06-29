@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/client/theceloclient"
@@ -160,7 +161,12 @@ func initStore(cfg *config.Config) (*psql.Store, error) {
 }
 
 func initDataLake(cfg *config.Config) (*datalake.DataLake, error) {
-	storage := datalake.NewRedisStorage("", 0)
+	exp, err := time.ParseDuration(cfg.RedisExp)
+	if err != nil {
+		return nil, err
+	}
+
+	storage := datalake.NewRedisStorage(cfg.RedisURL, exp)
 
 	dl := datalake.NewDataLake("celo", "mainnet", storage)
 
