@@ -8,11 +8,11 @@ Celo Indexer is responsible for fetching and indexing Celo data.
 * `gin` - Http server
 * `gorm` - ORM with PostgreSQL interface
 * `cron` - Cron jobs runner
-* `zap` - logging 
+* `zap` - logging
 
 ### Environmental variables:
 
-* `APP_ENV` - application environment (development | production) 
+* `APP_ENV` - application environment (development | production)
 * `NODE_URL` - url to celo node
 * `SERVER_ADDR` - address to use for API
 * `SERVER_PORT` - port to use for API
@@ -27,8 +27,8 @@ Celo Indexer is responsible for fetching and indexing Celo data.
 * `LOG_OUTPUT` - log output (ie. stdout or /tmp/logs.json)
 * `ROLLBAR_ACCESS_TOKEN` - Rollbar access token for error reporting
 * `ROLLBAR_SERVER_ROOT` - Rollbar server root for error reporting
-* `INDEXER_METRIC_ADDR` - Prometheus server address for indexer metrics 
-* `SERVER_METRIC_ADDR` - Prometheus server address for server metrics 
+* `INDEXER_METRIC_ADDR` - Prometheus server address for indexer metrics
+* `SERVER_METRIC_ADDR` - Prometheus server address for server metrics
 * `METRIC_SERVER_URL` - Url at which metrics will be accessible (for both indexer and server)
 * `PURGE_BLOCK_INTERVAL` - Block sequence older than given interval will be purged
 * `PURGE_BLOCK_HOURLY_SUMMARY_INTERVAL` - Block hourly summary records older than given interval will be purged
@@ -36,7 +36,13 @@ Celo Indexer is responsible for fetching and indexing Celo data.
 * `PURGE_VALIDATOR_INTERVAL` - Validator sequence older than given interval will be purged
 * `PURGE_VALIDATOR_HOURLY_SUMMARY_INTERVAL` - Validator hourly summary records older than given interval will be purged
 * `PURGE_VALIDATOR_DAILY_SUMMARY_INTERVAL` - Validator daily summary records older than given interval will be purged
-* `INDEXER_TARGETS_FILE` - JSON file with targets and its task names 
+* `INDEXER_TARGETS_FILE` - JSON file with targets and its task names
+* `FETCH_WORKERS` - Space-separated list of fetch worker endpoints
+* `FETCH_WORKER_ADDR` - Fetch worker address
+* `FETCH_WORKER_PORT` - Fetch worker port
+* `FETCH_INTERVAL` - Processing interval for the fetch manager
+* `REDIS_URL` - Redis server URL
+* `REDIS_EXP` - Expiration time for the data stored in Redis
 
 ### Available endpoints:
 
@@ -107,17 +113,3 @@ To run tests with coverage you can use `test` Makefile target:
 ```shell script
 make test
 ```
-
-### Exporting metrics for scrapping
-We use Prometheus for exposing metrics for indexer and for server.
-Check environmental variables section on what variables to use to setup connection details to metrics scrapper.
-We currently expose below metrics:
-* `figment_indexer_height_success` (counter) - total number of successfully indexed heights
-* `figment_indexer_height_error` (counter) - total number of failed indexed heights
-* `figment_indexer_height_duration` (gauge) - total time required to index one height
-* `figment_indexer_height_task_duration` (gauge) - total time required to process indexing task 
-* `figment_indexer_use_case_duration` (gauge) - total time required to execute use case 
-* `figment_database_query_duration` (gauge) - total time required to execute database query 
-* `figment_server_request_duration` (gauge) - total time required to execute http request 
-
-
