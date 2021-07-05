@@ -72,7 +72,8 @@ func (p *payload) MarkAsProcessed() {}
 func (p *payload) Store(name string, obj interface{}) error {
 	res, err := datalake.NewJSONResource(obj)
 	if err != nil {
-		return fmt.Errorf("cannot store %v in data lake: %v", name, err)
+		return fmt.Errorf("cannot store %s in data lake [height=%d]: %v",
+			name, p.CurrentHeight, err)
 	}
 
 	return p.DataLake.StoreResourceAtHeight(res, name, p.CurrentHeight)
@@ -81,7 +82,8 @@ func (p *payload) Store(name string, obj interface{}) error {
 func (p *payload) Retrieve(name string, obj interface{}) error {
 	res, err := p.DataLake.RetrieveResourceAtHeight(name, p.CurrentHeight)
 	if err != nil {
-		return fmt.Errorf("cannot retrieve %v from data lake: %v", name, err)
+		return fmt.Errorf("cannot retrieve %s from data lake [height=%d]: %v",
+			name, p.CurrentHeight, err)
 	}
 
 	return res.ScanJSON(obj)

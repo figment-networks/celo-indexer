@@ -2,15 +2,16 @@ package fetcher
 
 import (
 	"context"
+	"fmt"
 	"time"
-
-	"github.com/figment-networks/indexing-engine/pipeline"
-	"github.com/figment-networks/indexing-engine/worker"
 
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/celo-indexer/utils/logger"
+	"github.com/figment-networks/indexing-engine/pipeline"
+	"github.com/figment-networks/indexing-engine/worker"
 )
 
 // Manager represents a fetcher manager
@@ -131,10 +132,13 @@ func (m *Manager) getHeightRange() (*pipeline.HeightRange, error) {
 
 func (m *Manager) scheduleJob(job *model.Job) error {
 	if m.isJobDelayed(job) {
+		logger.Warn(fmt.Sprintf("job skipped [height=%d]", *job.Height))
 		return nil
 	}
 
 	m.pool.Process(*job.Height)
+
+	logger.Info(fmt.Sprintf("job started [height=%d]", *job.Height))
 
 	now := time.Now()
 
@@ -179,6 +183,8 @@ func (m *Manager) handleResponse(res worker.Response) {
 }
 
 func (m *Manager) handleSuccess(job *model.Job) {
+	logger.Info(fmt.Sprintf("job finished [height=%d]", *job.Height))
+
 	now := time.Now()
 
 	job.FinishedAt = &now
@@ -190,6 +196,8 @@ func (m *Manager) handleSuccess(job *model.Job) {
 }
 
 func (m *Manager) handleFailure(job *model.Job, res worker.Response) {
+	logger.Error(fmt.Errorf("job error [height=%d]: %s", *job.Height, res.Error))
+
 	job.LastError = &res.Error
 
 	err := m.store.Update(job, "last_error")

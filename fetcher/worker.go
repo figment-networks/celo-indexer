@@ -1,14 +1,16 @@
 package fetcher
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/indexer"
+	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/indexing-engine/datalake"
 	"github.com/figment-networks/indexing-engine/worker"
-	"github.com/rollbar/rollbar-go"
+	"github.com/pkg/errors"
 	"golang.org/x/net/websocket"
 )
 
@@ -46,11 +48,15 @@ func (w *Worker) handleConnection(conn *websocket.Conn) {
 }
 
 func (w *Worker) handleRequest(req worker.Request) error {
+	logger.Info(fmt.Sprintf("job started [height=%d]", req.Height))
+
 	err := indexer.RunFetcherPipeline(req.Height, w.client, w.dl)
 	if err != nil {
-		rollbar.Error(err)
+		logger.Error(errors.Wrapf(err, "job error [height=%d]", req.Height))
 		return err
 	}
+
+	logger.Info(fmt.Sprintf("job finished [height=%d]", req.Height))
 
 	return nil
 }
