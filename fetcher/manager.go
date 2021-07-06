@@ -76,18 +76,23 @@ func (m *Manager) getJobs() ([]model.Job, error) {
 	}
 
 	if len(jobs) == 0 {
-		return m.createJobs()
+		err := m.createJobs()
+		if err != nil {
+			return nil, err
+		}
+
+		return []model.Job{}, nil
 	}
 
 	return jobs, nil
 }
 
-func (m *Manager) createJobs() ([]model.Job, error) {
+func (m *Manager) createJobs() error {
 	var jobs []model.Job
 
 	hr, err := m.getHeightRange()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for h := hr.StartHeight(); h <= hr.EndHeight(); h++ {
@@ -95,12 +100,7 @@ func (m *Manager) createJobs() ([]model.Job, error) {
 		jobs = append(jobs, model.Job{Height: &height})
 	}
 
-	err = m.store.Create(jobs)
-	if err != nil {
-		return nil, err
-	}
-
-	return jobs, nil
+	return m.store.Create(jobs)
 }
 
 func (m *Manager) getHeightRange() (*pipeline.HeightRange, error) {

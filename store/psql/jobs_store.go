@@ -1,8 +1,11 @@
 package psql
 
 import (
+	"time"
+
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/store"
+	"github.com/figment-networks/indexing-engine/store/bulk"
 	"github.com/jinzhu/gorm"
 )
 
@@ -17,15 +20,13 @@ type Jobs struct {
 	baseStore
 }
 
-// Create inserts the job records
+// Create bulk-inserts the job records
 func (s Jobs) Create(jobs []model.Job) error {
-	for _, job := range jobs {
-		err := s.db.Create(&job).Error
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	now := time.Now()
+
+	return bulk.Import(s.db, bulkInsertJobs, len(jobs), func(i int) bulk.Row {
+		return bulk.Row{*jobs[i].Height, now, now}
+	})
 }
 
 // Update updates the selected fields of the job record
