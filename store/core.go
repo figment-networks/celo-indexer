@@ -41,6 +41,7 @@ type SystemEvents interface {
 	BulkUpsert(records []model.SystemEvent) error
 	FindByHeight(height int64) ([]model.SystemEvent, error)
 	FindByActor(actorAddress string, query FindSystemEventByActorQuery) ([]model.SystemEvent, error)
+	FindAll(query FindAll) ([]model.SystemEvent, error)
 	FindUnique(height int64, address string, kind model.SystemEventKind) (*model.SystemEvent, error)
 	FindMostRecent() (*model.SystemEvent, error)
 	DeleteOlderThan(purgeThreshold time.Time) (*int64, error)
@@ -49,4 +50,9 @@ type SystemEvents interface {
 type FindSystemEventByActorQuery struct {
 	Kind      *model.SystemEventKind
 	MinHeight *int64
+}
+
+type FindAll struct {
+	Page  int64
+	Limit int64
 }
