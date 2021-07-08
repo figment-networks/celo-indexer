@@ -58,4 +58,5 @@ type Jobs interface {
 	FindByHeight(height int64) (*model.Job, error)
 	FindAllUnfinished() ([]model.Job, error)
 	LastFinishedHeight() (int64, error)
+	LastSyncedHeight() (int64, error)
 }

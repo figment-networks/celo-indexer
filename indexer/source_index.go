@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/store"
@@ -17,16 +18,17 @@ var (
 )
 
 type IndexSourceConfig struct {
-	BatchSize      int64
-	StartHeight    int64
+	BatchSize   int64
+	StartHeight int64
 }
 
-func NewIndexSource(cfg *config.Config, client figmentclient.Client, syncableDb store.Syncables, sourceCfg *IndexSourceConfig) (*indexSource, error) {
+func NewIndexSource(cfg *config.Config, client figmentclient.Client, syncableDb store.Syncables, jobsDb store.Jobs, sourceCfg *IndexSourceConfig) (*indexSource, error) {
 	src := &indexSource{
 		cfg:    cfg,
 		client: client,
 
 		syncableDb: syncableDb,
+		jobsDb:     jobsDb,
 
 		sourceCfg: sourceCfg,
 	}
@@ -37,10 +39,11 @@ func NewIndexSource(cfg *config.Config, client figmentclient.Client, syncableDb 
 }
 
 type indexSource struct {
-	cfg           *config.Config
-	client        figmentclient.Client
+	cfg    *config.Config
+	client figmentclient.Client
 
 	syncableDb store.Syncables
+	jobsDb     store.Jobs
 
 	sourceCfg *IndexSourceConfig
 
@@ -117,12 +120,10 @@ func (s *indexSource) setStartHeight() error {
 }
 
 func (s *indexSource) setEndHeight() error {
-	ctx := context.Background()
-	chainStatus, err := s.client.GetChainStatus(ctx)
+	endH, err := s.jobsDb.LastSyncedHeight()
 	if err != nil {
 		return err
 	}
-	endH := chainStatus.LastBlockHeight
 
 	if s.sourceCfg.BatchSize > 0 && endH-s.startHeight > s.sourceCfg.BatchSize {
 		endOfBatch := (s.startHeight + s.sourceCfg.BatchSize) - 1
@@ -133,9 +134,11 @@ func (s *indexSource) setEndHeight() error {
 }
 
 func (s *indexSource) validate() error {
-	blocksToSyncCount := s.endHeight - s.startHeight
-	if blocksToSyncCount == 0 && s.sourceCfg.BatchSize != 1 {
+	blocksToSyncCount := s.endHeight - s.startHeight + 1
+
+	if blocksToSyncCount <= 0 {
 		return ErrNothingToProcess
 	}
+
 	return nil
 }

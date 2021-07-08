@@ -42,6 +42,7 @@ func (uc *startUseCase) Execute(ctx context.Context, batchSize int64) error {
 		uc.client,
 		uc.dl,
 		uc.db.GetCore().Syncables,
+		uc.db.GetCore().Jobs,
 		uc.db.GetCore().Database,
 		uc.db.GetCore().Reports,
 		uc.db.GetBlocks().BlockSeq,

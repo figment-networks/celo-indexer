@@ -32,6 +32,7 @@ type indexingPipeline struct {
 	client figmentclient.Client
 
 	syncableDb              store.Syncables
+	jobsDb                  store.Jobs
 	databaseDb              store.Database
 	reportDb                store.Reports
 	blockSeqDb              store.BlockSeq
@@ -55,6 +56,7 @@ func NewPipeline(
 	dl *datalake.DataLake,
 
 	syncableDb store.Syncables,
+	jobsDb store.Jobs,
 	databaseDb store.Database,
 	reportsDb store.Reports,
 	blockSeqDb store.BlockSeq,
@@ -174,6 +176,7 @@ func NewPipeline(
 		client: client,
 
 		syncableDb:              syncableDb,
+		jobsDb:                  jobsDb,
 		databaseDb:              databaseDb,
 		reportDb:                reportsDb,
 		blockSeqDb:              blockSeqDb,
@@ -205,7 +208,7 @@ func (p *indexingPipeline) Start(ctx context.Context, indexCfg IndexConfig) erro
 
 	indexVersion := p.configParser.GetCurrentVersionId()
 
-	source, err := NewIndexSource(p.cfg, p.client, p.syncableDb, &IndexSourceConfig{
+	source, err := NewIndexSource(p.cfg, p.client, p.syncableDb, p.jobsDb, &IndexSourceConfig{
 		BatchSize:   indexCfg.BatchSize,
 		StartHeight: indexCfg.StartHeight,
 	})

@@ -53,6 +53,7 @@ func (uc *getByHeightUseCase) Execute(height *int64) (SeqListView, error) {
 			uc.client,
 			nil,
 			uc.db.GetCore().Syncables,
+			uc.db.GetCore().Jobs,
 			uc.db.GetCore().Database,
 			uc.db.GetCore().Reports,
 			uc.db.GetBlocks().BlockSeq,

@@ -45,6 +45,7 @@ func (uc *backfillUseCase) Execute(ctx context.Context, useCaseConfig BackfillUs
 		uc.client,
 		nil,
 		uc.db.GetCore().Syncables,
+		uc.db.GetCore().Jobs,
 		uc.db.GetCore().Database,
 		uc.db.GetCore().Reports,
 		uc.db.GetBlocks().BlockSeq,

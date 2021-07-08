@@ -65,9 +65,7 @@ func (s Jobs) FindAllUnfinished() ([]model.Job, error) {
 
 // LastFinishedHeight returns the most recent finished height
 func (s Jobs) LastFinishedHeight() (int64, error) {
-	var result struct {
-		Height int64
-	}
+	var result struct{ Height int64 }
 
 	err := s.db.
 		Table("jobs").
@@ -76,8 +74,27 @@ func (s Jobs) LastFinishedHeight() (int64, error) {
 		Scan(&result).
 		Error
 
-	if err != nil || result.Height == 0 {
-		return -1, err
+	if err != nil {
+		return 0, err
+	}
+
+	return result.Height, nil
+}
+
+// LastSyncedHeight returns the most recent synced height
+func (s Jobs) LastSyncedHeight() (int64, error) {
+	var result struct{ Height int64 }
+
+	err := s.db.
+		Table("jobs").
+		Where("finished_at IS NOT NULL").
+		Where("height < (SELECT MIN(height) FROM jobs WHERE finished_at IS NULL)").
+		Select("MAX(height) AS height").
+		Scan(&result).
+		Error
+
+	if err != nil {
+		return 0, err
 	}
 
 	return result.Height, nil

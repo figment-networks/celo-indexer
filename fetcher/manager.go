@@ -112,6 +112,9 @@ func (m *Manager) getHeightRange() (*pipeline.HeightRange, error) {
 
 	lastHeight, err := m.store.LastFinishedHeight()
 	if err != nil {
+		return nil, err
+	}
+	if lastHeight == 0 {
 		lastHeight = -1
 	}
 
