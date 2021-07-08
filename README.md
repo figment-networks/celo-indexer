@@ -76,7 +76,14 @@ need to migrate the database. You can do that by running the command below:
 celo-indexer -config path/to/config.json -cmd=migrate
 ```
 
-Start the data indexer:
+Start the data fetcher:
+
+```bash
+celo-indexer -config path/to/config.json -cmd=fetch_worker
+celo-indexer -config path/to/config.json -cmd=fetch_manager
+```
+
+Start the indexer:
 
 ```bash
 celo-indexer -config path/to/config.json -cmd=worker
@@ -87,8 +94,6 @@ Start the API server:
 ```bash
 celo-indexer -config path/to/config.json -cmd=server
 ```
-
-IMPORTANT!!! Make sure that you have celo-proxy running and connected to Celo node.
 
 ### Running one-off commands
 
