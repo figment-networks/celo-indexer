@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"strings"
 	"sync"
 
 	kliento "github.com/celo-org/kliento/client"
@@ -30,8 +29,6 @@ var (
 
 type Client interface {
 	base.Client
-
-	WithAssignedNode(uint8) Client
 
 	GetRequestCounter() base.RequestCounter
 
@@ -70,50 +67,47 @@ func (rc *requestCounter) GetCounter() uint64 {
 }
 
 type client struct {
-	ccs []*kliento.CeloClient
-
-	requestCounter *requestCounter
+	cc  *kliento.CeloClient
+	crs map[int64]*contractsRegistry
+	rc  *requestCounter
 }
 
-func New(urls string) (*client, error) {
-	client := &client{
-		requestCounter: &requestCounter{},
+func New(url string) (*client, error) {
+	cc, err := kliento.Dial(url)
+	if err != nil {
+		return nil, err
 	}
 
-	for _, url := range strings.Fields(urls) {
-		cc, err := kliento.Dial(url)
-		if err != nil {
-			return nil, err
-		}
-
-		client.ccs = append(client.ccs, cc)
+	client := &client{
+		cc:  cc,
+		crs: make(map[int64]*contractsRegistry),
+		rc:  &requestCounter{},
 	}
 
 	return client, nil
 }
 
-func (l *client) WithAssignedNode(nodeIndex uint8) Client {
-	return &client{
-		ccs: []*kliento.CeloClient{
-			l.ccs[int(nodeIndex)%len(l.ccs)],
-		},
-		requestCounter: l.requestCounter,
-	}
-}
-
-func (l *client) cc() *kliento.CeloClient {
-	if len(l.ccs) == 1 {
-		return l.ccs[0]
-	} else {
-		rc := l.requestCounter.GetCounter()
-		return l.ccs[rc%uint64(len(l.ccs))]
-	}
-}
-
 func (l *client) Close() {
-	for _, cc := range l.ccs {
-		cc.Close()
+	l.cc.Close()
+}
+
+func (l *client) getContractsRegistry(ctx context.Context, height int64) (*contractsRegistry, error) {
+	if cr, ok := l.crs[height]; ok {
+		return cr, nil
 	}
+
+	cr, err := NewContractsRegistry(l.cc, l.rc, parseHeight(height))
+	if err != nil {
+		return nil, err
+	}
+	err = cr.setupContracts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	l.crs[height] = cr // Cache contracts registry
+
+	return cr, nil
 }
 
 func (l *client) GetName() string {
@@ -121,21 +115,21 @@ func (l *client) GetName() string {
 }
 
 func (l *client) GetRequestCounter() base.RequestCounter {
-	return l.requestCounter
+	return l.rc
 }
 
 func (l *client) GetChainStatus(ctx context.Context) (*ChainStatus, error) {
-	chainId, err := l.cc().Net.ChainId(ctx)
+	chainId, err := l.cc.Net.ChainId(ctx)
 	if err != nil {
 		return nil, err
 	}
-	l.requestCounter.IncrementCounter()
+	l.rc.IncrementCounter()
 
-	last, err := l.cc().Eth.HeaderByNumber(ctx, nil)
+	last, err := l.cc.Eth.HeaderByNumber(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	l.requestCounter.IncrementCounter()
+	l.rc.IncrementCounter()
 
 	chain := &ChainStatus{
 		ChainId:         chainId.Uint64(),
@@ -149,19 +143,17 @@ func (l *client) GetChainStatus(ctx context.Context) (*ChainStatus, error) {
 func (l *client) GetChainParams(ctx context.Context) (*ChainParams, error) {
 	chainParams := &ChainParams{}
 
-	chainId, err := l.cc().Net.ChainId(ctx)
+	chainId, err := l.cc.Net.ChainId(ctx)
 	if err != nil {
 		return nil, err
 	}
-	l.requestCounter.IncrementCounter()
+	l.rc.IncrementCounter()
 	chainParams.ChainId = chainId.Uint64()
 
-	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, nil)
+	cr, err := l.getContractsRegistry(ctx, 0)
 	if err != nil {
 		return nil, err
 	}
-	l.requestCounter.IncrementCounter()
-	setupErr := cr.setupContracts(ctx, registry.ElectionContractID)
 
 	if cr.contractDeployed(registry.ElectionContractID) {
 		opts := &bind.CallOpts{Context: ctx}
@@ -169,39 +161,29 @@ func (l *client) GetChainParams(ctx context.Context) (*ChainParams, error) {
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 		e := epochSize.Int64()
 		chainParams.EpochSize = &e
 	}
 
-	return chainParams, setupErr
+	return chainParams, nil
 }
 
 func (l *client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, error) {
-	var height *big.Int
-	if h == 0 {
-		height = nil
-	} else {
-		height = big.NewInt(h)
-	}
+	height := parseHeight(h)
+	heightMeta := &HeightMeta{Height: h}
 
-	heightMeta := &HeightMeta{
-		Height: h,
-	}
-
-	rawBlock, err := l.cc().Eth.BlockByNumber(ctx, height)
+	rawBlock, err := l.cc.Eth.BlockByNumber(ctx, height)
 	if err != nil {
 		return nil, err
 	}
-	l.requestCounter.IncrementCounter()
+	l.rc.IncrementCounter()
 	heightMeta.Time = rawBlock.Time()
 
-	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, height)
+	cr, err := l.getContractsRegistry(ctx, h)
 	if err != nil {
 		return nil, err
 	}
-	l.requestCounter.IncrementCounter()
-	setupErr := cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID)
 
 	if cr.contractDeployed(registry.ValidatorsContractID) {
 		opts := &bind.CallOpts{Context: ctx}
@@ -209,7 +191,7 @@ func (l *client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, err
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 		e := epoch.Int64()
 		heightMeta.Epoch = &e
 	}
@@ -220,35 +202,30 @@ func (l *client) GetMetaByHeight(ctx context.Context, h int64) (*HeightMeta, err
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 		isLastInEpoch := istanbul.IsLastBlockOfEpoch(height.Uint64(), epochSize.Uint64())
 		heightMeta.LastInEpoch = &isLastInEpoch
 	}
 
-	return heightMeta, setupErr
+	return heightMeta, nil
 }
 
 func (l *client) GetBlockByHeight(ctx context.Context, h int64) (*Block, error) {
-	var height *big.Int
-	if h == 0 {
-		height = nil
-	} else {
-		height = big.NewInt(h)
-	}
+	height := parseHeight(h)
 
-	rawBlock, err := l.cc().Eth.BlockByNumber(ctx, height)
+	rawBlock, err := l.cc.Eth.BlockByNumber(ctx, height)
 	if err != nil {
 		return nil, err
 	}
-	l.requestCounter.IncrementCounter()
+	l.rc.IncrementCounter()
 
 	nextHeight := big.NewInt(0)
 	nextHeight.Add(height, big.NewInt(1))
-	nextBlockHeader, err := l.cc().Eth.HeaderByNumber(ctx, nextHeight)
+	nextBlockHeader, err := l.cc.Eth.HeaderByNumber(ctx, nextHeight)
 	if err != nil {
 		return nil, err
 	}
-	l.requestCounter.IncrementCounter()
+	l.rc.IncrementCounter()
 
 	extra, err := celoTypes.ExtractIstanbulExtra(nextBlockHeader)
 	if err != nil {
@@ -290,24 +267,16 @@ func (l *client) GetBlockByHeight(ctx context.Context, h int64) (*Block, error) 
 }
 
 func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Transaction, error) {
-	var height *big.Int
-	if h == 0 {
-		height = nil
-	} else {
-		height = big.NewInt(h)
-	}
-
-	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, height)
+	cr, err := l.getContractsRegistry(ctx, h)
 	if err != nil {
 		return nil, err
 	}
-	setupErr := cr.setupContracts(ctx)
 
-	block, err := l.cc().Eth.BlockByNumber(ctx, height)
+	block, err := l.cc.Eth.BlockByNumber(ctx, parseHeight(h))
 	if err != nil {
 		return nil, err
 	}
-	l.requestCounter.IncrementCounter()
+	l.rc.IncrementCounter()
 
 	rawTransactions := block.Transactions()
 
@@ -315,20 +284,20 @@ func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Trans
 	for _, tx := range rawTransactions {
 		txHash := tx.Hash()
 
-		receipt, err := l.cc().Eth.TransactionReceipt(ctx, txHash)
+		receipt, err := l.cc.Eth.TransactionReceipt(ctx, txHash)
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 
 		var operations []*Operation
 
 		// Internal transfers
-		internalTransfers, err := l.cc().Debug.TransactionTransfers(ctx, txHash)
+		internalTransfers, err := l.cc.Debug.TransactionTransfers(ctx, txHash)
 		if err != nil {
 			return nil, fmt.Errorf("can't run celo-rpc tx-tracer: %w", err)
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 		operations = append(operations, l.parseFromInternalTransfers(internalTransfers)...)
 
 		// Operations from logs
@@ -366,7 +335,7 @@ func (l *client) GetTransactionsByHeight(ctx context.Context, h int64) ([]*Trans
 		transactions = append(transactions, transaction)
 	}
 
-	return transactions, setupErr
+	return transactions, nil
 }
 
 func (l *client) parseFromInternalTransfers(internalTransfers []debug.Transfer) []*Operation {
@@ -476,18 +445,7 @@ func (l *client) parseFromLogs(cr *contractsRegistry, logs []*celoTypes.Log) ([]
 }
 
 func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*ValidatorGroup, error) {
-	var height *big.Int
-	if h == 0 {
-		height = nil
-	} else {
-		height = big.NewInt(h)
-	}
-
-	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, height)
-	if err != nil {
-		return nil, err
-	}
-	err = cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID)
+	cr, err := l.getContractsRegistry(ctx, h)
 	if err != nil {
 		return nil, err
 	}
@@ -500,7 +458,7 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 
 		for i, rawValidatorGroup := range rawValidatorGroups {
 			opts = &bind.CallOpts{Context: ctx}
@@ -508,28 +466,28 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 			if err != nil {
 				return nil, err
 			}
-			l.requestCounter.IncrementCounter()
+			l.rc.IncrementCounter()
 
 			opts = &bind.CallOpts{Context: ctx}
 			activeVotes, err := cr.electionContract.GetActiveVotesForGroup(opts, rawValidatorGroup)
 			if err != nil {
 				return nil, err
 			}
-			l.requestCounter.IncrementCounter()
+			l.rc.IncrementCounter()
 
 			opts = &bind.CallOpts{Context: ctx}
 			pendingVotes, err := cr.electionContract.GetPendingVotesForGroup(opts, rawValidatorGroup)
 			if err != nil {
 				return nil, err
 			}
-			l.requestCounter.IncrementCounter()
+			l.rc.IncrementCounter()
 
 			opts := &bind.CallOpts{Context: ctx}
 			votingCap, err := cr.electionContract.GetNumVotesReceivable(opts, rawValidatorGroup)
 			if err != nil {
 				return nil, err
 			}
-			l.requestCounter.IncrementCounter()
+			l.rc.IncrementCounter()
 
 			validatorGroup := &ValidatorGroup{
 				Index:               uint64(i),
@@ -557,18 +515,7 @@ func (l *client) GetValidatorGroupsByHeight(ctx context.Context, h int64) ([]*Va
 }
 
 func (l *client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validator, error) {
-	var height *big.Int
-	if h == 0 {
-		height = nil
-	} else {
-		height = big.NewInt(h)
-	}
-
-	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, height)
-	if err != nil {
-		return nil, err
-	}
-	err = cr.setupContracts(ctx, registry.ValidatorsContractID, registry.ElectionContractID)
+	cr, err := l.getContractsRegistry(ctx, h)
 	if err != nil {
 		return nil, err
 	}
@@ -580,9 +527,9 @@ func (l *client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validat
 	if err != nil {
 		return nil, err
 	}
-	l.requestCounter.IncrementCounter()
+	l.rc.IncrementCounter()
 
-	validationMap, err := l.getValidationMap(ctx, cr, height)
+	validationMap, err := l.getValidationMap(ctx, cr, parseHeight(h))
 	if err != nil {
 		return nil, err
 	}
@@ -593,7 +540,7 @@ func (l *client) GetValidatorsByHeight(ctx context.Context, h int64) ([]*Validat
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 
 		validator := &Validator{
 			Address:        rawValidator.String(),
@@ -624,15 +571,15 @@ func (l *client) getValidationMap(ctx context.Context, cr *contractsRegistry, he
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 
 		nextHeight := big.NewInt(0)
 		nextHeight.Add(height, big.NewInt(1))
-		nextBlockHeader, err := l.cc().Eth.HeaderByNumber(ctx, nextHeight)
+		nextBlockHeader, err := l.cc.Eth.HeaderByNumber(ctx, nextHeight)
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 
 		extra, err := celoTypes.ExtractIstanbulExtra(nextBlockHeader)
 		if err != nil {
@@ -655,27 +602,19 @@ func (l *client) getValidationMap(ctx context.Context, cr *contractsRegistry, he
 }
 
 func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress string, h int64) (*AccountInfo, error) {
-	var height *big.Int
-	if h == 0 {
-		height = nil
-	} else {
-		height = big.NewInt(h)
-	}
-
-	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, height)
+	cr, err := l.getContractsRegistry(ctx, h)
 	if err != nil {
 		return nil, err
 	}
-	setupErr := cr.setupContracts(ctx, registry.AccountsContractID, registry.LockedGoldContractID, registry.StableTokenContractID, registry.ValidatorsContractID)
-	address := common.HexToAddress(rawAddress)
 
+	address := common.HexToAddress(rawAddress)
 	accountInfo := &AccountInfo{}
 
-	goldAmount, err := l.cc().Eth.BalanceAt(ctx, address, height)
+	goldAmount, err := l.cc.Eth.BalanceAt(ctx, address, parseHeight(h))
 	if err != nil {
 		return nil, err
 	}
-	l.requestCounter.IncrementCounter()
+	l.rc.IncrementCounter()
 	accountInfo.GoldBalance = goldAmount
 
 	if cr.contractDeployed(registry.AccountsContractID) {
@@ -692,7 +631,7 @@ func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress st
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 		accountInfo.TotalLockedGold = totalLockedGold
 
 		opts = &bind.CallOpts{Context: ctx}
@@ -700,7 +639,7 @@ func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress st
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 		accountInfo.TotalNonvotingLockedGold = totalNonvotingLockedGold
 	}
 
@@ -710,26 +649,15 @@ func (l *client) GetAccountByAddressAndHeight(ctx context.Context, rawAddress st
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 		accountInfo.StableTokenBalance = stableTokenBalance
 	}
 
-	return accountInfo, setupErr
+	return accountInfo, nil
 }
 
 func (l *client) GetIdentityByHeight(ctx context.Context, rawAddress string, h int64) (*Identity, error) {
-	var height *big.Int
-	if h == 0 {
-		height = nil
-	} else {
-		height = big.NewInt(h)
-	}
-
-	cr, err := NewContractsRegistry(l.cc(), l.requestCounter, height)
-	if err != nil {
-		return nil, err
-	}
-	err = cr.setupContracts(ctx, registry.AccountsContractID, registry.ValidatorsContractID)
+	cr, err := l.getContractsRegistry(ctx, h)
 	if err != nil {
 		return nil, err
 	}
@@ -747,14 +675,14 @@ func (l *client) getIdentity(ctx context.Context, cr *contractsRegistry, rawAddr
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 		identity.Name = name
 
 		metadataUrl, err := cr.accountsContract.GetMetadataURL(opts, address)
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 		identity.MetadataUrl = metadataUrl
 
 	}
@@ -765,7 +693,7 @@ func (l *client) getIdentity(ctx context.Context, cr *contractsRegistry, rawAddr
 		if err != nil {
 			return nil, err
 		}
-		l.requestCounter.IncrementCounter()
+		l.rc.IncrementCounter()
 		identity.Type = "validator"
 		if !isValidator {
 			identity.Type = "validator_group"
@@ -778,4 +706,12 @@ func (l *client) getIdentity(ctx context.Context, cr *contractsRegistry, rawAddr
 	}
 
 	return identity, nil
+}
+
+func parseHeight(h int64) *big.Int {
+	if h == 0 {
+		return nil
+	} else {
+		return big.NewInt(h)
+	}
 }
