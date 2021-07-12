@@ -50,8 +50,8 @@ type Config struct {
 	FetchWorkerAddr              string `json:"fetch_worker_addr" envconfig:"FETCH_WORKER_ADDR" default:"127.0.0.1"`
 	FetchWorkerPort              int64  `json:"fetch_worker_port" envconfig:"FETCH_WORKER_PORT" default:"7000"`
 	FetchInterval                string `json:"fetch_interval" envconfig:"FETCH_INTERVAL" default:"1s"`
-	RedisURL                     string `json:"redis_url" envconfig:"REDIS_URL" default:"127.0.0.1:6379"`
-	RedisExp                     string `json:"redis_exp" envconfig:"REDIS_EXP" default:"0"`
+	AWSRegion                    string `json:"aws_region" envconfig:"AWS_REGION" default:"us-east-1"`
+	S3Bucket                     string `json:"aws_s3_bucket" envconfig:"AWS_S3_BUCKET"`
 }
 
 // Validate returns an error if config is invalid

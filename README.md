@@ -41,8 +41,10 @@ Celo Indexer is responsible for fetching and indexing Celo data.
 * `FETCH_WORKER_ADDR` - Fetch worker address
 * `FETCH_WORKER_PORT` - Fetch worker port
 * `FETCH_INTERVAL` - Processing interval for the fetch manager
-* `REDIS_URL` - Redis server URL
-* `REDIS_EXP` - Expiration time for the data stored in Redis
+* `AWS_ACCESS_KEY_ID` - Access key to AWS
+* `AWS_SECRET_ACCESS_KEY` - Secret access key to AWS
+* `AWS_REGION` - AWS region
+* `AWS_S3_BUCKET` - AWS S3 bucket name
 
 ### Available endpoints:
 

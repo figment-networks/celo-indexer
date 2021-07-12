@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/client/theceloclient"
@@ -161,13 +160,14 @@ func initStore(cfg *config.Config) (*psql.Store, error) {
 }
 
 func initDataLake(cfg *config.Config) (*datalake.DataLake, error) {
-	exp, err := time.ParseDuration(cfg.RedisExp)
-	if err != nil {
-		return nil, err
+	if cfg.AWSRegion == "" {
+		return nil, errors.New("AWS region must be provided")
+	}
+	if cfg.S3Bucket == "" {
+		return nil, errors.New("AWS S3 bucket name must be provided")
 	}
 
-	storage := datalake.NewRedisStorage(cfg.RedisURL, exp)
-
+	storage := datalake.NewS3Storage(cfg.AWSRegion, cfg.S3Bucket)
 	dl := datalake.NewDataLake("celo", "mainnet", storage)
 
 	return dl, nil
