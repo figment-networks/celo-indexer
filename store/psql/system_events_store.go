@@ -81,6 +81,20 @@ func (s SystemEvents) FindByActor(actorAddress string, query store.FindSystemEve
 	return result, checkErr(err)
 }
 
+func (s SystemEvents) FindAll(query store.FindAll) ([]model.SystemEvent, error) {
+	var result []model.SystemEvent
+
+	statement := s.db
+	offset := (query.Page - 1) * query.Limit
+	statement = statement.Offset(offset).Limit(query.Limit)
+
+	err := statement.
+		Find(&result).
+		Error
+
+	return result, checkErr(err)
+}
+
 // FindUnique returns unique system
 func (s SystemEvents) FindUnique(height int64, address string, kind model.SystemEventKind) (*model.SystemEvent, error) {
 	q := model.SystemEvent{

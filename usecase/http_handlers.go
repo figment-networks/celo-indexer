@@ -34,6 +34,7 @@ func NewHttpHandlers(cfg *config.Config, db *psql.Store, c figmentclient.Client)
 		GetValidatorGroupByAddress: validatorgroup.NewGetByAddressHttpHandler(db, c),
 		GetValidatorGroupSummary:   validatorgroup.NewGetSummaryHttpHandler(db, c),
 		GetSystemEventsForAddress:  systemevent.NewGetForAddressHttpHandler(db, c),
+		GetSystemEvents:            systemevent.NewGetAllHttpHandler(db, c),
 		GetProposals:               governance.NewGetProposalsHttpHandler(db, c),
 		GetProposalActivity:        governance.NewGetActivityHttpHandler(db, c),
 	}
@@ -56,6 +57,7 @@ type HttpHandlers struct {
 	GetValidatorGroupByAddress types.HttpHandler
 	GetValidatorGroupSummary   types.HttpHandler
 	GetSystemEventsForAddress  types.HttpHandler
+	GetSystemEvents            types.HttpHandler
 	GetProposals               types.HttpHandler
 	GetProposalActivity        types.HttpHandler
 }

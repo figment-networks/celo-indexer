@@ -831,6 +831,21 @@ func (mr *MockSystemEventsMockRecorder) FindByActor(arg0, arg1 interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActor", reflect.TypeOf((*MockSystemEvents)(nil).FindByActor), arg0, arg1)
 }
 
+// FindAll mocks base method
+func (m *MockSystemEvents) FindAll(arg0 string, arg1 store.FindAll) ([]model.SystemEvent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAll", arg0, arg1)
+	ret0, _ := ret[0].([]model.SystemEvent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAll indicates an expected call of FindAll
+func (mr *MockSystemEventsMockRecorder) FindAll(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockSystemEvents)(nil).FindByActor), arg0, arg1)
+}
+
 // FindByHeight mocks base method
 func (m *MockSystemEvents) FindByHeight(arg0 int64) ([]model.SystemEvent, error) {
 	m.ctrl.T.Helper()
