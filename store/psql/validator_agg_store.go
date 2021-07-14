@@ -27,6 +27,15 @@ func (s ValidatorAgg) Save(val *model.ValidatorAgg) error {
 	return s.baseStore.Save(val)
 }
 
+// UpdateIdentity updates the identity of a validator
+func (s ValidatorAgg) UpdateIdentity(val *model.ValidatorAgg) error {
+	return s.db.
+		Model(val).
+		Select("recent_name", "recent_metadata_url").
+		Updates(val).
+		Error
+}
+
 // FindBy returns an validator for a matching attribute
 func (s ValidatorAgg) FindBy(key string, value interface{}) (*model.ValidatorAgg, error) {
 	result := &model.ValidatorAgg{}

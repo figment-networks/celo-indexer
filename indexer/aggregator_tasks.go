@@ -48,16 +48,6 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageAggregator, t.GetName(), payload.CurrentHeight))
 
-	shouldFetchIdentities := false
-	report, ok := ctx.Value(CtxReport).(*model.Report)
-	if ok {
-		// No need to get metadata for all heights
-		// Get metadata only for beginning of sync cycle and end
-		if payload.CurrentHeight == report.StartHeight || payload.CurrentHeight == report.EndHeight {
-			shouldFetchIdentities = true
-		}
-	}
-
 	existingValidatorAggs, err := t.validatorAggDb.All()
 	if err != nil {
 		return err
@@ -99,14 +89,6 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 				validator.AccumulatedUptimeCount = 1
 			}
 
-			// Always get identity for new records
-			identity, err := t.client.GetIdentityByHeight(ctx, validator.Address, payload.CurrentHeight)
-			if err != nil {
-				return err
-			}
-			validator.RecentName = identity.Name
-			validator.RecentMetadataUrl = identity.MetadataUrl
-
 			newValidatorAggs = append(newValidatorAggs, validator)
 		} else {
 			// Update
@@ -129,16 +111,6 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					validator.AccumulatedUptime = existing.AccumulatedUptime
 				}
 				validator.AccumulatedUptimeCount = existing.AccumulatedUptimeCount + 1
-			}
-
-			if shouldFetchIdentities {
-				identity, err := t.client.GetIdentityByHeight(ctx, validator.Address, payload.CurrentHeight)
-				if err != nil {
-					return err
-				}
-
-				validator.RecentName = identity.Name
-				validator.RecentMetadataUrl = identity.MetadataUrl
 			}
 
 			existing.Update(validator)
@@ -175,16 +147,6 @@ func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageAggregator, t.GetName(), payload.CurrentHeight))
 
-	shouldFetchIdentities := false
-	report, ok := ctx.Value(CtxReport).(*model.Report)
-	if ok {
-		// No need to get metadata for all heights
-		// Get metadata only for beginning of sync cycle and end
-		if payload.CurrentHeight == report.StartHeight || payload.CurrentHeight == report.EndHeight {
-			shouldFetchIdentities = true
-		}
-	}
-
 	existingValidatorGroupAggs, err := t.validatorGroupAggDb.All()
 	if err != nil {
 		return err
@@ -213,14 +175,6 @@ func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 				Address: rawGroup.Address,
 			}
 
-			// Always get identity for new records
-			identity, err := t.client.GetIdentityByHeight(ctx, group.Address, payload.CurrentHeight)
-			if err != nil {
-				return err
-			}
-			group.RecentName = identity.Name
-			group.RecentMetadataUrl = identity.MetadataUrl
-
 			newValidatorGroupAggs = append(newValidatorGroupAggs, group)
 		} else {
 			// Update
@@ -229,15 +183,6 @@ func (t *validatorGroupAggCreatorTask) Run(ctx context.Context, p pipeline.Paylo
 					RecentAtHeight: payload.Syncable.Height,
 					RecentAt:       *payload.Syncable.Time,
 				},
-			}
-
-			if shouldFetchIdentities {
-				identity, err := t.client.GetIdentityByHeight(ctx, group.Address, payload.CurrentHeight)
-				if err != nil {
-					return err
-				}
-				group.RecentName = identity.Name
-				group.RecentMetadataUrl = identity.MetadataUrl
 			}
 
 			existing.Update(group)

@@ -50,8 +50,6 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 						RecentAt:        *syncTime,
 					},
 					Address:                 "acct1",
-					RecentName:              "test",
-					RecentMetadataUrl:       "http://test.com",
 					RecentAsValidatorHeight: syncHeight,
 					AccumulatedUptime:       0,
 					AccumulatedUptimeCount:  0,
@@ -64,8 +62,6 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 						RecentAt:        *syncTime,
 					},
 					Address:                 "acct2",
-					RecentName:              "test",
-					RecentMetadataUrl:       "http://test.com",
 					RecentAsValidatorHeight: syncHeight,
 					AccumulatedUptime:       1,
 					AccumulatedUptimeCount:  1,
@@ -78,8 +74,6 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 						RecentAt:        *syncTime,
 					},
 					Address:                 "acct3",
-					RecentName:              "test",
-					RecentMetadataUrl:       "http://test.com",
 					RecentAsValidatorHeight: syncHeight,
 					AccumulatedUptime:       0,
 					AccumulatedUptimeCount:  1,
@@ -103,8 +97,10 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 
-			ctrl := gomock.NewController(t)
 			ctx := context.Background()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
 			dbMock := mock.NewMockValidatorAgg(ctrl)
 			cMock := clientMock.NewMockClient(ctrl)
@@ -119,11 +115,6 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 			} else {
 				dbMock.EXPECT().All().Return([]model.ValidatorAgg{}, nil).Times(1)
 			}
-
-			cMock.EXPECT().GetIdentityByHeight(ctx, gomock.Any(), gomock.Any()).Return(&figmentclient.Identity{
-				Name:        "test",
-				MetadataUrl: "http://test.com",
-			}, nil).Times(len(tt.rawValidators))
 
 			task := NewValidatorAggCreatorTask(cMock, dbMock)
 			if err := task.Run(ctx, pld); err != tt.expectErr {
@@ -261,8 +252,10 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 
-			ctrl := gomock.NewController(t)
 			ctx := context.Background()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
 			dbMock := mock.NewMockValidatorAgg(ctrl)
 			cMock := clientMock.NewMockClient(ctrl)
@@ -273,11 +266,6 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 			}
 
 			dbMock.EXPECT().All().Return(tt.returnValidators, nil).Times(1)
-
-			cMock.EXPECT().GetIdentityByHeight(ctx, gomock.Any(), gomock.Any()).Return(&figmentclient.Identity{
-				Name:        "test",
-				MetadataUrl: "http://test.com",
-			}, nil).Times(len(tt.rawValidators))
 
 			task := NewValidatorAggCreatorTask(cMock, dbMock)
 			if err := task.Run(ctx, pld); err != nil {

@@ -44,6 +44,7 @@ type core struct {
 	*Reports
 	*Syncables
 	*SystemEvents
+	*Jobs
 }
 
 type accounts struct {
@@ -101,6 +102,7 @@ func (s *Store) GetCore() *core {
 			NewReportsStore(s.db),
 			NewSyncablesStore(s.db),
 			NewSystemEventsStore(s.db),
+			NewJobsStore(s.db),
 		}
 	}
 	return s.core

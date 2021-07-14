@@ -39,6 +39,15 @@ func (s ValidatorGroupAgg) CreateOrUpdate(val *model.ValidatorGroupAgg) error {
 	return s.Update(existing)
 }
 
+// UpdateIdentity updates the identity of a validator group
+func (s ValidatorGroupAgg) UpdateIdentity(val *model.ValidatorGroupAgg) error {
+	return s.db.
+		Model(val).
+		Select("recent_name", "recent_metadata_url").
+		Updates(val).
+		Error
+}
+
 // FindBy returns an validator group for a matching attribute
 func (s ValidatorGroupAgg) FindBy(key string, value interface{}) (*model.ValidatorGroupAgg, error) {
 	result := &model.ValidatorGroupAgg{}

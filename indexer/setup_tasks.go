@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
-
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/indexing-engine/pipeline"

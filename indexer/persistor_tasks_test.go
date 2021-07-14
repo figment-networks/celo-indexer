@@ -3,12 +3,13 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	mock "github.com/figment-networks/celo-indexer/mock/store"
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/golang/mock/gomock"
-	"testing"
-	"time"
 )
 
 func TestSyncerPersistor_Run(t *testing.T) {
@@ -31,8 +32,10 @@ func TestSyncerPersistor_Run(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 
-			ctrl := gomock.NewController(t)
 			ctx := context.Background()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
 			dbMock := mock.NewMockSyncables(ctrl)
 
@@ -74,8 +77,10 @@ func TestBlockSeqPersistor_Run(t *testing.T) {
 		t.Run(fmt.Sprintf("[new] %v", tt.description), func(t *testing.T) {
 			t.Parallel()
 
-			ctrl := gomock.NewController(t)
 			ctx := context.Background()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
 			dbMock := mock.NewMockBlockSeq(ctrl)
 
@@ -96,8 +101,10 @@ func TestBlockSeqPersistor_Run(t *testing.T) {
 		t.Run(fmt.Sprintf("[updated] %v", tt.description), func(t *testing.T) {
 			t.Parallel()
 
-			ctrl := gomock.NewController(t)
 			ctx := context.Background()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
 			dbMock := mock.NewMockBlockSeq(ctrl)
 
@@ -127,8 +134,8 @@ func TestValidatorSeqPersistor_Run(t *testing.T) {
 	}
 
 	tests := []struct {
-		description   string
-		expectErr     error
+		description string
+		expectErr   error
 	}{
 		{"calls db with all validator sequences", nil},
 		{"returns error if database errors", fmt.Errorf("db err")},
@@ -139,8 +146,10 @@ func TestValidatorSeqPersistor_Run(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 
-			ctrl := gomock.NewController(t)
 			ctx := context.Background()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
 			dbMock := mock.NewMockValidatorSeq(ctrl)
 
@@ -168,8 +177,8 @@ func TestValidatorGroupSeqPersistor_Run(t *testing.T) {
 	}
 
 	tests := []struct {
-		description   string
-		expectErr     error
+		description string
+		expectErr   error
 	}{
 		{"calls db with all validator sequences", nil},
 		{"returns error if database errors", fmt.Errorf("db err")},
@@ -180,15 +189,17 @@ func TestValidatorGroupSeqPersistor_Run(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 
-			ctrl := gomock.NewController(t)
 			ctx := context.Background()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
 			dbMock := mock.NewMockValidatorGroupSeq(ctrl)
 
 			task := NewValidatorGroupSeqPersistorTask(dbMock)
 
 			pl := &payload{
-				Syncable:           &model.Syncable{Height: 20},
+				Syncable:                &model.Syncable{Height: 20},
 				ValidatorGroupSequences: seqs,
 			}
 

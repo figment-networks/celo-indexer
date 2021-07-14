@@ -56,6 +56,11 @@ func (w *Worker) init() (*Worker, error) {
 		return nil, err
 	}
 
+	_, err = w.addFetchIdentitiesJob()
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = w.addUpdateProposalsJob()
 	if err != nil {
 		return nil, err

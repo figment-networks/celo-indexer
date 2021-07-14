@@ -8,13 +8,15 @@ import (
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/usecase/governance"
 	"github.com/figment-networks/celo-indexer/usecase/indexing"
+	"github.com/figment-networks/indexing-engine/datalake"
 )
 
-func NewWorkerHandlers(cfg *config.Config, db *psql.Store, client figmentclient.Client, theCeloClient theceloclient.Client) *WorkerHandlers {
+func NewWorkerHandlers(cfg *config.Config, db *psql.Store, client figmentclient.Client, theCeloClient theceloclient.Client, dl *datalake.DataLake) *WorkerHandlers {
 	return &WorkerHandlers{
-		RunIndexer:       indexing.NewRunWorkerHandler(cfg, db, client),
+		RunIndexer:       indexing.NewRunWorkerHandler(cfg, db, client, dl),
 		SummarizeIndexer: indexing.NewSummarizeWorkerHandler(cfg, db, client),
 		PurgeIndexer:     indexing.NewPurgeWorkerHandler(cfg, db, client),
+		FetchIdentities:  indexing.NewFetchIdentitiesWorkerHandler(db, client),
 		UpdateProposals:  governance.NewUpdateProposalsWorkerHandler(cfg, db, theCeloClient),
 	}
 }
@@ -23,5 +25,6 @@ type WorkerHandlers struct {
 	RunIndexer       types.WorkerHandler
 	SummarizeIndexer types.WorkerHandler
 	PurgeIndexer     types.WorkerHandler
+	FetchIdentities  types.WorkerHandler
 	UpdateProposals  types.WorkerHandler
 }

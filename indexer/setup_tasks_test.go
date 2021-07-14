@@ -2,14 +2,15 @@ package indexer
 
 import (
 	"context"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	baseClientMock "github.com/figment-networks/celo-indexer/mock/baseclient"
 	figmentClientMock "github.com/figment-networks/celo-indexer/mock/client"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/golang/mock/gomock"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestHeightMetaRetriever_Run(t *testing.T) {
@@ -57,6 +58,8 @@ func TestHeightMetaRetriever_Run(t *testing.T) {
 			ctx := context.Background()
 
 			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
 			mockRequestCounter := baseClientMock.NewMockRequestCounter(ctrl)
 			mockFigmentClient := figmentClientMock.NewMockClient(ctrl)
 
