@@ -3,11 +3,12 @@ package indexer
 import (
 	"context"
 	"errors"
+	"reflect"
+	"testing"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	mock "github.com/figment-networks/celo-indexer/mock/client"
 	"github.com/golang/mock/gomock"
-	"reflect"
-	"testing"
 )
 
 func TestBlockFetcher_Run(t *testing.T) {
@@ -24,8 +25,11 @@ func TestBlockFetcher_Run(t *testing.T) {
 		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
-			ctrl := gomock.NewController(t)
+
 			ctx := context.Background()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 
 			mockClient := mock.NewMockClient(ctrl)
 			task := NewBlockFetcherTask(mockClient)

@@ -1,6 +1,9 @@
 package indexer
 
 import (
+	"testing"
+	"time"
+
 	"github.com/figment-networks/celo-indexer/config"
 	mock "github.com/figment-networks/celo-indexer/mock/store"
 	"github.com/figment-networks/celo-indexer/model"
@@ -8,15 +11,13 @@ import (
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	"testing"
-	"time"
 )
 
 const (
-	testAccountAddress   = "test_acct_address"
-	testValidatorAddress = "test_address"
+	testAccountAddress        = "test_acct_address"
+	testValidatorAddress      = "test_address"
 	testValidatorGroupAddress = "test_validator_group_address"
-	testHeight           = 17
+	testHeight                = 17
 )
 
 var (
@@ -251,6 +252,7 @@ func TestSystemEventCreatorTask_getActiveSetPresenceChangeSystemEvents(t *testin
 		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 

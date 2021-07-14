@@ -1,12 +1,12 @@
 package indexer
 
 import (
-	"github.com/figment-networks/celo-indexer/store/psql"
 	"testing"
 	"time"
 
 	mock "github.com/figment-networks/celo-indexer/mock/store"
 	"github.com/figment-networks/celo-indexer/model"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
