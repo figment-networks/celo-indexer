@@ -20,6 +20,8 @@ Celo Indexer is responsible for fetching and indexing Celo data.
 * `INDEX_WORKER_INTERVAL` - index interval for worker
 * `SUMMARIZE_WORKER_INTERVAL` - summary interval for worker
 * `PURGE_WORKER_INTERVAL` - purge interval for worker
+* `FETCH_IDENTITIES_INTERVAL` - interval for fetching validator and validator group identities
+* `UPDATE_PROPOSALS_INTERVAL` - interval for updating proposals
 * `DEFAULT_BATCH_SIZE` - syncing batch size. Setting this value to 0 means no batch size
 * `DATABASE_DSN` - PostgreSQL database URL
 * `DEBUG` - turn on db debugging mode

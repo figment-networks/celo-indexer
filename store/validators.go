@@ -1,14 +1,16 @@
 package store
 
 import (
+	"time"
+
 	"github.com/figment-networks/celo-indexer/model"
 	"github.com/figment-networks/celo-indexer/types"
-	"time"
 )
 
 type ValidatorAgg interface {
 	Create(*model.ValidatorAgg) error
 	Save(*model.ValidatorAgg) error
+	UpdateIdentity(*model.ValidatorAgg) error
 	FindBy(key string, value interface{}) (*model.ValidatorAgg, error)
 	FindByID(id int64) (*model.ValidatorAgg, error)
 	FindByAddress(key string) (*model.ValidatorAgg, error)

@@ -16,6 +16,7 @@ func NewWorkerHandlers(cfg *config.Config, db *psql.Store, client figmentclient.
 		RunIndexer:       indexing.NewRunWorkerHandler(cfg, db, client, dl),
 		SummarizeIndexer: indexing.NewSummarizeWorkerHandler(cfg, db, client),
 		PurgeIndexer:     indexing.NewPurgeWorkerHandler(cfg, db, client),
+		FetchIdentities:  indexing.NewFetchIdentitiesWorkerHandler(db, client),
 		UpdateProposals:  governance.NewUpdateProposalsWorkerHandler(cfg, db, theCeloClient),
 	}
 }
@@ -24,5 +25,6 @@ type WorkerHandlers struct {
 	RunIndexer       types.WorkerHandler
 	SummarizeIndexer types.WorkerHandler
 	PurgeIndexer     types.WorkerHandler
+	FetchIdentities  types.WorkerHandler
 	UpdateProposals  types.WorkerHandler
 }

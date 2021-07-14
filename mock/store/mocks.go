@@ -816,6 +816,21 @@ func (mr *MockSystemEventsMockRecorder) DeleteOlderThan(arg0 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOlderThan", reflect.TypeOf((*MockSystemEvents)(nil).DeleteOlderThan), arg0)
 }
 
+// FindAll mocks base method
+func (m *MockSystemEvents) FindAll(arg0 store.FindAll) ([]model.SystemEvent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAll", arg0)
+	ret0, _ := ret[0].([]model.SystemEvent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAll indicates an expected call of FindAll
+func (mr *MockSystemEventsMockRecorder) FindAll(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockSystemEvents)(nil).FindAll), arg0)
+}
+
 // FindByActor mocks base method
 func (m *MockSystemEvents) FindByActor(arg0 string, arg1 store.FindSystemEventByActorQuery) ([]model.SystemEvent, error) {
 	m.ctrl.T.Helper()
@@ -829,21 +844,6 @@ func (m *MockSystemEvents) FindByActor(arg0 string, arg1 store.FindSystemEventBy
 func (mr *MockSystemEventsMockRecorder) FindByActor(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByActor", reflect.TypeOf((*MockSystemEvents)(nil).FindByActor), arg0, arg1)
-}
-
-// FindAll mocks base method
-func (m *MockSystemEvents) FindAll(arg0 string, arg1 store.FindAll) ([]model.SystemEvent, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAll", arg0, arg1)
-	ret0, _ := ret[0].([]model.SystemEvent)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FindAll indicates an expected call of FindAll
-func (mr *MockSystemEventsMockRecorder) FindAll(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockSystemEvents)(nil).FindByActor), arg0, arg1)
 }
 
 // FindByHeight mocks base method
@@ -1015,6 +1015,20 @@ func (m *MockValidatorAgg) Save(arg0 *model.ValidatorAgg) error {
 func (mr *MockValidatorAggMockRecorder) Save(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockValidatorAgg)(nil).Save), arg0)
+}
+
+// UpdateIdentity mocks base method
+func (m *MockValidatorAgg) UpdateIdentity(arg0 *model.ValidatorAgg) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateIdentity", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateIdentity indicates an expected call of UpdateIdentity
+func (mr *MockValidatorAggMockRecorder) UpdateIdentity(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateIdentity", reflect.TypeOf((*MockValidatorAgg)(nil).UpdateIdentity), arg0)
 }
 
 // MockValidatorSeq is a mock of ValidatorSeq interface
@@ -1409,6 +1423,20 @@ func (m *MockValidatorGroupAgg) Save(arg0 *model.ValidatorGroupAgg) error {
 func (mr *MockValidatorGroupAggMockRecorder) Save(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockValidatorGroupAgg)(nil).Save), arg0)
+}
+
+// UpdateIdentity mocks base method
+func (m *MockValidatorGroupAgg) UpdateIdentity(arg0 *model.ValidatorGroupAgg) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateIdentity", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateIdentity indicates an expected call of UpdateIdentity
+func (mr *MockValidatorGroupAggMockRecorder) UpdateIdentity(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateIdentity", reflect.TypeOf((*MockValidatorGroupAgg)(nil).UpdateIdentity), arg0)
 }
 
 // MockValidatorGroupSeq is a mock of ValidatorGroupSeq interface

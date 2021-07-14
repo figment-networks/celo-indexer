@@ -46,6 +46,8 @@ func runCmd(cfg *config.Config, flags Flags) error {
 		cmdHandlers.SummarizeIndexer.Handle(ctx)
 	case "indexer_purge":
 		cmdHandlers.PurgeIndexer.Handle(ctx)
+	case "fetch_identities":
+		cmdHandlers.FetchIdentities.Handle(ctx)
 	case "update_proposals":
 		cmdHandlers.UpdateProposals.Handle(ctx)
 	default:

@@ -31,6 +31,7 @@ type Config struct {
 	IndexWorkerInterval          string `json:"index_worker_interval" envconfig:"INDEX_WORKER_INTERVAL" default:"@every 15m"`
 	SummarizeWorkerInterval      string `json:"summarize_worker_interval" envconfig:"SUMMARIZE_WORKER_INTERVAL" default:"@every 20m"`
 	PurgeWorkerInterval          string `json:"purge_worker_interval" envconfig:"PURGE_WORKER_INTERVAL" default:"@every 1h"`
+	FetchIdentitiesInterval      string `json:"fetch_identities_interval" envconfig:"FETCH_IDENTITIES_INTERVAL" default:"@every 1h"`
 	UpdateProposalsInterval      string `json:"update_proposals_interval" envconfig:"UPDATE_PROPOSALS_INTERVAL" default:"@every 24h"`
 	DefaultBatchSize             int64  `json:"default_batch_size" envconfig:"DEFAULT_BATCH_SIZE" default:"0"`
 	DatabaseDSN                  string `json:"database_dsn" envconfig:"DATABASE_DSN"`

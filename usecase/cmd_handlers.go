@@ -18,6 +18,7 @@ func NewCmdHandlers(cfg *config.Config, db *psql.Store, nodeClient figmentclient
 		BackfillIndexer:  indexing.NewBackfillCmdHandler(cfg, db, nodeClient),
 		PurgeIndexer:     indexing.NewPurgeCmdHandler(cfg, db, nodeClient),
 		SummarizeIndexer: indexing.NewSummarizeCmdHandler(cfg, db, nodeClient),
+		FetchIdentities:  indexing.NewFetchIdentitiesCmdHandler(db, nodeClient),
 		UpdateProposals:  governance.NewUpdateProposalsCmdHandler(db, theCeloClient),
 	}
 }
@@ -28,5 +29,6 @@ type CmdHandlers struct {
 	BackfillIndexer  *indexing.BackfillCmdHandler
 	PurgeIndexer     *indexing.PurgeCmdHandler
 	SummarizeIndexer *indexing.SummarizeCmdHandler
+	FetchIdentities  *indexing.FetchIdentitiesCmdHandler
 	UpdateProposals  *governance.UpdateProposalsCmdHandler
 }

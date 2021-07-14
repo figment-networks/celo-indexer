@@ -20,6 +20,12 @@ func (w *Worker) addPurgeIndexerJob() (cron.EntryID, error) {
 	return w.cronJob.AddJob(w.cfg.PurgeWorkerInterval, job)
 }
 
+func (w *Worker) addFetchIdentitiesJob() (cron.EntryID, error) {
+	job = cron.FuncJob(w.handlers.FetchIdentities.Handle)
+	job = cron.NewChain(cron.SkipIfStillRunning(w.logger)).Then(job)
+	return w.cronJob.AddJob(w.cfg.FetchIdentitiesInterval, job)
+}
+
 func (w *Worker) addUpdateProposalsJob() (cron.EntryID, error) {
 	job = cron.FuncJob(w.handlers.UpdateProposals.Handle)
 	job = cron.NewChain(cron.SkipIfStillRunning(w.logger)).Then(job)
