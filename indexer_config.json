@@ -12,7 +12,9 @@
       }
     ],
     "shared_tasks": [
-      "HeightMetaRetriever",
+      "Setup",
+      "HeightMetaFetcher",
+      "HeightMetaDownloader",
       "MainSyncer",
       "SyncerPersistor"
     ],

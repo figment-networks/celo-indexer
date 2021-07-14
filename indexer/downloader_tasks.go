@@ -9,11 +9,30 @@ import (
 )
 
 const (
+	TaskNameHeightMetaDownloader      = "HeightMetaDownloader"
 	TaskNameBlockDownloader           = "BlockDownloader"
 	TaskNameValidatorsDownloader      = "ValidatorsDownloader"
 	TaskNameValidatorGroupsDownloader = "ValidatorGroupsDownloader"
 	TaskNameTransactionsDownloader    = "TransactionsDownloader"
 )
+
+func NewHeightMetaDownloaderTask() pipeline.Task {
+	return &HeightMetaDownloaderTask{}
+}
+
+type HeightMetaDownloaderTask struct{}
+
+func (t *HeightMetaDownloaderTask) GetName() string {
+	return TaskNameHeightMetaDownloader
+}
+
+func (t *HeightMetaDownloaderTask) Run(ctx context.Context, p pipeline.Payload) error {
+	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
+
+	return payload.Retrieve("height_meta", &payload.HeightMeta)
+}
 
 func NewBlockDownloaderTask() pipeline.Task {
 	return &BlockDownloaderTask{}

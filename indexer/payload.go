@@ -5,6 +5,7 @@ import (
 
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/model"
+	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/indexing-engine/datalake"
 	"github.com/figment-networks/indexing-engine/pipeline"
 )
@@ -27,6 +28,15 @@ func (pf *payloadFactory) GetPayload(currentHeight int64) pipeline.Payload {
 		CurrentHeight: currentHeight,
 		DataLake:      pf.dl,
 	}
+}
+
+type HeightMeta struct {
+	ChainId     uint64
+	Height      int64
+	Time        *types.Time
+	Epoch       *int64
+	EpochSize   *int64
+	LastInEpoch *bool
 }
 
 type payload struct {

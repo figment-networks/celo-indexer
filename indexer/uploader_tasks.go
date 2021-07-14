@@ -9,11 +9,30 @@ import (
 )
 
 const (
+	TaskNameHeightMetaUploader      = "HeightMetaUploader"
 	TaskNameBlockUploader           = "BlockUploader"
 	TaskNameValidatorsUploader      = "ValidatorsUploader"
 	TaskNameValidatorGroupsUploader = "ValidatorGroupsUploader"
 	TaskNameTransactionsUploader    = "TransactionsUploader"
 )
+
+func NewHeightMetaUploaderTask() pipeline.Task {
+	return &HeightMetaUploaderTask{}
+}
+
+type HeightMetaUploaderTask struct{}
+
+func (t *HeightMetaUploaderTask) GetName() string {
+	return TaskNameHeightMetaUploader
+}
+
+func (t *HeightMetaUploaderTask) Run(ctx context.Context, p pipeline.Payload) error {
+	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
+
+	return payload.Store("height_meta", payload.HeightMeta)
+}
 
 func NewBlockUploaderTask() pipeline.Task {
 	return &BlockUploaderTask{}
@@ -28,7 +47,7 @@ func (t *BlockUploaderTask) GetName() string {
 func (t *BlockUploaderTask) Run(ctx context.Context, p pipeline.Payload) error {
 	payload := p.(*payload)
 
-	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
 	return payload.Store("block", payload.RawBlock)
 }
@@ -46,7 +65,7 @@ func (t *ValidatorsUploaderTask) GetName() string {
 func (t *ValidatorsUploaderTask) Run(ctx context.Context, p pipeline.Payload) error {
 	payload := p.(*payload)
 
-	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
 	return payload.Store("validators", payload.RawValidators)
 }
@@ -64,7 +83,7 @@ func (t *ValidatorGroupsUploaderTask) GetName() string {
 func (t *ValidatorGroupsUploaderTask) Run(ctx context.Context, p pipeline.Payload) error {
 	payload := p.(*payload)
 
-	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
 	return payload.Store("validator_groups", payload.RawValidatorGroups)
 }
@@ -82,7 +101,7 @@ func (t *TransactionsUploaderTask) GetName() string {
 func (t *TransactionsUploaderTask) Run(ctx context.Context, p pipeline.Payload) error {
 	payload := p.(*payload)
 
-	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
 	return payload.Store("transactions", payload.RawTransactions)
 }

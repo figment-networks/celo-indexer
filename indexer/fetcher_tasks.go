@@ -5,16 +5,74 @@ import (
 	"fmt"
 
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
+	"github.com/figment-networks/celo-indexer/types"
 	"github.com/figment-networks/celo-indexer/utils/logger"
 	"github.com/figment-networks/indexing-engine/pipeline"
 )
 
 const (
+	TaskNameHeightMetaFetcher      = "HeightMetaFetcher"
 	TaskNameBlockFetcher           = "BlockFetcher"
 	TaskNameValidatorsFetcher      = "ValidatorsFetcher"
 	TaskNameValidatorGroupsFetcher = "ValidatorGroupsFetcher"
 	TaskNameTransactionsFetcher    = "TransactionsFetcher"
 )
+
+func NewHeightMetaFetcherTask(client figmentclient.Client) pipeline.Task {
+	return &HeightMetaFetcherTask{client: client}
+}
+
+type HeightMetaFetcherTask struct {
+	client figmentclient.Client
+}
+
+func (t *HeightMetaFetcherTask) GetName() string {
+	return TaskNameHeightMetaFetcher
+}
+
+func (t *HeightMetaFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
+	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
+
+	heightMeta := HeightMeta{}
+
+	chainParams, err := t.client.GetChainParams(ctx)
+	if err != nil {
+		if err == figmentclient.ErrContractNotDeployed {
+			logger.Info("GetChainParams returned partial data")
+		} else {
+			return err
+		}
+	} else {
+		// Contract dependent data
+		heightMeta.EpochSize = chainParams.EpochSize
+	}
+
+	// Get chainParams partial data
+	heightMeta.ChainId = chainParams.ChainId
+
+	meta, err := t.client.GetMetaByHeight(ctx, payload.CurrentHeight)
+	if err != nil {
+		if err == figmentclient.ErrContractNotDeployed {
+			logger.Info("GetMetaByHeight returned partial data")
+		} else {
+			return err
+		}
+	} else {
+		// Contract dependent data
+		heightMeta.Epoch = meta.Epoch
+		heightMeta.LastInEpoch = meta.LastInEpoch
+	}
+
+	// Get meta partial data
+	heightMeta.Height = meta.Height
+	heightMeta.Time = types.NewTimeFromSeconds(meta.Time)
+
+	payload.HeightMeta = heightMeta
+
+	return nil
+}
 
 func NewBlockFetcherTask(client figmentclient.Client) pipeline.Task {
 	return &BlockFetcherTask{client: client}

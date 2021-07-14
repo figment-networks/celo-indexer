@@ -76,13 +76,14 @@ func NewPipeline(
 
 	// Setup stage
 	p.AddStage(
-		pipeline.NewStageWithTasks(pipeline.StageSetup, pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, maxRetries)),
+		pipeline.NewStageWithTasks(pipeline.StageSetup, pipeline.RetryingTask(NewSetupTask(client), isTransient, maxRetries)),
 	)
 
 	// Fetcher stage
 	if dl != nil {
 		p.AddStage(
 			pipeline.NewAsyncStageWithTasks(pipeline.StageFetcher,
+				pipeline.RetryingTask(NewHeightMetaDownloaderTask(), isTransient, maxRetries),
 				pipeline.RetryingTask(NewBlockDownloaderTask(), isTransient, maxRetries),
 				pipeline.RetryingTask(NewValidatorDownloaderTask(), isTransient, maxRetries),
 				pipeline.RetryingTask(NewValidatorGroupDownloaderTask(), isTransient, maxRetries),
@@ -92,6 +93,7 @@ func NewPipeline(
 	} else {
 		p.AddStage(
 			pipeline.NewAsyncStageWithTasks(pipeline.StageFetcher,
+				pipeline.RetryingTask(NewHeightMetaFetcherTask(client), isTransient, maxRetries),
 				pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, maxRetries),
 				pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, maxRetries),
 				pipeline.RetryingTask(NewValidatorGroupFetcherTask(client), isTransient, maxRetries),
@@ -393,13 +395,14 @@ func RunFetcherPipeline(height int64, client figmentclient.Client, dl *datalake.
 	// Setup stage
 	p.AddStage(
 		pipeline.NewStageWithTasks(pipeline.StageSetup,
-			pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, maxRetries),
+			pipeline.RetryingTask(NewSetupTask(client), isTransient, maxRetries),
 		),
 	)
 
 	// Fetcher stage
 	p.AddStage(
 		pipeline.NewAsyncStageWithTasks(pipeline.StageFetcher,
+			pipeline.RetryingTask(NewHeightMetaFetcherTask(client), isTransient, maxRetries),
 			pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorGroupFetcherTask(client), isTransient, maxRetries),
@@ -410,6 +413,7 @@ func RunFetcherPipeline(height int64, client figmentclient.Client, dl *datalake.
 	// Persistor stage
 	p.AddStage(
 		pipeline.NewAsyncStageWithTasks(pipeline.StagePersistor,
+			pipeline.RetryingTask(NewHeightMetaUploaderTask(), isTransient, maxRetries),
 			pipeline.RetryingTask(NewBlockUploaderTask(), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorUploaderTask(), isTransient, maxRetries),
 			pipeline.RetryingTask(NewValidatorGroupUploaderTask(), isTransient, maxRetries),
