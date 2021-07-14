@@ -3,6 +3,7 @@ package indexer
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/celo-org/kliento/contracts"
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/model"
@@ -84,12 +85,12 @@ func ToValidatorGroupSequence(syncable *model.Syncable, rawValidatorGroups []*fi
 				Time:   *syncable.Time,
 			},
 
-			Address:         rawValidatorGroup.Address,
-			Commission:      types.NewQuantity(rawValidatorGroup.Commission),
-			ActiveVotes:     types.NewQuantity(rawValidatorGroup.ActiveVotes),
-			PendingVotes:    types.NewQuantity(rawValidatorGroup.PendingVotes),
-			VotingCap:       types.NewQuantity(rawValidatorGroup.VotingCap),
-			MembersCount:    len(rawValidatorGroup.Members),
+			Address:      rawValidatorGroup.Address,
+			Commission:   types.NewQuantity(rawValidatorGroup.Commission),
+			ActiveVotes:  types.NewQuantity(rawValidatorGroup.ActiveVotes),
+			PendingVotes: types.NewQuantity(rawValidatorGroup.PendingVotes),
+			VotingCap:    types.NewQuantity(rawValidatorGroup.VotingCap),
+			MembersCount: len(rawValidatorGroup.Members),
 		}
 
 		found, ok := membersAvgSignedMap[rawValidatorGroup.Address]
@@ -162,7 +163,12 @@ func operationToAccountActivitySequence(sequence *model.Sequence, rawOperation *
 
 	// Internal transfer
 	case figmentclient.OperationTypeInternalTransfer:
-		event := rawOperation.Details.(*figmentclient.Transfer)
+		var event figmentclient.Transfer
+
+		err := json.Unmarshal(marshaledData, &event)
+		if err != nil {
+			return nil, err
+		}
 
 		accountActivities = append(accountActivities, model.AccountActivitySeq{
 			Sequence:        sequence,
@@ -185,7 +191,12 @@ func operationToAccountActivitySequence(sequence *model.Sequence, rawOperation *
 	//Election
 	case figmentclient.OperationTypeValidatorGroupVoteCast:
 		// vote() [ValidatorGroupVoteCast] => lockNonVoting->lockVotingPending
-		event := rawOperation.Details.(*contracts.ElectionValidatorGroupVoteCast)
+		var event contracts.ElectionValidatorGroupVoteCast
+
+		err := json.Unmarshal(marshaledData, &event)
+		if err != nil {
+			return nil, err
+		}
 
 		accountActivities = append(accountActivities, model.AccountActivitySeq{
 			Sequence:        sequence,
@@ -206,7 +217,13 @@ func operationToAccountActivitySequence(sequence *model.Sequence, rawOperation *
 		})
 	case figmentclient.OperationTypeValidatorGroupVoteActivated:
 		// activate() [ValidatorGroupVoteActivated] => lockVotingPending->lockVotingActive
-		event := rawOperation.Details.(*contracts.ElectionValidatorGroupVoteActivated)
+		var event contracts.ElectionValidatorGroupVoteActivated
+
+		err := json.Unmarshal(marshaledData, &event)
+		if err != nil {
+			return nil, err
+		}
+
 		accountActivities = append(accountActivities, model.AccountActivitySeq{
 			Sequence:        sequence,
 			TransactionHash: txHash,
@@ -226,7 +243,13 @@ func operationToAccountActivitySequence(sequence *model.Sequence, rawOperation *
 		})
 	case figmentclient.OperationTypeValidatorGroupPendingVoteRevoked:
 		// revokePending() [ValidatorGroupPendingVoteRevoked] => lockVotingPending->lockNonVoting
-		event := rawOperation.Details.(*contracts.ElectionValidatorGroupPendingVoteRevoked)
+		var event contracts.ElectionValidatorGroupPendingVoteRevoked
+
+		err := json.Unmarshal(marshaledData, &event)
+		if err != nil {
+			return nil, err
+		}
+
 		accountActivities = append(accountActivities, model.AccountActivitySeq{
 			Sequence:        sequence,
 			TransactionHash: txHash,
@@ -246,7 +269,13 @@ func operationToAccountActivitySequence(sequence *model.Sequence, rawOperation *
 		})
 	case figmentclient.OperationTypeValidatorGroupActiveVoteRevoked:
 		// revokeActive() [ValidatorGroupActiveVoteRevoked] => lockVotingActive->lockNonVoting
-		event := rawOperation.Details.(*contracts.ElectionValidatorGroupActiveVoteRevoked)
+		var event contracts.ElectionValidatorGroupActiveVoteRevoked
+
+		err := json.Unmarshal(marshaledData, &event)
+		if err != nil {
+			return nil, err
+		}
+
 		accountActivities = append(accountActivities, model.AccountActivitySeq{
 			Sequence:        sequence,
 			TransactionHash: txHash,
@@ -268,7 +297,13 @@ func operationToAccountActivitySequence(sequence *model.Sequence, rawOperation *
 	// Gold locked
 	case figmentclient.OperationTypeGoldLocked:
 		// lock() [GoldLocked + transfer] => main->lockNonVoting
-		event := rawOperation.Details.(*contracts.LockedGoldGoldLocked)
+		var event contracts.LockedGoldGoldLocked
+
+		err := json.Unmarshal(marshaledData, &event)
+		if err != nil {
+			return nil, err
+		}
+
 		accountActivities = append(accountActivities, model.AccountActivitySeq{
 			Sequence:        sequence,
 			TransactionHash: txHash,
@@ -279,7 +314,13 @@ func operationToAccountActivitySequence(sequence *model.Sequence, rawOperation *
 		})
 	case figmentclient.OperationTypeGoldRelocked:
 		// relock() [GoldRelocked] => lockPending->lockNonVoting
-		event := rawOperation.Details.(*contracts.LockedGoldGoldRelocked)
+		var event contracts.LockedGoldGoldRelocked
+
+		err := json.Unmarshal(marshaledData, &event)
+		if err != nil {
+			return nil, err
+		}
+
 		accountActivities = append(accountActivities, model.AccountActivitySeq{
 			Sequence:        sequence,
 			TransactionHash: txHash,
@@ -290,7 +331,13 @@ func operationToAccountActivitySequence(sequence *model.Sequence, rawOperation *
 		})
 	case figmentclient.OperationTypeGoldUnlocked:
 		// unlock() [GoldUnlocked] => lockNonVoting->lockPending
-		event := rawOperation.Details.(*contracts.LockedGoldGoldUnlocked)
+		var event contracts.LockedGoldGoldUnlocked
+
+		err := json.Unmarshal(marshaledData, &event)
+		if err != nil {
+			return nil, err
+		}
+
 		accountActivities = append(accountActivities, model.AccountActivitySeq{
 			Sequence:        sequence,
 			TransactionHash: txHash,
@@ -301,7 +348,13 @@ func operationToAccountActivitySequence(sequence *model.Sequence, rawOperation *
 		})
 	case figmentclient.OperationTypeGoldWithdrawn:
 		// withdraw() [GoldWithdrawn + transfer] => lockPending->main
-		event := rawOperation.Details.(*contracts.LockedGoldGoldWithdrawn)
+		var event contracts.LockedGoldGoldWithdrawn
+
+		err := json.Unmarshal(marshaledData, &event)
+		if err != nil {
+			return nil, err
+		}
+
 		accountActivities = append(accountActivities, model.AccountActivitySeq{
 			Sequence:        sequence,
 			TransactionHash: txHash,
@@ -314,7 +367,13 @@ func operationToAccountActivitySequence(sequence *model.Sequence, rawOperation *
 	// Account
 	case figmentclient.OperationTypeAccountSlashed:
 		// slash() [AccountSlashed + transfer] => account:lockNonVoting -> beneficiary:lockNonVoting + governance:main
-		event := rawOperation.Details.(*contracts.LockedGoldAccountSlashed)
+		var event contracts.LockedGoldAccountSlashed
+
+		err := json.Unmarshal(marshaledData, &event)
+		if err != nil {
+			return nil, err
+		}
+
 		accountActivities = append(accountActivities, model.AccountActivitySeq{
 			Sequence:        sequence,
 			TransactionHash: txHash,
@@ -326,7 +385,12 @@ func operationToAccountActivitySequence(sequence *model.Sequence, rawOperation *
 
 	// Validators
 	case figmentclient.OperationTypeValidatorEpochPaymentDistributed:
-		event := rawOperation.Details.(*contracts.ValidatorsValidatorEpochPaymentDistributed)
+		var event contracts.ValidatorsValidatorEpochPaymentDistributed
+
+		err := json.Unmarshal(marshaledData, &event)
+		if err != nil {
+			return nil, err
+		}
 
 		// For group
 		accountActivities = append(accountActivities, model.AccountActivitySeq{
@@ -368,7 +432,7 @@ func ToGovernanceActivitySequence(syncable *model.Syncable, parsedGovernanceLogs
 
 			TransactionHash: log.TransactionHash,
 			ProposalId:      log.ProposalId,
-			Account: log.Account,
+			Account:         log.Account,
 			Kind:            log.Kind,
 			Data:            types.Jsonb{RawMessage: marshaledData},
 		})

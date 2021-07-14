@@ -3,25 +3,29 @@ package indexing
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/figment-networks/celo-indexer/utils/logger"
+	"github.com/figment-networks/indexing-engine/datalake"
 )
 
 type StartCmdHandler struct {
 	cfg    *config.Config
 	db     *psql.Store
 	client figmentclient.Client
+	dl     *datalake.DataLake
 
 	useCase *startUseCase
 }
 
-func NewStartCmdHandler(cfg *config.Config, db *psql.Store, c figmentclient.Client) *StartCmdHandler {
+func NewStartCmdHandler(cfg *config.Config, db *psql.Store, c figmentclient.Client, dl *datalake.DataLake) *StartCmdHandler {
 	return &StartCmdHandler{
 		cfg:    cfg,
 		db:     db,
 		client: c,
+		dl:     dl,
 	}
 }
 
@@ -37,7 +41,7 @@ func (h *StartCmdHandler) Handle(ctx context.Context, batchSize int64) {
 
 func (h *StartCmdHandler) getUseCase() *startUseCase {
 	if h.useCase == nil {
-		return NewStartUseCase(h.cfg, h.db, h.client)
+		return NewStartUseCase(h.cfg, h.db, h.client, h.dl)
 	}
 	return h.useCase
 }

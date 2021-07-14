@@ -1,8 +1,12 @@
 package indexer
 
 import (
+	"fmt"
+
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/model"
+	"github.com/figment-networks/celo-indexer/types"
+	"github.com/figment-networks/indexing-engine/datalake"
 	"github.com/figment-networks/indexing-engine/pipeline"
 )
 
@@ -11,20 +15,34 @@ var (
 	_ pipeline.Payload        = (*payload)(nil)
 )
 
-func NewPayloadFactory() *payloadFactory {
-	return &payloadFactory{}
+func NewPayloadFactory(dl *datalake.DataLake) *payloadFactory {
+	return &payloadFactory{dl: dl}
 }
 
-type payloadFactory struct{}
+type payloadFactory struct {
+	dl *datalake.DataLake
+}
 
 func (pf *payloadFactory) GetPayload(currentHeight int64) pipeline.Payload {
 	return &payload{
 		CurrentHeight: currentHeight,
+		DataLake:      pf.dl,
 	}
+}
+
+type HeightMeta struct {
+	ChainId     uint64
+	Height      int64
+	Time        *types.Time
+	Epoch       *int64
+	EpochSize   *int64
+	LastInEpoch *bool
 }
 
 type payload struct {
 	CurrentHeight int64
+
+	DataLake *datalake.DataLake
 
 	// Fetcher stage
 	HeightMeta         HeightMeta
@@ -37,7 +55,7 @@ type payload struct {
 	Syncable *model.Syncable
 
 	// Parser stage
-	ParsedGovernanceLogs     []*ParsedGovernanceLogs
+	ParsedGovernanceLogs []*ParsedGovernanceLogs
 
 	// Aggregator stage
 	NewValidatorAggregates          []model.ValidatorAgg
@@ -60,3 +78,23 @@ type payload struct {
 }
 
 func (p *payload) MarkAsProcessed() {}
+
+func (p *payload) Store(name string, obj interface{}) error {
+	res, err := datalake.NewJSONResource(obj)
+	if err != nil {
+		return fmt.Errorf("cannot store %s in data lake [height=%d]: %v",
+			name, p.CurrentHeight, err)
+	}
+
+	return p.DataLake.StoreResourceAtHeight(res, name, p.CurrentHeight)
+}
+
+func (p *payload) Retrieve(name string, obj interface{}) error {
+	res, err := p.DataLake.RetrieveResourceAtHeight(name, p.CurrentHeight)
+	if err != nil {
+		return fmt.Errorf("cannot retrieve %s from data lake [height=%d]: %v",
+			name, p.CurrentHeight, err)
+	}
+
+	return res.ScanJSON(obj)
+}

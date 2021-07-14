@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/kelseyhightower/envconfig"
 )
@@ -45,6 +46,12 @@ type Config struct {
 	PurgeHourlySummariesInterval string `json:"purge_hourly_summaries_interval" envconfig:"PURGE_HOURLY_SUMMARIES_INTERVAL" default:"26h"`
 	IndexerConfigFile            string `json:"indexer_config_file" envconfig:"INDEXER_CONFIG_FILE" default:"indexer_config.json"`
 	TheCeloBaseUrl               string `json:"the_celo_base_url" envconfig:"THE_CELO_BASE_URL" default:"https://thecelo.com/api/v0.1"`
+	FetchWorkers                 string `json:"fetch_workers" envconfig:"FETCH_WORKERS" default:"127.0.0.1:7000"`
+	FetchWorkerAddr              string `json:"fetch_worker_addr" envconfig:"FETCH_WORKER_ADDR" default:"127.0.0.1"`
+	FetchWorkerPort              int64  `json:"fetch_worker_port" envconfig:"FETCH_WORKER_PORT" default:"7000"`
+	FetchInterval                string `json:"fetch_interval" envconfig:"FETCH_INTERVAL" default:"1s"`
+	AWSRegion                    string `json:"aws_region" envconfig:"AWS_REGION" default:"us-east-1"`
+	S3Bucket                     string `json:"aws_s3_bucket" envconfig:"AWS_S3_BUCKET"`
 }
 
 // Validate returns an error if config is invalid
@@ -74,9 +81,19 @@ func (c *Config) IsProduction() bool {
 	return c.AppEnv == modeProduction
 }
 
-// ListenAddr returns a full listen address and port
-func (c *Config) ListenAddr() string {
+// ServerListenAddr returns the listen address for the API server
+func (c *Config) ServerListenAddr() string {
 	return fmt.Sprintf("%s:%d", c.ServerAddr, c.ServerPort)
+}
+
+// FetchWorkerListenAddr returns the listen address for the fetch worker
+func (c *Config) FetchWorkerListenAddr() string {
+	return fmt.Sprintf("%s:%d", c.FetchWorkerAddr, c.FetchWorkerPort)
+}
+
+// FetchWorkerEndpoints returns fetch worker endpoints
+func (c *Config) FetchWorkerEndpoints() []string {
+	return strings.Fields(c.FetchWorkers)
 }
 
 // New returns a new config

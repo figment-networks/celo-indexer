@@ -2,11 +2,11 @@ package validatorgroup
 
 import (
 	"context"
-	"github.com/figment-networks/celo-indexer/store/psql"
 
 	"github.com/figment-networks/celo-indexer/client/figmentclient"
 	"github.com/figment-networks/celo-indexer/config"
 	"github.com/figment-networks/celo-indexer/indexer"
+	"github.com/figment-networks/celo-indexer/store/psql"
 	"github.com/pkg/errors"
 )
 
@@ -51,7 +51,9 @@ func (uc *getByHeightUseCase) Execute(height *int64) (SeqListView, error) {
 		indexingPipeline, err := indexer.NewPipeline(
 			uc.cfg,
 			uc.client,
+			nil,
 			uc.db.GetCore().Syncables,
+			uc.db.GetCore().Jobs,
 			uc.db.GetCore().Database,
 			uc.db.GetCore().Reports,
 			uc.db.GetBlocks().BlockSeq,

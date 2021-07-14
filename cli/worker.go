@@ -21,8 +21,12 @@ func startWorker(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
+	dl, err := initDataLake(cfg)
+	if err != nil {
+		return err
+	}
 
-	workerHandlers := usecase.NewWorkerHandlers(cfg, db, client, theCeloClient)
+	workerHandlers := usecase.NewWorkerHandlers(cfg, db, client, theCeloClient, dl)
 
 	w, err := worker.New(cfg, workerHandlers)
 	if err != nil {
